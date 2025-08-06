@@ -2,3 +2,5 @@
 *.bat text eol=crlf
 *.jar binary
 * text=auto
+
+# git flow 테스트용 주석입니다.
