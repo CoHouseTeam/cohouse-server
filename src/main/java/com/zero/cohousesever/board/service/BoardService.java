@@ -2,6 +2,7 @@ package com.zero.cohousesever.board.service;
 
 import com.zero.cohousesever.board.dto.PostRequest;
 import com.zero.cohousesever.board.dto.PostResponse;
+import com.zero.cohousesever.board.repository.PostRepository;
 
 import java.util.List;
 

@@ -21,23 +21,20 @@ public class Post {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long postId;
+    private Long id;
 
     @Column(name = "group_member_id", nullable = false)
     private Long groupMemberId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "post_type", nullable = false)
-    private PostType postType;
+    @Column(name = "type", nullable = false)
+    private PostType type;
 
-    @Column(name = "post_title", nullable = false)
-    private String postTitle;
+    @Column(name = "title", nullable = false)
+    private String title;
 
-    @Column(name = "post_content", columnDefinition = "TEXT", nullable = false)
-    private String postContent;
-
-//    @Column(nullable = false)
-//    private PostStatus status;
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
+    private String content;
 
     @CreatedDate
     private LocalDateTime createdAt;

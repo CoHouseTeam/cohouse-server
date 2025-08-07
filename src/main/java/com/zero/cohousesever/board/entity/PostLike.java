@@ -19,7 +19,7 @@ public class PostLike {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long postLikeId;
+    private Long id;
 
     @Column(name = "post_id", nullable = false)
     private Long postId;

@@ -2,6 +2,8 @@ package com.zero.cohousesever.board.service.impl;
 
 import com.zero.cohousesever.board.dto.PostRequest;
 import com.zero.cohousesever.board.dto.PostResponse;
+import com.zero.cohousesever.board.repository.PostLikeRepository;
+import com.zero.cohousesever.board.repository.PostRepository;
 import com.zero.cohousesever.board.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class BoardServiceImpl implements BoardService {
+
+    private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
 
     @Override
     public PostResponse createPost(PostRequest request) {

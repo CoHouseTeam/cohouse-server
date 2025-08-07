@@ -6,8 +6,7 @@ import lombok.Getter;
 public enum PostType {
 
     ANNOUNCEMENT("공지사항"),
-    FREE("자유게시판"),
-    ANNIVERSARY("기념일");
+    FREE("자유게시판");
 
     private final String description;
 
