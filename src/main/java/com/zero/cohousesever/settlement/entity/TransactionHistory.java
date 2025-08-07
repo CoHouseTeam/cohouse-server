@@ -35,5 +35,7 @@ public class TransactionHistory {
 
     private LocalDateTime transferDate;  // 송금 일시
 
-    private String status;           // 상태 (PENDING, COMPLETED, FAILED)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private TransactionStatus status;
 }

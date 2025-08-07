@@ -19,18 +19,21 @@ public class Settlement {
     @Column(name = "total_amount")
     private Long totalAmount;         // 총 금액
 
-    private String status;            // 상태 (PENDING, COMPLETE)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private SettlementStatus status;
 
     private String imageUrl;          // 영수증 이미지 URL (optional)
 
-    @Column(name = "payer_id")
-    private Long payerId;             // 비용을 낸 사람 ID
+    // TODO MEMBER 추가 시 변경
+//    @Column(name = "payer_id")
+//    private Long payerId;             // 비용을 낸 사람 ID
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;  // 생성 시각
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;  // 수정 시각
+    private LocalDateTime updatedAt;
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt; // 완료 시각 (optional)

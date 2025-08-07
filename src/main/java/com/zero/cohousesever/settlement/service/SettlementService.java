@@ -2,6 +2,7 @@ package com.zero.cohousesever.settlement.service;
 
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.SettlementDto;
+import com.zero.cohousesever.settlement.repository.ParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;

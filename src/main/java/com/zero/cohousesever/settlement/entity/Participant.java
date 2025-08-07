@@ -20,11 +20,13 @@ public class Participant {
     @JoinColumn(name = "settlement_id", nullable = false)
     private Settlement settlement;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    // TODO Member 생성되면 사용
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "user_id", nullable = false)
+//    private Member member;
 
     @Column(name = "share_amount")
-    private Long shareAmount;
+    private Long perPersonAmount; // 1인당 정산할 금액
 
     private String status;
 }
