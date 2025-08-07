@@ -1,10 +1,7 @@
 package com.zero.cohousesever.settlement.service;
 
-import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
-import com.zero.cohousesever.settlement.dto.SettlementDto;
 import com.zero.cohousesever.settlement.repository.ParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,27 +20,54 @@ public class SettlementService {
     /**
      * 정산 목록 조회 (페이징 및 필터링 포함)
      */
-    public Page<SettlementDto> getSettlements(String status, int page, int size, String sort) {
-        return Page.empty();
+    public void getSettlements() {
     }
 
     /**
-     * 특정 정산 상세 조회
+     * 신규 정산 등록
      */
-    public SettlementDto getSettlement(Long settlementId) {
-        return null;
+    public void createSettlement() {
     }
 
     /**
-     * 새로운 정산 등록
+     * 특정 정산 상세 정보 조회
      */
-    public SettlementDto createSettlement(CreateSettlementRequest request) {
-        return null;
+    public void getSettlement() {
     }
 
     /**
-     * 정산 취소 처리
+     * 정산 삭제 또는 취소 처리
      */
-    public void cancelSettlement(Long settlementId) {
+    public void deleteSettlement() {
+    }
+
+    /**
+     * 정산 참여자 목록 조회
+     */
+    public void getParticipants() {
+    }
+
+    /**
+     * 정산 참여자 추가
+     */
+    public void addParticipant() {
+    }
+
+    /**
+     * 정산 참여자 제거
+     */
+    public void removeParticipant() {
+    }
+
+    /**
+     * 영수증 이미지 업로드 및 처리
+     */
+    public void uploadReceiptImage() {
+    }
+
+    /**
+     * 정산 상태 변경 이력 조회
+     */
+    public void getSettlementHistories() {
     }
 }
