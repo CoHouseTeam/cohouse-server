@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface BoardService {
 
+    // 게시글 API
+
     /**
      * 게시글 작성
      */
@@ -36,6 +38,8 @@ public interface BoardService {
 //     * 공지 게시글 상단 고정
 //     */
 //    void pinPost(Long postId);
+
+    // 좋아요 API
 
     /**
      * 좋아요(읽음) 누르기
