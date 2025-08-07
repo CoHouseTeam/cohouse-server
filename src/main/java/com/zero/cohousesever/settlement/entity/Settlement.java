@@ -3,22 +3,23 @@ package com.zero.cohousesever.settlement.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
-@Table(name = "settlements") // 테이블명도 맞춰서 변경
+@Table(name = "settlements")
 public class Settlement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String category;          // 분류 (예: 식사, 교통비 등)
-    private String title;             // 제목 (예: 배달비)
-    private String description;       // 상세 설명 (optional)
+    private String category;
+    private String title;
+    private String description;
 
     @Column(name = "total_amount")
     private Long totalAmount;         // 총 금액
 
-    private String status;            // 상태 (예: PENDING, COMPLETE 등)
+    private String status;            // 상태 (PENDING, COMPLETE)
 
     private String imageUrl;          // 영수증 이미지 URL (optional)
 
