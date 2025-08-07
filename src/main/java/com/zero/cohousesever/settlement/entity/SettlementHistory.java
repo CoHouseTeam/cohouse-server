@@ -25,7 +25,9 @@ public class SettlementHistory {
     @JoinColumn(name = "settlement_id", nullable = false)
     private Settlement settlement;
 
-    private String action; // CREATED, UPDATED, COMPLETED
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private SettlementStatus status;
 
     private LocalDateTime changedAt;
 
