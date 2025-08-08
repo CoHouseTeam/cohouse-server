@@ -67,6 +67,7 @@ public class SettlementService {
 
     /**
      * 정산 상태 변경 이력 조회
+     * 테스트
      */
     public void getSettlementHistories() {
     }
