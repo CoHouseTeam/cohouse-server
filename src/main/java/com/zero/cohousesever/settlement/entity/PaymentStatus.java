@@ -1,6 +1,6 @@
 package com.zero.cohousesever.settlement.entity;
 
-public enum TransactionStatus {
+public enum PaymentStatus {
     PENDING,      // 대기 중
     COMPLETED,    // 이체 완료됨
     REFUNDED,     // 환불됨
