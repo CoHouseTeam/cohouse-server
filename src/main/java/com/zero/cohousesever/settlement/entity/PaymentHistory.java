@@ -8,14 +8,14 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * 거래 히스토리
+ * 송금 히스토리
  */
 @Entity
-@Table(name = "transaction_histories")
+@Table(name = "payment_histories")
 @Getter
 @Setter
 @NoArgsConstructor
-public class TransactionHistory {
+public class PaymentHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,5 +37,5 @@ public class TransactionHistory {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private TransactionStatus status;
+    private PaymentStatus status;
 }
