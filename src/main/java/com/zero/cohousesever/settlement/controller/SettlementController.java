@@ -76,7 +76,7 @@ public class SettlementController {
     // 정산 히스토리 조회
     @GetMapping("/history")
     public ResponseEntity<?> getSettlementHistories() {
-
+        // 테스트입니다.
         return ResponseEntity.ok().build();
     }
 }
