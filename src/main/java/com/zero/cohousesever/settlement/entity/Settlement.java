@@ -1,5 +1,6 @@
 package com.zero.cohousesever.settlement.entity;
 
+import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -16,8 +17,8 @@ public class Settlement {
     private String title;
     private String description;
 
-    @Column(name = "total_amount")
-    private Long totalAmount;         // 총 금액
+    @Column(name = "settlement_amount")
+    private Long settlementAmount; // 정산 금액
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -25,9 +26,9 @@ public class Settlement {
 
     private String imageUrl;          // 영수증 이미지 URL (optional)
 
-    // TODO MEMBER 추가 시 변경
-//    @Column(name = "payer_id")
-//    private Long payerId;             // 비용을 낸 사람 ID
+    @ManyToOne(fetch = FetchType.LAZY)
+    @Column(name = "payer_id", nullable = false)
+    private Member payerId;           // 비용을 낸 사람 ID
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
