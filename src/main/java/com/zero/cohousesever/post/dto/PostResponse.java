@@ -1,6 +1,6 @@
-package com.zero.cohousesever.board.dto;
+package com.zero.cohousesever.post.dto;
 
-import com.zero.cohousesever.board.type.PostType;
+import com.zero.cohousesever.post.type.PostType;
 import lombok.*;
 
 import java.time.LocalDateTime;

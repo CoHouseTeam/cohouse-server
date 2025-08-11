@@ -1,4 +1,4 @@
-package com.zero.cohousesever.board.entity;
+package com.zero.cohousesever.post.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

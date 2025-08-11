@@ -1,6 +1,6 @@
-package com.zero.cohousesever.board.entity;
+package com.zero.cohousesever.post.entity;
 
-import com.zero.cohousesever.board.type.PostType;
+import com.zero.cohousesever.post.type.PostType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

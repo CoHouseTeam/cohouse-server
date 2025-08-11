@@ -1,10 +1,10 @@
-package com.zero.cohousesever.board.service.impl;
+package com.zero.cohousesever.post.service.impl;
 
-import com.zero.cohousesever.board.dto.PostRequest;
-import com.zero.cohousesever.board.dto.PostResponse;
-import com.zero.cohousesever.board.repository.PostLikeRepository;
-import com.zero.cohousesever.board.repository.PostRepository;
-import com.zero.cohousesever.board.service.BoardService;
+import com.zero.cohousesever.post.dto.PostRequest;
+import com.zero.cohousesever.post.dto.PostResponse;
+import com.zero.cohousesever.post.repository.PostLikeRepository;
+import com.zero.cohousesever.post.repository.PostRepository;
+import com.zero.cohousesever.post.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

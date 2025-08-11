@@ -1,4 +1,4 @@
-package com.zero.cohousesever.board.type;
+package com.zero.cohousesever.post.type;
 
 import lombok.Getter;
 

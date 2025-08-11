@@ -1,8 +1,8 @@
-package com.zero.cohousesever.board.controller;
+package com.zero.cohousesever.post.controller;
 
-import com.zero.cohousesever.board.dto.PostRequest;
-import com.zero.cohousesever.board.dto.PostResponse;
-import com.zero.cohousesever.board.service.BoardService;
+import com.zero.cohousesever.post.dto.PostRequest;
+import com.zero.cohousesever.post.dto.PostResponse;
+import com.zero.cohousesever.post.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/board")
 @RequiredArgsConstructor
-public class BoardController {
+public class PostController {
 
     private final BoardService boardService;
 

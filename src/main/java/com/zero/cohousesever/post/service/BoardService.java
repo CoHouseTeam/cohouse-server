@@ -1,8 +1,7 @@
-package com.zero.cohousesever.board.service;
+package com.zero.cohousesever.post.service;
 
-import com.zero.cohousesever.board.dto.PostRequest;
-import com.zero.cohousesever.board.dto.PostResponse;
-import com.zero.cohousesever.board.repository.PostRepository;
+import com.zero.cohousesever.post.dto.PostRequest;
+import com.zero.cohousesever.post.dto.PostResponse;
 
 import java.util.List;
 
