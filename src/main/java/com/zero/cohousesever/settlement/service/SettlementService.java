@@ -1,8 +1,12 @@
 package com.zero.cohousesever.settlement.service;
 
+import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.repository.ParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class SettlementService {
@@ -66,9 +70,16 @@ public class SettlementService {
     }
 
     /**
-     * 정산 상태 변경 이력 조회
-     * 테스트2
+     * 정산 전체 히스토리 조회
      */
-    public void getSettlementHistories() {
+    public List<SettlementHistoryResponse> getSettlementHistories(Long groupId, Long settlementId) {
+        return null;
+    }
+
+    /**
+     * 그룹의 정산 히스토리 조회
+     */
+    public List<SettlementHistoryResponse> getGroupSettlementHistories(Long groupId, Long settlementId, LocalDate fromDate, LocalDate toDate) {
+        return null;
     }
 }

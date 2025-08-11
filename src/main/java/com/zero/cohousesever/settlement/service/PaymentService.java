@@ -1,11 +1,15 @@
 package com.zero.cohousesever.settlement.service;
 
+import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
 import com.zero.cohousesever.settlement.entity.Participant;
 import com.zero.cohousesever.settlement.entity.PaymentHistory;
 import com.zero.cohousesever.settlement.repository.ParticipantRepository;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +26,19 @@ public class PaymentService {
         // 2. 송금 거래 내역 생성 및 저장
         // 3. 참여자의 송금 상태 업데이트 및 저장
         // 4. 저장된 거래 이력 반환
+        return null;
+    }
+
+    public List<PaymentHistoryResponse> getPaymentHistories(Long groupId, Long settlementId) {
+        return null;
+    }
+
+    public List<PaymentHistoryResponse> getMyPaymentHistoriesInSettlement(Long groupId, Long settlementId) {
+        return null;
+    }
+
+    //FIXME status ENUM으로 변경
+    public List<PaymentHistoryResponse> getMyPaymentsInGroup(Long groupId, Long SettlementId, String status, LocalDate fromDate, LocalDate toDate) {
         return null;
     }
 }
