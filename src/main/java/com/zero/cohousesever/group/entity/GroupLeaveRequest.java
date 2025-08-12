@@ -1,5 +1,6 @@
 package com.zero.cohousesever.group.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.group.enums.LeaveRequestStatus;
 import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
@@ -7,11 +8,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-public class GroupLeaveRequest {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class GroupLeaveRequest extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
