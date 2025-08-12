@@ -9,7 +9,7 @@ import java.time.LocalTime;
 
 @Getter
 @Builder
-public class MemberProfileResponseDto {
+public class MemberProfileSummary {
 
     private Long id;
     private String email;
