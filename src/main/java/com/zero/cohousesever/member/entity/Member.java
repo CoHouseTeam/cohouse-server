@@ -21,8 +21,6 @@ public class Member extends BaseEntity {
 
     private LocalTime alertTime;
 
-    private String oauthId;
-
     private String email;
 
     @Enumerated(EnumType.STRING)
