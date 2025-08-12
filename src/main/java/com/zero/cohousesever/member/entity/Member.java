@@ -21,6 +21,7 @@ import java.time.LocalTime;
 @Builder
 public class Member extends BaseEntity {
 
+    @Column(nullable = false)
     private String name;
 
     private String profileImageUrl;
@@ -29,9 +30,11 @@ public class Member extends BaseEntity {
 
     private LocalTime alertTime;
 
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private MemberStatus status;
 
     @Column(columnDefinition = "TINYINT")
