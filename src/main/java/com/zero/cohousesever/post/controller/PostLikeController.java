@@ -43,7 +43,7 @@ public class PostLikeController {
      * 해당 게시글의 좋아요 개수만 조회
      */
     @GetMapping("/{postId}/likes/counts")
-    public ResponseEntity<PostLikeCountResponse> getLikeCount(@PathVariable Long postId) {
+    public ResponseEntity<Void> getLikeCount(@PathVariable Long postId) {
         return ResponseEntity.ok().build();
     }
 
