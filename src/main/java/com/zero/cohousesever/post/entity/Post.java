@@ -1,13 +1,11 @@
 package com.zero.cohousesever.post.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "post")
@@ -17,11 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Post {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Post extends BaseEntity {
 
     @Column(name = "group_member_id", nullable = false)
     private Long groupMemberId;
@@ -36,9 +30,13 @@ public class Post {
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @CreatedDate
-    private LocalDateTime createdAt;
+    @Builder.Default
+    @Column(name = "like_count", nullable = false)
+    private Long likeCount = 0L;
 
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "status", nullable = false)
+    private PostStatus status = PostStatus.ACTIVE;
+
 }

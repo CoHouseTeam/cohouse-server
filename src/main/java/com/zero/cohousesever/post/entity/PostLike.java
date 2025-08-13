@@ -1,11 +1,12 @@
 package com.zero.cohousesever.post.entity;
 
-import jakarta.persistence.*;
+import com.zero.cohousesever.common.entity.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.Table;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "post_like")
@@ -15,11 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PostLike {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class PostLike extends BaseEntity {
 
     @Column(name = "post_id", nullable = false)
     private Long postId;
@@ -27,8 +24,6 @@ public class PostLike {
     @Column(name = "group_member_id", nullable = false)
     private Long groupMemberId;
 
+    private boolean isLiked;
 
-    @CreatedDate
-    @Column(name = "liked_at", nullable = false)
-    private LocalDateTime likedAt;
 }

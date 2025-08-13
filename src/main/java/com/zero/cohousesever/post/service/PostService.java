@@ -1,10 +1,8 @@
-package com.zero.cohousesever.post.service.impl;
+package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.post.dto.PostRequest;
 import com.zero.cohousesever.post.dto.PostResponse;
-import com.zero.cohousesever.post.repository.PostLikeRepository;
 import com.zero.cohousesever.post.repository.PostRepository;
-import com.zero.cohousesever.post.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,53 +10,48 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class BoardServiceImpl implements BoardService {
+public class PostService {
 
     private final PostRepository postRepository;
-    private final PostLikeRepository postLikeRepository;
 
-    @Override
+    /**
+     * 게시글 전체 조회
+     */
+    public List<PostResponse> getAllPosts(Long groupId) {
+        return List.of();
+    }
+
+
+    /**
+     * 게시글 작성
+     */
     public PostResponse createPost(PostRequest request) {
         return null;
     }
 
-    @Override
+    /**
+     * 게시글 상세 조회
+     */
     public PostResponse getPostDetail(Long postId) {
         return null;
     }
 
-    @Override
-    public List<PostResponse> getPostListByGroup(Long groupId) {
-        return List.of();
-    }
-
-    @Override
+    /**
+     * 게시글 수정
+     */
     public PostResponse updatePost(Long postId, PostRequest request) {
         return null;
     }
 
-    @Override
+    /**
+     * 게시글 삭제
+     */
     public void deletePost(Long postId) {
 
     }
 
-//    @Override
 //    public void pinPost(Long postId) {
 //
 //    }
 
-    @Override
-    public void likePost(Long postId, Long userId) {
-
-    }
-
-    @Override
-    public void unlikePost(Long postId, Long userId) {
-
-    }
-
-    @Override
-    public List<Long> getLikeUsers(Long postId) {
-        return List.of();
-    }
 }
