@@ -2,7 +2,6 @@ package com.zero.cohousesever.member.security;
 
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collection;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CustomUserDetailsTest {
 
@@ -88,7 +88,7 @@ class CustomUserDetailsTest {
         Member nullMember = null;
 
         // then
-        Assertions.assertThrows(NullPointerException.class,
-                () -> customUserDetails = new CustomUserDetails(nullMember));
+        assertThatThrownBy(() -> new CustomUserDetails(nullMember))
+                .isInstanceOf(NullPointerException.class);
     }
 }
