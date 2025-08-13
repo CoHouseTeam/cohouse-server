@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @EqualsAndHashCode
 public class CustomUserDetails implements UserDetails {
@@ -21,6 +22,8 @@ public class CustomUserDetails implements UserDetails {
     private final String password;
 
     public CustomUserDetails(Member member) {
+        Objects.requireNonNull(member, "Member must not be null");
+
         this.id = member.getId();
         this.email = member.getEmail();
         this.name = member.getName();
