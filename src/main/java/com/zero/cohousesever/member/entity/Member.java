@@ -41,5 +41,5 @@ public class Member extends BaseEntity {
     private MemberStatus status;
 
     @Column(columnDefinition = "TINYINT")
-    private Integer gender; // 0: Male, 1: Female
+    private Boolean gender; // 0: Male, 1: Female
 }
