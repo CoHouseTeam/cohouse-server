@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class NotificationSetting extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
-    private Member memberId;
+    private Member member;
 
     @Enumerated(EnumType.STRING)
     private NotificationType type;
