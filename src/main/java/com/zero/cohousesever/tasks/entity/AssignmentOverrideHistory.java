@@ -24,7 +24,7 @@ import lombok.Setter;
 @Table(name = "tasks_override_request_histories")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
-public class TasksOverrideRequestHistory {
+public class AssignmentOverrideHistory {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

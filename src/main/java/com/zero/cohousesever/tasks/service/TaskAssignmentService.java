@@ -1,4 +1,4 @@
-package com.zero.cohousesever.tasks;
+package com.zero.cohousesever.tasks.service;
 
 import com.zero.cohousesever.tasks.repository.TaskAssignmentRepository;
 import lombok.RequiredArgsConstructor;

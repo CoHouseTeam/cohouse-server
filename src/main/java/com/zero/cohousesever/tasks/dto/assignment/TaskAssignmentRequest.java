@@ -10,6 +10,6 @@ import lombok.Setter;
 @Setter
 public class TaskAssignmentRequest {
   private Long groupId;
-  private String date; // ISO_LOCAL_DATE ("2025-08-05")
+  private String date;
   private Long templateId;
 }

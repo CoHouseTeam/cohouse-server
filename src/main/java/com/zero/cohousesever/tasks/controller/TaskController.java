@@ -1,9 +1,11 @@
 package com.zero.cohousesever.tasks.controller;
 
-import com.zero.cohousesever.tasks.AssignmentOverrideService;
-import com.zero.cohousesever.tasks.RepeatDayService;
-import com.zero.cohousesever.tasks.TaskAssignmentService;
-import com.zero.cohousesever.tasks.TaskTemplateService;
+import com.zero.cohousesever.tasks.service.AssignmentOverrideHistoryService;
+import com.zero.cohousesever.tasks.service.AssignmentOverrideService;
+import com.zero.cohousesever.tasks.service.RepeatDayService;
+import com.zero.cohousesever.tasks.service.TaskAssignmentHistoryService;
+import com.zero.cohousesever.tasks.service.TaskAssignmentService;
+import com.zero.cohousesever.tasks.service.TaskTemplateService;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideRequest;
@@ -14,6 +16,7 @@ import com.zero.cohousesever.tasks.dto.template.TaskTemplateRequest;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateResponse;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateUpdateRequest;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +38,8 @@ public class TaskController {
   private final RepeatDayService repeatDayService;
   private final TaskAssignmentService taskAssignmentService;
   private final AssignmentOverrideService overrideService;
+  private final TaskAssignmentHistoryService taskAssignmentHistoryService;
+  private final AssignmentOverrideHistoryService assignmentOverrideHistoryService;
 
   // 1. 템플릿 관련
   @GetMapping("/templates")
@@ -112,4 +117,22 @@ public class TaskController {
   public ResponseEntity<AssignmentOverrideResponse> respondOverride() {
     return null;
   }
+
+  // 할일 이행 히스토리 조회
+  @GetMapping("/assignments/{assignmentId}/histories")
+  public ResponseEntity<List<TaskAssignmentResponse>> getTaskAssignmentHistories(
+      @PathVariable Long assignmentId
+      ) {
+    return ResponseEntity.ok(Collections.emptyList()); // TODO
+  }
+
+  // 담당자 변경 요청 히스토리 조회
+  @GetMapping("/override-requests/{requestId}/histories")
+  public ResponseEntity<List<AssignmentOverrideResponse>> getAssignmentOverrideHistories(
+
+  ) {
+    return ResponseEntity.ok(Collections.emptyList()); // TODO
+  }
 }
+
+

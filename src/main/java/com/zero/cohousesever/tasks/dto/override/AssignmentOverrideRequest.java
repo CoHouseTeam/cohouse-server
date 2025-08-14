@@ -11,6 +11,6 @@ import lombok.Setter;
 @Setter
 public class AssignmentOverrideRequest {
   private Long assignmentId;        // 필수
-  private Long targetId;            // 1명 대상일 때 사용 (선택)
-  private List<Long> targetIds;     // 여러 명 대상일 때 사용 (선택, null/empty면 전체로 처리)
+  private Long targetId;            // 단일 대상 or null인 경우 전체
+  private List<Long> targetIds;     // 여러 명 대상일 때 사용
 }

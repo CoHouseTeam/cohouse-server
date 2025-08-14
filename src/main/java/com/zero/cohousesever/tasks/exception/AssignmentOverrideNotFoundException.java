@@ -1,5 +1,5 @@
 package com.zero.cohousesever.tasks.exception;
 
-public class OverrideRequestNotFoundException {
+public class AssignmentOverrideNotFoundException {
 
 }
