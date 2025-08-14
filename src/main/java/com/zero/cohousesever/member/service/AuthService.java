@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.Objects;
 
@@ -30,6 +31,14 @@ public class AuthService {
         String email = signupRequestDto.getEmail();
         String password = signupRequestDto.getPassword();
         String passwordRepeat = signupRequestDto.getPasswordRepeat();
+
+        // TODO: Validation 도입하여 처리하기
+        if (!StringUtils.hasText(name)
+                || !StringUtils.hasText(email)
+                || !StringUtils.hasText(password)
+                || !StringUtils.hasText(passwordRepeat)) {
+            throw new RuntimeException(); // TODO: 적절한 예외 처리 로직 작성
+        }
 
         if (!Objects.equals(password, passwordRepeat)) {
             throw new RuntimeException(); // TODO: 적절한 예외 처리 로직 작성
