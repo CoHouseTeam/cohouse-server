@@ -4,13 +4,8 @@ import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "notification_settings")
@@ -19,7 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class NotificationSetting extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
-    private Member memberId;
+    private Member member;
 
     @Enumerated(EnumType.STRING)
     private NotificationType type;
