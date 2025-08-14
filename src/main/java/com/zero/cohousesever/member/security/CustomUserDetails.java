@@ -1,6 +1,7 @@
 package com.zero.cohousesever.member.security;
 
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.enums.MemberStatus;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,6 +22,8 @@ public class CustomUserDetails implements UserDetails {
     private final String name;
     private final String password;
 
+    private final boolean isEnabled;
+
     public CustomUserDetails(Member member) {
         Objects.requireNonNull(member, "Member must not be null");
 
@@ -28,6 +31,7 @@ public class CustomUserDetails implements UserDetails {
         this.email = member.getEmail();
         this.name = member.getName();
         this.password = member.getPassword();
+        this.isEnabled = member.getStatus().equals(MemberStatus.ACTIVE);
     }
 
     @Override
@@ -42,30 +46,31 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // 권한 정보: 미사용
         return List.of();
     }
 
-    /**
-    * 이하 미사용
-    */
-
     @Override
     public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
+        // 계정 만료: 미사용
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
+        // 계정 잠김: 미사용
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
+        // 비밀번호 만료일: 미사용
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        // 계정 활성 상태: Member의 status가 ACTIVE인 경우
+        return isEnabled;
     }
 }
