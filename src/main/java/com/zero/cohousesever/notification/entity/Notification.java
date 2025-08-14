@@ -1,7 +1,10 @@
 package com.zero.cohousesever.notification.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -13,7 +16,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notification extends BaseEntity {
-    private Long memberId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Member memberId;
 
     private String type;
     private String title;
