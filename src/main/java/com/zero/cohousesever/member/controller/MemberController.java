@@ -4,6 +4,8 @@ import com.zero.cohousesever.member.dto.MessageDto;
 import com.zero.cohousesever.member.dto.auth.*;
 import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
+import com.zero.cohousesever.member.security.JwtTokenProvider;
+import com.zero.cohousesever.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,11 +16,15 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class MemberController {
 
+    private final MemberService memberService;
+    private final JwtTokenProvider jwtTokenProvider;
+
     // 이메일 회원 가입
     @PostMapping("/signup")
     public ResponseEntity<MessageDto> signup(
             @RequestBody SignupRequestDto requestDto
     ) {
+        memberService.registerMember(requestDto);
 
         return ResponseEntity.ok().build();
     }
@@ -28,17 +34,20 @@ public class MemberController {
     public ResponseEntity<EmailDuplicateCheckResponseDto> checkEmailDuplicate(
             @RequestBody EmailDuplicateCheckRequestDto requestDto
     ) {
+        boolean isDuplicated = memberService.isEmailDuplicated(requestDto.getEmail());
+        EmailDuplicateCheckResponseDto responseDto = EmailDuplicateCheckResponseDto.builder()
+                .isDuplicate(isDuplicated)
+                .build();
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 이메일 로그인
     @PostMapping("/login")
-    public ResponseEntity<JwtTokenResponseDto> login(
-            @RequestBody LoginRequestDto requestDto
-    ) {
+    public ResponseEntity<JwtTokenResponseDto> login(@RequestBody LoginRequestDto requestDto) {
+        JwtTokenResponseDto responseDto = memberService.loginAuthenticate(requestDto);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 소셜 로그인 요청
