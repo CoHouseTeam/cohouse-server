@@ -1,5 +1,7 @@
 package com.zero.cohousesever.notification.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -13,25 +15,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "notification_settings")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationSetting {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private Long memberId;
+public class NotificationSetting extends BaseEntity {
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Member memberId;
 
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
     private boolean isEnabled;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
 }
