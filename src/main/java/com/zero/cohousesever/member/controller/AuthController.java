@@ -18,17 +18,12 @@ public class AuthController {
 
     // 이메일 회원 가입
     @PostMapping("/signup")
-    public ResponseEntity<MessageDto> signup(
+    public ResponseEntity<Void> signup(
             @RequestBody SignupRequestDto requestDto
     ) {
         authService.registerMember(requestDto);
 
-        MessageDto responseDto = MessageDto
-                .builder()
-                .message("회원가입이 완료되었습니다.")
-                .build();
-
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.ok().build();
     }
 
     // 회원가입 시 이메일 중복 체크
