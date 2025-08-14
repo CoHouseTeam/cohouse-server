@@ -1,5 +1,9 @@
 package com.zero.cohousesever.tasks.controller;
 
+import com.zero.cohousesever.tasks.AssignmentOverrideService;
+import com.zero.cohousesever.tasks.RepeatDayService;
+import com.zero.cohousesever.tasks.TaskAssignmentService;
+import com.zero.cohousesever.tasks.TaskTemplateService;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideRequest;
@@ -9,10 +13,7 @@ import com.zero.cohousesever.tasks.dto.repeat.RepeatDayResponse;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateRequest;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateResponse;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateUpdateRequest;
-import com.zero.cohousesever.tasks.service.AssignmentOverrideService;
-import com.zero.cohousesever.tasks.service.RepeatDayService;
-import com.zero.cohousesever.tasks.service.TaskAssignmentService;
-import com.zero.cohousesever.tasks.service.TaskTemplateService;
+import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -57,19 +58,32 @@ public class TaskController {
   }
 
   // 2. 반복 요일 관련
+
+  // 조회
   @GetMapping("/templates/{templateId}/repeat-days")
   public ResponseEntity<List<RepeatDayResponse>> getRepeatDays(@PathVariable Long templateId) {
-    return null;
+    return ResponseEntity.ok(repeatDayService.getRepeatDaysByTemplateId(templateId));
   }
 
+  // 생성
   @PostMapping("/templates/{templateId}/repeat-days")
-  public ResponseEntity<RepeatDayResponse> addRepeatDay(@PathVariable Long templateId, @RequestBody RepeatDayRequest request) {
-    return null;
+  public ResponseEntity<RepeatDayResponse> addRepeatDay(
+      @PathVariable Long templateId,
+      @RequestBody RepeatDayRequest request) {
+    RepeatDayResponse created = repeatDayService.addRepeatDay(templateId, request);
+    return ResponseEntity
+        .created(URI.create("/api/tasks/templates/" + templateId + "/repeat-days/" + created.getRepeatDayId()))
+        .body(created);
   }
 
+  // 삭제
   @DeleteMapping("/templates/{templateId}/repeat-days/{repeatDayId}")
-  public ResponseEntity<Void> deleteRepeatDay(@PathVariable Long templateId, @PathVariable Long repeatDayId) {
-    return null;
+  public ResponseEntity<Void> deleteRepeatDay(
+      @PathVariable Long templateId,
+      @PathVariable Long repeatDayId
+  ) {
+    repeatDayService.deleteRepeatDay(templateId, repeatDayId);
+    return ResponseEntity.noContent().build();
   }
 
   // 3. 할일 배정 관련

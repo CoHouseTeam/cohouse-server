@@ -55,7 +55,7 @@ public class RepeatDay {
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  private DayOfWeek dayOfWeek;
+  private DayOfWeek dayOfWeek; // 서비스에서 일~토 형태로 변경 후 컨트롤러 사용 예정
 }
 
 

@@ -1,10 +1,25 @@
 package com.zero.cohousesever.tasks.entity;
 
 import com.zero.cohousesever.tasks.entity.enums.OverrideStatus;
-import jakarta.persistence.*;
-import lombok.*;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "assignment_override_request")
@@ -13,7 +28,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AssignmentOverrideRequest {
+public class AssignmentOverride {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,10 +48,12 @@ public class AssignmentOverrideRequest {
   private Long requesterId;
 
   /**
-   * 요청 수신자 (변경될 담당자)
+   * 대상자 (요청 받은 사람 1 or 다수 or 전체)
    */
   @Column(nullable = false)
-  private Long receiverId;
+  private Long targetId;
+
+  private Long modifierId; // 최종 변경자
 
   /**
    * 요청 상태

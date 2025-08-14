@@ -1,7 +1,6 @@
 package com.zero.cohousesever.tasks.entity;
 
 import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
-import com.zero.cohousesever.tasks.entity.enums.RepeatType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -56,18 +55,12 @@ public class TaskAssignment {
   @Column(nullable = false)
   private AssignmentStatus status;
 
-  /**
-   * 반복 방식 NONE, DAILY, WEEKLY
-   */
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private RepeatType repeatType;
-
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
   @PrePersist
   public void prePersist() {
+    if (this.status == null) this.status = AssignmentStatus.PENDING;
     this.createdAt = LocalDateTime.now();
     this.updatedAt = this.createdAt;
   }

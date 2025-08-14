@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.dto.assignment;
 
+import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,7 +11,6 @@ public class TaskAssignmentResponse {
   private Long groupMemberId;
   private Long templateId;
   private String date; // "2025-08-05"
-  private String status; // PENDING, COMPLETED 등
-  private String repeatType; // WEEKLY, NONE 등
+  private AssignmentStatus status; // PENDING, COMPLETED 등
   private String createdAt; // "2025-08-05T12:00:00"
 }

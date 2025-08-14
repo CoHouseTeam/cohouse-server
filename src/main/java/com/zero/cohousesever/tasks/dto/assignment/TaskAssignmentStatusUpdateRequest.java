@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.dto.assignment;
 
+import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,5 +10,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TaskAssignmentStatusUpdateRequest {
-  private String status; // COMPLETED, DEFERRED 등
+  private AssignmentStatus status;
 }

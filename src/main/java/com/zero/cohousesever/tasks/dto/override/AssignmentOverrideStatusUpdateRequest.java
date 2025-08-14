@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.dto.override;
 
+import com.zero.cohousesever.tasks.entity.enums.OverrideStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,5 +10,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AssignmentOverrideStatusUpdateRequest {
-  private String status; // "ACCEPTED" or "REJECTED"
+  private OverrideStatus status; // ACCEPTED, REJECTED, PENDING
 }

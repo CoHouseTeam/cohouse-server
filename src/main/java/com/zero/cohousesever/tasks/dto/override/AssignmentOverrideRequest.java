@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.dto.override;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AssignmentOverrideRequest {
-  private Long requesterId; // 요청자
-  private Long receiverId;  // 요청받는 사용자
+  private Long assignmentId;        // 필수
+  private Long targetId;            // 1명 대상일 때 사용 (선택)
+  private List<Long> targetIds;     // 여러 명 대상일 때 사용 (선택, null/empty면 전체로 처리)
 }
