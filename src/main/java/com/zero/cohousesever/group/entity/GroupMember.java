@@ -4,10 +4,18 @@ import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class GroupMember extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
