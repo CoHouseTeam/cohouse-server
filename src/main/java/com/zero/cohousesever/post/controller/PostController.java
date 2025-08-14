@@ -17,7 +17,7 @@ public class PostController {
     private final PostService postService;
 
     /**
-     * 게시글 전체 조회
+     * 게시글 목록 조회
      */
     @GetMapping("/{groupId}")
     public ResponseEntity<List<PostResponse>> getPostListByGroup(

@@ -15,7 +15,7 @@ public class PostService {
     private final PostRepository postRepository;
 
     /**
-     * 게시글 전체 조회
+     * 게시글 목록 조회
      */
     public List<PostResponse> getAllPosts(Long groupId) {
         return List.of();
