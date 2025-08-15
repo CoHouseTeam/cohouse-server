@@ -1,5 +1,6 @@
 package com.zero.cohousesever.member.security;
 
+import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;

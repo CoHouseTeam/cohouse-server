@@ -1,5 +1,6 @@
 package com.zero.cohousesever.member.security;
 
+import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

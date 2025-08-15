@@ -1,4 +1,4 @@
-package com.zero.cohousesever.member.security;
+package com.zero.cohousesever.member.enums;
 
 public enum TokenValidationStatus {
     VALID,

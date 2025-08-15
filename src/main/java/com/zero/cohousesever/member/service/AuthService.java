@@ -8,7 +8,7 @@ import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.member.security.JwtTokenProvider;
-import com.zero.cohousesever.member.security.TokenValidationStatus;
+import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
