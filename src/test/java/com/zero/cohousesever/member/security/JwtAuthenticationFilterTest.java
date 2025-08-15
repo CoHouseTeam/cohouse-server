@@ -70,12 +70,12 @@ class JwtAuthenticationFilterTest {
         verify(jwtTokenProvider).getEmailFromToken(validToken);
         verify(customUserDetailsService).loadUserByUsername(email);
 
+        // 필터 체인이 정상적으로 실행되었는지 확인
+        assertThat(response.getStatus()).isEqualTo(200);
+
         // SecurityContext에 인증 정보가 설정되었는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
         assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal()).isEqualTo(userDetails);
-        
-        // 필터 체인이 정상적으로 실행되었는지 확인
-        assertThat(response.getStatus()).isEqualTo(200);
     }
 
     @Test
@@ -97,9 +97,41 @@ class JwtAuthenticationFilterTest {
 
         // 401 Unauthorized 응답 확인
         assertThat(response.getStatus()).isEqualTo(401);
-        
+
         // SecurityContext에 인증 정보가 설정되지 않았는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    @DisplayName("refresh 엔드포인트는 만료된 토큰도 인증을 통과")
+    void shouldAuthenticateWithExpiredJwtTokenForRefreshEndpoint() throws ServletException, IOException {
+        // given
+        String expiredToken = "expired.jwt.token";
+        String email = "test@example.com";
+        request.addHeader("Authorization", "Bearer " + expiredToken);
+        request.setRequestURI("/members/login/refresh");
+
+        Member member = createTestMember();
+        CustomUserDetails userDetails = new CustomUserDetails(member);
+
+        when(jwtTokenProvider.validateToken(expiredToken)).thenReturn(TokenValidationStatus.EXPIRED);
+        when(jwtTokenProvider.getEmailFromToken(expiredToken)).thenReturn(email);
+        when(customUserDetailsService.loadUserByUsername(email)).thenReturn(userDetails);
+
+        // when
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        // then
+        verify(jwtTokenProvider).validateToken(expiredToken);
+        verify(jwtTokenProvider).getEmailFromToken(expiredToken);
+        verify(customUserDetailsService).loadUserByUsername(email);
+
+        // 필터 체인이 정상적으로 실행되었는지 확인
+        assertThat(response.getStatus()).isEqualTo(200);
+
+        // SecurityContext에 인증 정보가 설정되었는지 확인
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal()).isEqualTo(userDetails);
     }
 
     @Test
@@ -121,48 +153,48 @@ class JwtAuthenticationFilterTest {
 
         // 401 Unauthorized 응답 확인
         assertThat(response.getStatus()).isEqualTo(401);
-        
+
         // SecurityContext에 인증 정보가 설정되지 않았는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
-    @DisplayName("JWT 토큰이 없는 경우 인증 실패")
+    @DisplayName("JWT 토큰이 없는 경우 필터 통과")
     void shouldContinueFilterChainWhenNoJwtToken() throws ServletException, IOException {
         // given
         // Authorization 헤더 없음
-        when(jwtTokenProvider.validateToken(null)).thenReturn(TokenValidationStatus.INVALID);
 
         // when
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // then
+        verify(jwtTokenProvider, never()).validateToken(anyString());
         verify(jwtTokenProvider, never()).getEmailFromToken(anyString());
         verify(customUserDetailsService, never()).loadUserByUsername(anyString());
 
-        // 401 Unauthorized 응답 확인
-        assertThat(response.getStatus()).isEqualTo(401);
+        // 정상 응답 확인
+        assertThat(response.getStatus()).isEqualTo(200);
 
         // SecurityContext에 인증 정보가 설정되지 않았는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
-    @DisplayName("잘못된 형식의 Authorization 헤더")
-    void shouldHandleMalformedAuthorizationHeader() throws ServletException, IOException {
+    @DisplayName("잘못된 형식의 Authorization 헤더는 인증하지 않고 통과")
+    void shouldPassMalformedAuthorizationHeader() throws ServletException, IOException {
         // given
         request.addHeader("Authorization", "InvalidFormat");
-        when(jwtTokenProvider.validateToken(null)).thenReturn(TokenValidationStatus.INVALID);
 
         // when
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // then
+        verify(jwtTokenProvider, never()).validateToken(anyString());
         verify(jwtTokenProvider, never()).getEmailFromToken(anyString());
         verify(customUserDetailsService, never()).loadUserByUsername(anyString());
 
         // 401 Unauthorized 응답 확인
-        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getStatus()).isEqualTo(200);
 
         // SecurityContext에 인증 정보가 설정되지 않았는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
@@ -192,7 +224,7 @@ class JwtAuthenticationFilterTest {
 
         // 401 Unauthorized 응답 확인
         assertThat(response.getStatus()).isEqualTo(401);
-        
+
         // SecurityContext에 인증 정보가 설정되지 않았는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
