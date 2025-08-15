@@ -4,9 +4,10 @@ import com.zero.cohousesever.post.dto.PostRequest;
 import com.zero.cohousesever.post.dto.PostResponse;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
-import com.zero.cohousesever.post.type.PostStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -37,23 +38,18 @@ public class PostService {
                 .build();
         Post saved = postRepository.save(post);
 
-        return PostResponse.builder()
-                .id(saved.getId())
-                .groupId(saved.getGroupId())
-                .memberId(saved.getMemberId())
-                .type(saved.getType())
-                .title(saved.getTitle())
-                .content(saved.getContent())
-                .createdAt(saved.getCreatedAt())
-                .updatedAt(saved.getUpdatedAt())
-                .build();
+        return PostResponse.from(saved);
     }
+
 
     /**
      * 게시글 상세 조회
      */
-    public PostResponse getPostDetail(Long postId) {
-        return null;
+    public PostResponse getPostDetail(Long id) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."));
+
+        return PostResponse.from(post);
     }
 
     /**
