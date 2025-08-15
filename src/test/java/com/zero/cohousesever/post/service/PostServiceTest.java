@@ -1,6 +1,7 @@
 package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.post.dto.PostRequest;
+import com.zero.cohousesever.post.dto.PostResponse;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
 import com.zero.cohousesever.post.type.PostType;
@@ -26,8 +27,8 @@ class PostServiceTest {
     private PostService postService;
 
     @Test
-    @DisplayName("게시글 작성 성공 - 정상적인 데이터로 게시글 작성")
-    void givenValidRequest_whenCreatePost_thenReturnsId() {
+    @DisplayName("게시글 작성 - 성공 시 PostResponse 반환")
+    void returnsPostResponse_whenCreatePostSuccess() {
         // given
         PostRequest req = new PostRequest();
         req.setGroupId(10L);
@@ -48,10 +49,15 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(saved);
 
         // when
-        Long id = postService.createPost(req);
+        PostResponse res = postService.createPost(req);
 
         // then
-        assertThat(id).isEqualTo(100L);
+        assertThat(res.getId()).isEqualTo(100L);
+        assertThat(res.getGroupId()).isEqualTo(10L);
+        assertThat(res.getMemberId()).isEqualTo(20L);
+        assertThat(res.getType()).isEqualTo(PostType.ANNOUNCEMENT);
+        assertThat(res.getTitle()).isEqualTo("테스트 제목");
+        assertThat(res.getContent()).isEqualTo("테스트 내용");
 
         ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
         verify(postRepository, times(1)).save(captor.capture());

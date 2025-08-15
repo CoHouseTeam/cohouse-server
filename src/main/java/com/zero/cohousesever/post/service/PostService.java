@@ -27,7 +27,7 @@ public class PostService {
     /**
      * 게시글 작성
      */
-    public Long createPost(PostRequest request) {
+    public PostResponse createPost(PostRequest request) {
         Post post = Post.builder()
                 .groupId(request.getGroupId())
                 .memberId(request.getMemberId())
@@ -35,7 +35,18 @@ public class PostService {
                 .title(request.getTitle())
                 .content(request.getContent())
                 .build();
-        return postRepository.save(post).getId();
+        Post saved = postRepository.save(post);
+
+        return PostResponse.builder()
+                .id(saved.getId())
+                .groupId(saved.getGroupId())
+                .memberId(saved.getMemberId())
+                .type(saved.getType())
+                .title(saved.getTitle())
+                .content(saved.getContent())
+                .createdAt(saved.getCreatedAt())
+                .updatedAt(saved.getUpdatedAt())
+                .build();
     }
 
     /**

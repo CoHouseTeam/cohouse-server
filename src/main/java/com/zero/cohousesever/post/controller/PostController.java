@@ -30,9 +30,9 @@ public class PostController {
      * 게시글 작성
      */
     @PostMapping
-    public ResponseEntity<Long> createPost(@RequestBody PostRequest request) {
-        Long postId = postService.createPost(request);
-        return ResponseEntity.ok(postId);
+    public ResponseEntity<PostResponse> createPost(@RequestBody PostRequest request) {
+        PostResponse response = postService.createPost(request);
+        return ResponseEntity.ok(response);
     }
 
     /**

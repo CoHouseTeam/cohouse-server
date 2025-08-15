@@ -6,17 +6,17 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PostResponse {
 
-    private Long postId;
-    private String postTitle;
-    private String postContent;
-    private PostType postType;
-    private Long groupMemberId;
+    private Long id;
+    private Long groupId;
+    private Long memberId;
+    private PostType type;
+    private String title;
+    private String content;
     private LocalDateTime createdAt;
-    private int likeCount;
+    private LocalDateTime updatedAt;
 }
