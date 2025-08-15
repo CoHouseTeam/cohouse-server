@@ -1,5 +1,7 @@
 package com.zero.cohousesever.settlement.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,24 +17,21 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class SettlementHistory {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+public class SettlementHistory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "settlement_id", nullable = false)
     private Settlement settlement;
 
+    @Column(nullable = false)
+    private String title; // 정산 제목
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(nullable = false)
     private SettlementStatus status;
 
     private LocalDateTime changedAt;
 
-    private String changedBy; // 변경자 정보
-
-    @Column(columnDefinition = "TEXT")
-    private String details;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "changed_by_member_id")
+    private Member changedBy; // 변경자 정보
 }
