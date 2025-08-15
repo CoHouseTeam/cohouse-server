@@ -3,21 +3,17 @@ package com.zero.cohousesever.settlement.service;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.repository.ParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SettlementService {
     private final SettlementRepository settlementRepository;
     private final ParticipantRepository participantRepository;
-
-    public SettlementService(SettlementRepository settlementRepository,
-                             ParticipantRepository participantRepository) {
-        this.settlementRepository = settlementRepository;
-        this.participantRepository = participantRepository;
-    }
 
     // TODO: 실제 서비스 로직 구현 예정
 

@@ -1,5 +1,6 @@
 package com.zero.cohousesever.settlement.controller;
 
+import com.zero.cohousesever.settlement.dto.PaymentCompleteRequest;
 import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
@@ -18,8 +19,6 @@ import java.util.List;
 public class SettlementController {
     private final SettlementService settlementService;
     private final PaymentService paymentService;
-
-    // TODO: 실제 구현 필요
 
     // 정산 목록 조회
     @GetMapping
@@ -77,57 +76,12 @@ public class SettlementController {
         return ResponseEntity.ok().build();
     }
 
+    // 송금 완료 처리
+    @PostMapping("/{settlementId}/payment")
+    public ResponseEntity<?> completePayment(
+            @PathVariable Long settlementId,
+            @RequestBody PaymentCompleteRequest request) {
 
-    // 그룹 전체 정산 히스토리 조회
-    @GetMapping("/histories")
-    public ResponseEntity<List<?>> getGroupSettlementHistories(
-            @PathVariable Long groupId,
-            @RequestParam(required = false) Long memberId,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-
-        return ResponseEntity.ok(
-                settlementService.getGroupSettlementHistories(groupId, memberId, fromDate, toDate)
-        );
-    }
-
-    // 특정 정산 히스토리 조회
-    @GetMapping("/{settlementId}/histories")
-    public ResponseEntity<List<SettlementHistoryResponse>> getSettlementHistories(
-            @PathVariable Long groupId,
-            @PathVariable Long settlementId) {
-
-        return ResponseEntity.ok(
-                settlementService.getSettlementHistories(groupId, settlementId)
-        );
-    }
-
-    // 특정 정산의 내 송금 내역 조회
-    @GetMapping("/{settlementId}/payments")
-    public ResponseEntity<List<PaymentHistoryResponse>> getSettlementPaymentHistories(
-            @PathVariable Long groupId,
-            @PathVariable Long settlementId) {
-
-        return ResponseEntity.ok(
-                paymentService.getMyPaymentHistoriesInSettlement(groupId, settlementId)
-        );
-    }
-
-    // 해당 그룹의 내 송금 내역 조회 (필터 optional)
-    @GetMapping("/history")
-    public ResponseEntity<List<PaymentHistoryResponse>> getMyPaymentsInGroup(
-            @PathVariable Long groupId,
-            @RequestParam(required = false) Long settlementId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-
-        return ResponseEntity.ok(
-                paymentService.getMyPaymentsInGroup(groupId, settlementId, status, fromDate, toDate)
-        );
+        return ResponseEntity.ok().build();
     }
 }
