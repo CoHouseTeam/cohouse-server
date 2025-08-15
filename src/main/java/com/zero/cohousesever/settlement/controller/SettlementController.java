@@ -2,6 +2,7 @@ package com.zero.cohousesever.settlement.controller;
 
 import com.zero.cohousesever.settlement.dto.PaymentCompleteRequest;
 import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
+import com.zero.cohousesever.settlement.dto.SettlementDto;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
@@ -29,7 +30,7 @@ public class SettlementController {
 
     // 정산 등록
     @PostMapping
-    public ResponseEntity<?> createSettlement() {
+    public ResponseEntity<SettlementDto> createSettlement() {
 
         return ResponseEntity.ok().build();
     }

@@ -4,6 +4,7 @@ import com.zero.cohousesever.settlement.entity.SettlementCategory;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 // 정산 요청 DTO
@@ -13,6 +14,6 @@ public class CreateSettlementRequest {
     private String title;
     private String description;
     private SettlementCategory category;
-    private Long settlementAmount;
+    private BigDecimal settlementAmount;
     private List<Long> participantIds;
 }

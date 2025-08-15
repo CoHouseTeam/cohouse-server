@@ -8,9 +8,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 @Table(name = "settlement_participants")
 public class Participant extends BaseEntity {
@@ -25,7 +27,7 @@ public class Participant extends BaseEntity {
 
     // 배분 금액
     @Column(name = "share_amount", nullable = false)
-    private BigDecimal shareAmount; // 배분 금액 소수점일 경우 고려하여 BigDecimal 사용
+    private BigDecimal shareAmount;
 
     // 실제 송금 금액
     @Column(name = "paid_amount")
@@ -34,4 +36,6 @@ public class Participant extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status = PaymentStatus.PENDING;
+
+    private LocalDateTime paidAt;
 }
