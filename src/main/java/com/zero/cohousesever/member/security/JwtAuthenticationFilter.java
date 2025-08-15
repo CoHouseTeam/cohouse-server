@@ -32,7 +32,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-
         String token = resolveToken(request);
         TokenValidationStatus status = jwtTokenProvider.validateToken(token);
 
@@ -46,7 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 } catch (RuntimeException e) { // TODO: userDetailsService.loadUserByUsername()에서 던지는 예외를 캐치하도록 변경
                     // 사용자를 찾지 못하면 인증 실패 처리
-                    SecurityContextHolder.clearContext();
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // TODO: 적절한 예외 구현하기
+                    return;
                 }
             }
             case EXPIRED -> {
