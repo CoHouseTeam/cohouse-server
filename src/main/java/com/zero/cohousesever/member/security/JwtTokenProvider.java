@@ -20,10 +20,10 @@ public class JwtTokenProvider {
     public static final String KEY_NAME = "name";
 
 
-    // TODO: 외부에서 이슈어, 비밀키 설정하기. 비밀키는 BASE64 인코딩된 문자열 사용
-    @Value("")
+    // 설정에서 이슈어, 비밀키 설정하기. 비밀키는 BASE64 인코딩된 문자열 사용
+    @Value("${jwt.issuer}")
     private String issuer;
-    @Value("")
+    @Value("${jwt.secret}")
     private String secret;
 
     public String generateAccessToken(String email, String name) {

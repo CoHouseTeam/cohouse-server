@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/cohouse_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
-    password: 1
+    password: rootroot
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -15,3 +15,7 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+jwt:
+  secret: Y29ob3VzZXByb2plY3Rzand0c2VjcmV0c3RyaW5nc3dpdGhiYXNlNjRlbmNvZGluZ3M=
+  issuer: cohouse
