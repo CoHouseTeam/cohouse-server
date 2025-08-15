@@ -35,7 +35,7 @@ public class Participant extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentStatus status = PaymentStatus.PENDING;
+    private PaymentStatus status;
 
     private LocalDateTime paidAt;
 }

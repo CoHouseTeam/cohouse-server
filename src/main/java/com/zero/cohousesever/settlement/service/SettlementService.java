@@ -19,7 +19,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +33,10 @@ public class SettlementService {
     /**
      * 정산 등록
      */
-    public SettlementDto createSettlement(CreateSettlementRequest request) {
+    public SettlementDto createSettlement(Long payerId, CreateSettlementRequest request) {
+        Member payer = memberRepository.findById(payerId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + payerId));
+
         Settlement settlement = new Settlement();
         settlement.setTitle(request.getTitle());
         settlement.setDescription(request.getDescription());
@@ -39,27 +44,37 @@ public class SettlementService {
 
         settlement.setSettlementAmount(request.getSettlementAmount());
         settlement.setStatus(SettlementStatus.PENDING);
+        settlement.setPayer(payer);
+
+        Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
+        allParticipantIds.add(payerId); // 결제자 ID도 포함시킴
 
         List<Participant> participants = new ArrayList<>();
-        for (Long memberId : request.getParticipantIds()) {
+        for (Long memberId : allParticipantIds) {
             Member member = memberRepository.findById(memberId)
                     .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
 
             Participant participant = new Participant();
             participant.setMember(member);
             participant.setSettlement(settlement);
-            participant.setStatus(PaymentStatus.PENDING);
-            participant.setShareAmount(calculateShareAmount(request.getSettlementAmount(), request.getParticipantIds().size()));
+
+            if(memberId.equals(payerId)) {
+                participant.setStatus(PaymentStatus.PAID); // 결제자: 송금 완료 상태
+            } else {
+                participant.setStatus(PaymentStatus.PENDING); // 참여자: 대기 상태
+            }
+
+            participant.setShareAmount(calculateShareAmount(request.getSettlementAmount(), allParticipantIds.size()));
             participants.add(participant);
         }
         settlement.setParticipants(participants);
-
         Settlement savedSettlement = settlementRepository.save(settlement);
         return SettlementDto.fromEntity(savedSettlement);
     }
 
     // 배분 금액 계산 함수
     public BigDecimal calculateShareAmount(BigDecimal totalAmount, int participantCount) {
+        //TODO 똑같이 분배되지 않는 경우에 대한 로직 필요
         if (participantCount <= 0) {
             throw new IllegalArgumentException("참여자 수는 1 이상이어야 합니다.");
         }

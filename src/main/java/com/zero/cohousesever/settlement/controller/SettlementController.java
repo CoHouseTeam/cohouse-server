@@ -1,9 +1,6 @@
 package com.zero.cohousesever.settlement.controller;
 
-import com.zero.cohousesever.settlement.dto.PaymentCompleteRequest;
-import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
-import com.zero.cohousesever.settlement.dto.SettlementDto;
-import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
+import com.zero.cohousesever.settlement.dto.*;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +27,11 @@ public class SettlementController {
 
     // 정산 등록
     @PostMapping
-    public ResponseEntity<SettlementDto> createSettlement() {
-
-        return ResponseEntity.ok().build();
+    public ResponseEntity<SettlementDto> createSettlement(@RequestBody CreateSettlementRequest request) {
+        //TODO JWT 사용자 ID로 결제자 선정
+        Long payerId = 2L;
+        SettlementDto settlementDto = settlementService.createSettlement(payerId, request);
+        return ResponseEntity.ok(settlementDto);
     }
 
     // 정산 상세 조회
