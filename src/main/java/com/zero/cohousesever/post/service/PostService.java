@@ -2,7 +2,9 @@ package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.post.dto.PostRequest;
 import com.zero.cohousesever.post.dto.PostResponse;
+import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
+import com.zero.cohousesever.post.type.PostStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +27,15 @@ public class PostService {
     /**
      * 게시글 작성
      */
-    public PostResponse createPost(PostRequest request) {
-        return null;
+    public Long createPost(PostRequest request) {
+        Post post = Post.builder()
+                .groupId(request.getGroupId())
+                .memberId(request.getMemberId())
+                .type(request.getType())
+                .title(request.getTitle())
+                .content(request.getContent())
+                .build();
+        return postRepository.save(post).getId();
     }
 
     /**

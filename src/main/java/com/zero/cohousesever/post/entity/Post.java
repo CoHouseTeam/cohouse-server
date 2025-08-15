@@ -17,7 +17,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Post extends BaseEntity {
 
     @Column(nullable = false)
-    private Long groupMemberId;
+    private Long memberId;
+
+    @Column(nullable = false)
+    private Long groupId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

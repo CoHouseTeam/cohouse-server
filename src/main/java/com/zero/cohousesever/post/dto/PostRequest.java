@@ -10,8 +10,9 @@ import lombok.*;
 @Builder
 public class PostRequest {
 
-    private Long groupMemberId;
-    private String postTitle;
-    private String postContent;
-    private PostType postType;
+    private Long groupId;
+    private Long memberId;
+    private PostType type;
+    private String title;
+    private String content;
 }
