@@ -33,19 +33,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String token = resolveToken(request);
+        TokenValidationStatus status = jwtTokenProvider.validateToken(token);
 
-
-        try {
-            if (jwtTokenProvider.validateToken(token)) {
-                String email = jwtTokenProvider.getEmailFromToken(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+        switch (status) {
+            case VALID -> {
+                try {
+                    String email = jwtTokenProvider.getEmailFromToken(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (RuntimeException e) { // TODO: userDetailsService.loadUserByUsername()에서 던지는 예외를 캐치하도록 변경
+                    // 사용자를 찾지 못하면 인증 실패 처리
+                    SecurityContextHolder.clearContext();
+                }
             }
-        } catch (RuntimeException e) { // TODO: userDetailsService.loadUserByUsername()에서 던지는 예외를 캐치하도록 변경
-            // 사용자를 찾지 못하면 인증 실패 처리
-            SecurityContextHolder.clearContext();
+            case EXPIRED -> {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // TODO: 적절한 예외 구현하기
+                return;
+            }
+            case INVALID -> {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // TODO: 적절한 예외 구현하기
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);
