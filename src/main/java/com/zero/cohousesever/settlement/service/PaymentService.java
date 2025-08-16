@@ -33,43 +33,27 @@ public class PaymentService {
      */
     public PaymentHistory processPayment(Long memberId, Long settlementId) throws AccessDeniedException {
         Settlement settlement = settlementRepository.findById(settlementId)
-                .orElseThrow(() -> new EntityNotFoundException("NOT FOUND SETTLEMENT"));
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new EntityNotFoundException("NOT FOUND MEMBER"));
-
-        // 해당 정산 참여 여부 확인
-        boolean isParticipant = settlement.getParticipants()
-                .stream()
-                .anyMatch(participant -> participant.getMember().getId().equals(memberId));
-        if (!isParticipant) {
-            throw new AccessDeniedException("Member is not part of the settlement");
-        }
+                .orElseThrow(() -> new EntityNotFoundException("Settlement not found with id: " + settlementId));
 
         Participant participant = settlement.getParticipants()
                 .stream()
                 .filter(p -> p.getMember().getId().equals(memberId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Member is not part of the settlement"));
+                .orElseThrow(() -> new AccessDeniedException("Member is not part of the settlement"));
+
         participant.setStatus(PaymentStatus.PAID);
         participantRepository.save(participant);
 
-        Participant payerParticipant = settlement.getParticipants()
+        Participant payeeParticipant = settlement.getParticipants()
                 .stream()
-                .filter(p -> p.getMember().getId().equals(member.getId()))
+                .filter(p -> p.getMember().getId().equals(settlement.getPayer().getId()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Member is not part of the settlement"));
+                .orElseThrow(() -> new IllegalStateException("Payer participant not found in the settlement"));
 
-        PaymentHistory paymentHistory = new PaymentHistory();
-        paymentHistory.setSettlement(settlement);
-
-        paymentHistory.setPayer(payerParticipant);
-
-        paymentHistory.setAmount(payerParticipant.getShareAmount());
-        paymentHistory.setTransferDate(LocalDateTime.now());
+        PaymentHistory paymentHistory = PaymentHistory.fromParticipants(settlement, participant, payeeParticipant, participant.getShareAmount());
         paymentHistoryRepository.save(paymentHistory);
 
-        return null;
+        return paymentHistory;
     }
 
     public List<PaymentHistoryResponse> getPaymentHistories(Long groupId, Long settlementId) {

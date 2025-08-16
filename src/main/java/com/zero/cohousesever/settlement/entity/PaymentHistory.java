@@ -22,12 +22,12 @@ public class PaymentHistory extends BaseEntity {
     private Settlement settlement;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payer_id", nullable = false)
-    private Participant payer; // 송금하는 정산 참여자
+    @JoinColumn(name = "sender_id", nullable = false)
+    private Participant sender; // 송금하는 정산 참여자
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payee_id", nullable = false)
-    private Participant payee; // 송금 받는 정산 참여자
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private Participant receiver; // 송금 받는 정산 참여자
 
     private Long amount;             // 송금 금액
 
@@ -36,4 +36,15 @@ public class PaymentHistory extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private PaymentStatus status;
+
+    public static PaymentHistory fromParticipants(Settlement settlement, Participant sender, Participant receiver, Long amount) {
+        PaymentHistory paymentHistory = new PaymentHistory();
+        paymentHistory.setSettlement(settlement);
+        paymentHistory.setSender(sender);
+        paymentHistory.setReceiver(receiver);
+        paymentHistory.setAmount(amount);
+        paymentHistory.setTransferDate(LocalDateTime.now());
+        paymentHistory.setStatus(PaymentStatus.PAID);
+        return paymentHistory;
+    }
 }

@@ -54,19 +54,20 @@ public class SettlementController {
         return ResponseEntity.ok().build();
     }
 
-    // 정산 참여자 추가
-    @PostMapping("/{settlementId}/participants")
-    public ResponseEntity<?> addParticipant() {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 정산 참여자 제거
-    @DeleteMapping("/{settlementId}/participants/{participantId}")
-    public ResponseEntity<?> removeParticipant() {
-
-        return ResponseEntity.ok().build();
-    }
+    // FIXME 프론트에서 한번에 MAP으로 데이터 넘겨주기에 필요없음
+//    // 정산 참여자 추가
+//    @PostMapping("/{settlementId}/participants")
+//    public ResponseEntity<?> addParticipant() {
+//
+//        return ResponseEntity.ok().build();
+//    }
+//
+//    // 정산 참여자 제거
+//    @DeleteMapping("/{settlementId}/participants/{participantId}")
+//    public ResponseEntity<?> removeParticipant() {
+//
+//        return ResponseEntity.ok().build();
+//    }
 
     // 영수증 이미지 업로드
     @PostMapping("/{settlementId}/image")
