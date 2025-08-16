@@ -41,16 +41,35 @@ public class PaymentService {
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("Member is not part of the settlement"));
 
-        participant.setStatus(PaymentStatus.PAID);
-        participantRepository.save(participant);
-
         Participant payeeParticipant = settlement.getParticipants()
                 .stream()
                 .filter(p -> p.getMember().getId().equals(settlement.getPayer().getId()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Payer participant not found in the settlement"));
 
-        PaymentHistory paymentHistory = PaymentHistory.fromParticipants(settlement, participant, payeeParticipant, participant.getShareAmount());
+        PaymentHistory paymentHistory = new PaymentHistory();
+        paymentHistory.setSettlement(settlement);
+        paymentHistory.setSender(participant);
+        paymentHistory.setReceiver(payeeParticipant);
+        paymentHistory.setAmount(participant.getShareAmount());
+        paymentHistory.setTransferDate(LocalDateTime.now());
+
+        try {
+            boolean paymentSuccess = true; // 송금 성공
+//            boolean paymentSuccess = false; // 송금 실패 가정
+
+            if (paymentSuccess) {
+                participant.setStatus(PaymentStatus.PAID);
+                participantRepository.save(participant);
+
+                paymentHistory.setStatus(PaymentStatus.PAID);
+            } else {
+                paymentHistory.setStatus(PaymentStatus.FAILED);
+            }
+        } catch (Exception e) {
+            paymentHistory.setStatus(PaymentStatus.FAILED);
+        }
+
         paymentHistoryRepository.save(paymentHistory);
 
         return paymentHistory;
