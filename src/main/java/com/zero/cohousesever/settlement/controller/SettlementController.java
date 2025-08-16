@@ -17,20 +17,20 @@ public class SettlementController {
     private final SettlementService settlementService;
     private final PaymentService paymentService;
 
-    // 정산 목록 조회
-    @GetMapping
-    public ResponseEntity<?> getSettlements() {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 정산 등록
+     // 정산 등록
     @PostMapping
     public ResponseEntity<SettlementResponseDto> createSettlement(@RequestBody CreateSettlementRequest request) {
         //TODO JWT 사용자 ID로 결제자 선정
         Long payerId = 2L;
         SettlementResponseDto settlementResponseDto = settlementService.createSettlement(payerId, request);
         return ResponseEntity.ok(settlementResponseDto);
+    }
+
+    // 정산 목록 조회
+    @GetMapping
+    public ResponseEntity<?> getSettlements() {
+
+        return ResponseEntity.ok().build();
     }
 
     // 정산 상세 조회

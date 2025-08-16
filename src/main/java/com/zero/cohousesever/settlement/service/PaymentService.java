@@ -47,12 +47,14 @@ public class PaymentService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Payer participant not found in the settlement"));
 
-        PaymentHistory paymentHistory = new PaymentHistory();
-        paymentHistory.setSettlement(settlement);
-        paymentHistory.setSender(participant);
-        paymentHistory.setReceiver(payeeParticipant);
-        paymentHistory.setAmount(participant.getShareAmount());
-        paymentHistory.setTransferDate(LocalDateTime.now());
+        PaymentHistory paymentHistory = PaymentHistory.builder()
+                .settlement(settlement)
+                .sender(participant)
+                .receiver(payeeParticipant)
+                .amount(participant.getShareAmount())
+                .transferDate(LocalDateTime.now())
+                .status(PaymentStatus.PAID)
+                .build();
 
         try {
             boolean paymentSuccess = true; // 송금 성공

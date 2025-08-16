@@ -2,20 +2,20 @@ package com.zero.cohousesever.settlement.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 /**
  * 송금 히스토리
  */
-@Entity
 @Table(name = "payment_histories")
 @Getter
 @Setter
+@Entity
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class PaymentHistory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "settlement_id", nullable = false)
@@ -36,15 +36,4 @@ public class PaymentHistory extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private PaymentStatus status;
-
-    public static PaymentHistory fromParticipants(Settlement settlement, Participant sender, Participant receiver, Long amount) {
-        PaymentHistory paymentHistory = new PaymentHistory();
-        paymentHistory.setSettlement(settlement);
-        paymentHistory.setSender(sender);
-        paymentHistory.setReceiver(receiver);
-        paymentHistory.setAmount(amount);
-        paymentHistory.setTransferDate(LocalDateTime.now());
-        paymentHistory.setStatus(PaymentStatus.PAID);
-        return paymentHistory;
-    }
 }
