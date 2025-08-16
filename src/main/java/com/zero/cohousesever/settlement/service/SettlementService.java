@@ -3,8 +3,8 @@ package com.zero.cohousesever.settlement.service;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
-import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
+import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.entity.Participant;
 import com.zero.cohousesever.settlement.entity.PaymentStatus;
 import com.zero.cohousesever.settlement.entity.Settlement;
@@ -43,11 +43,11 @@ public class SettlementService {
         Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
         allParticipantIds.add(payerId); // 결제자 포함
 
-        List<Participant> participants;
+        List<Participant> participants = new ArrayList<>();
         if (request.isEqualDistribution()) {
             participants = createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
         } else {
-//            participants = createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
+            participants = createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
         }
 
         settlement.setParticipants(participants);
@@ -83,18 +83,26 @@ public class SettlementService {
             throw new IllegalArgumentException("Manual shares must be provided for manual distribution.");
         }
 
+        // 참여자들의 금액의 합이 맞는지 계산
         Long sumShares = manualShares.values().stream().mapToLong(Long::longValue).sum();
-        if (!sumShares.equals(totalAmount)) {
-            throw new IllegalArgumentException("Sum of manual shares does not match total amount.");
+        System.out.println(sumShares);
+        Long payerId = settlement.getPayer().getId();
+
+        // 결제자 부담금 계산
+        Long payerShare = totalAmount - sumShares;
+
+        // 분배 금액 합이 정산 금액을 초과하면 예외 처리
+        if (payerShare < 0) {
+            throw new IllegalArgumentException("The sum of distributed amounts exceeds the total settlement amount");
         }
 
-        settlement.setPlatformSupportAmount(0L); // 오차 없음
+        manualShares.put(payerId, payerShare);
+
+        settlement.setPlatformSupportAmount(0L); // 플랫폼 오차 지원금 없음
 
         List<Participant> participants = new ArrayList<>();
         for (Long memberId : participantIds) {
-            Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
-
+            Member member = findMemberOrThrow(memberId);
             Participant participant = new Participant();
             participant.setMember(member);
             participant.setSettlement(settlement);
@@ -105,10 +113,10 @@ public class SettlementService {
         return participants;
     }
 
-    // 배분 금액 계산 함수
+    // 배분 금액 계산 메서드
     public Long calculateShareAmount(Long totalAmount, int participantCount) {
         if (participantCount <= 0) {
-            throw new IllegalArgumentException("참여자 수는 1 이상이어야 합니다.");
+            throw new IllegalArgumentException("Participant count must be at least 1.");
         }
         return totalAmount / participantCount;
     }
@@ -167,5 +175,11 @@ public class SettlementService {
      */
     public List<SettlementHistoryResponse> getGroupSettlementHistories(Long groupId, Long settlementId, LocalDate fromDate, LocalDate toDate) {
         return null;
+    }
+
+    // 회원 엔티티 조회 메서드
+    private Member findMemberOrThrow(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
     }
 }
