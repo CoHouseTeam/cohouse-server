@@ -32,13 +32,14 @@ public class SettlementService {
         Member payer = memberRepository.findById(payerId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + payerId));
 
-        Settlement settlement = new Settlement();
-        settlement.setTitle(request.getTitle());
-        settlement.setDescription(request.getDescription());
-        settlement.setCategory(request.getCategory());
-        settlement.setSettlementAmount(request.getSettlementAmount());
-        settlement.setStatus(SettlementStatus.PENDING);
-        settlement.setPayer(payer);
+        Settlement settlement = Settlement.builder()
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .category(request.getCategory())
+                .settlementAmount(request.getSettlementAmount())
+                .status(SettlementStatus.PENDING)
+                .payer(payer)
+                .build();
 
         Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
         allParticipantIds.add(payerId); // 결제자 포함
@@ -67,11 +68,12 @@ public class SettlementService {
             Member member = memberRepository.findById(memberId)
                     .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
 
-            Participant participant = new Participant();
-            participant.setMember(member);
-            participant.setSettlement(settlement);
-            participant.setStatus(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING);
-            participant.setShareAmount(shareAmount);
+            Participant participant = Participant.builder()
+                    .member(member)
+                    .settlement(settlement)
+                    .status(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING)
+                    .shareAmount(shareAmount)
+                    .build();
             participants.add(participant);
         }
         return participants;

@@ -3,13 +3,13 @@ package com.zero.cohousesever.settlement.entity;
 import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "settlement_participants")
 public class Participant extends BaseEntity {
