@@ -2,7 +2,6 @@ package com.zero.cohousesever.member.security;
 
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,7 +10,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-@EqualsAndHashCode
 public class CustomUserDetails implements UserDetails {
 
     @Getter
