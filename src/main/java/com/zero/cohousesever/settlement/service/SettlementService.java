@@ -5,24 +5,23 @@ import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
-import com.zero.cohousesever.settlement.entity.Participant;
-import com.zero.cohousesever.settlement.entity.PaymentStatus;
-import com.zero.cohousesever.settlement.entity.Settlement;
-import com.zero.cohousesever.settlement.entity.SettlementStatus;
+import com.zero.cohousesever.settlement.entity.*;
 import com.zero.cohousesever.settlement.repository.ParticipantRepository;
+import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class SettlementService {
     private final SettlementRepository settlementRepository;
-    private final ParticipantRepository participantRepository;
+    private final SettlementHistoryRepository settlementHistoryRepository;
     private final MemberRepository memberRepository;
 
     /**
@@ -53,6 +52,15 @@ public class SettlementService {
 
         settlement.setParticipants(participants);
         Settlement savedSettlement = settlementRepository.save(settlement);
+
+        SettlementHistory history = SettlementHistory.builder()
+                .settlement(savedSettlement)
+                .changedBy(payer)
+                .title(savedSettlement.getTitle())
+                .status(savedSettlement.getStatus())
+                .changedAt(LocalDateTime.now())
+                .build();
+        settlementHistoryRepository.save(history);
 
         return SettlementResponseDto.fromEntity(savedSettlement);
     }
