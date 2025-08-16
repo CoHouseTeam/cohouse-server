@@ -36,8 +36,7 @@ public class SettlementDto {
                         participant.getMember().getId(),
                         participant.getMember().getName(),
                         participant.getShareAmount(),
-                        participant.getStatus(),
-                        participant.getPaidAt()
+                        participant.getStatus()
                 ))
                 .collect(Collectors.toList());
 

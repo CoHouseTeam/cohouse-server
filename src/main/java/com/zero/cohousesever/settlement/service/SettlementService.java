@@ -15,13 +15,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -49,36 +44,56 @@ public class SettlementService {
         Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
         allParticipantIds.add(payerId); // 결제자 ID도 포함시킴
 
-        List<Participant> participants = new ArrayList<>();
-        for (Long memberId : allParticipantIds) {
-            Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
+        if (request.isEqualDistribution()) {
+            // 솜금 금액 균등 분배 시
+            Long shareAmount = calculateShareAmount(request.getSettlementAmount(), allParticipantIds.size());
+            Long roundingAmount = request.getSettlementAmount() % allParticipantIds.size();
+            settlement.setPlatformSupportAmount(roundingAmount);
 
-            Participant participant = new Participant();
-            participant.setMember(member);
-            participant.setSettlement(settlement);
+            List<Participant> participants = new ArrayList<>();
+            for (Long memberId : allParticipantIds) {
+                Member member = memberRepository.findById(memberId)
+                        .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
 
-            if(memberId.equals(payerId)) {
-                participant.setStatus(PaymentStatus.PAID); // 결제자: 송금 완료 상태
-            } else {
-                participant.setStatus(PaymentStatus.PENDING); // 참여자: 대기 상태
+                Participant participant = new Participant();
+                participant.setMember(member);
+                participant.setSettlement(settlement);
+
+                if (memberId.equals(payerId)) {
+                    participant.setStatus(PaymentStatus.PAID); // 결제자: 송금 완료 상태
+                } else {
+                    participant.setStatus(PaymentStatus.PENDING); // 참여자: 대기 상태
+                }
+                participant.setShareAmount(shareAmount);
+                participants.add(participant);
             }
+            settlement.setParticipants(participants);
 
-            participant.setShareAmount(calculateShareAmount(request.getSettlementAmount(), allParticipantIds.size()));
-            participants.add(participant);
+        } else {
+//            // 송금 금액 직접 분배 시
+//            Long manualShares = request.getManualSharedAmount();
+//            Long sumShares = manualShares.values().stream().mapToLong(Long::longValue).sum();
+//            if (!sumShares.equals(request.getSettlementAmount())) {
+//                throw new IllegalArgumentException("참여자별 분배 금액 합계가 총 정산 금액과 일치하지 않습니다.");
+//            }
+//
+//            settlement.setPlatformSupportAmount(0L); // 오차 없음
+//
+//            for (Long memberId : allParticipantIds) {
+//                participant.setShareAmount(manualShares.get(memberId));
+//            }
         }
-        settlement.setParticipants(participants);
         Settlement savedSettlement = settlementRepository.save(settlement);
+
         return SettlementDto.fromEntity(savedSettlement);
     }
 
     // 배분 금액 계산 함수
-    public BigDecimal calculateShareAmount(BigDecimal totalAmount, int participantCount) {
-        //TODO 똑같이 분배되지 않는 경우에 대한 로직 필요
+    public Long calculateShareAmount(Long totalAmount, int participantCount) {
         if (participantCount <= 0) {
             throw new IllegalArgumentException("참여자 수는 1 이상이어야 합니다.");
         }
-        return totalAmount.divide(BigDecimal.valueOf(participantCount), 2, RoundingMode.HALF_UP);
+        return totalAmount / participantCount;
     }
 
     /**

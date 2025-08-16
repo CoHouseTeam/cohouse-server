@@ -1,15 +1,15 @@
 package com.zero.cohousesever.settlement.controller;
 
-import com.zero.cohousesever.settlement.dto.*;
+import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
+import com.zero.cohousesever.settlement.dto.SettlementDto;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.List;
+import java.nio.file.AccessDeniedException;
 
 @RestController
 @RequiredArgsConstructor
@@ -79,9 +79,12 @@ public class SettlementController {
     // 송금 완료 처리
     @PostMapping("/{settlementId}/payment")
     public ResponseEntity<?> completePayment(
-            @PathVariable Long settlementId,
-            @RequestBody PaymentCompleteRequest request) {
+            @PathVariable Long settlementId) throws AccessDeniedException {
+        //FIXME JWT에서 회원 ID 추출하여 사용
+        //Long memberId = userDetails.getId();
+        Long memberId = 3L;
 
+        paymentService.processPayment(memberId, settlementId);
         return ResponseEntity.ok().build();
     }
 }

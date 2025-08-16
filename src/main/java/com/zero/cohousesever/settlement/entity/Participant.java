@@ -7,9 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 @Entity
 @Getter
 @Setter
@@ -27,15 +24,15 @@ public class Participant extends BaseEntity {
 
     // 배분 금액
     @Column(name = "share_amount", nullable = false)
-    private BigDecimal shareAmount;
-
-    // 실제 송금 금액
-    @Column(name = "paid_amount")
-    private BigDecimal paidAmount;
+    private Long shareAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
 
-    private LocalDateTime paidAt;
+//    // 실제 송금 금액
+//    @Column(name = "paid_amount")
+//    private Long paidAmount;
+//
+//    private LocalDateTime paidAt;
 }

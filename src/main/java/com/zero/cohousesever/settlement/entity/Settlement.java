@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,7 +23,14 @@ public class Settlement extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SettlementCategory category;
 
-    private BigDecimal settlementAmount; // 정산 금액
+    @Column(nullable = false)
+    private boolean isEqualDistribution;  // true: 균등 분배, false: 개별 금액 분배
+
+    @Column(nullable = false)
+    private Long settlementAmount; // 정산 금액
+
+    @Column(nullable = false)
+    private Long platformSupportAmount;  // 플랫폼이 지원하는 오차 금액
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

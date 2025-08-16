@@ -1,5 +1,6 @@
 package com.zero.cohousesever.settlement.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,21 +16,18 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PaymentHistory {
+public class PaymentHistory extends BaseEntity {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "settlement_id", nullable = false)
+    private Settlement settlement;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    // 송금하는 참여자
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payer_id", nullable = false)
-    private Participant payer;
+    private Participant payer; // 송금하는 정산 참여자
 
-    // 송금 받는 참여자
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payee_id", nullable = false)
-    private Participant payee;
+    private Participant payee; // 송금 받는 정산 참여자
 
     private Long amount;             // 송금 금액
 
