@@ -1,6 +1,5 @@
 package com.zero.cohousesever.group.controller;
 
-import com.zero.cohousesever.group.dto.MessageDto;
 import com.zero.cohousesever.group.dto.group.GroupInviteUrlDto;
 import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
@@ -134,7 +133,7 @@ public class GroupController {
 
     // 그룹 탈퇴 요청
     @PostMapping("/{groupId}/leave-requests")
-    public ResponseEntity<MessageDto> createGroupLeaveRequests(
+    public ResponseEntity<LeaveRequestSummary> createGroupLeaveRequests(
             @PathVariable("groupId") Long groupId,
             @RequestBody LeaveRequestReasonDto requestDto
     ) {
@@ -144,7 +143,7 @@ public class GroupController {
 
     // 그룹 탈퇴 승인(그룹장)
     @PostMapping("/{groupId}/leave-requests/{leaveRequestId}")
-    public ResponseEntity<MessageDto> approveGroupLeaveRequest(
+    public ResponseEntity<LeaveRequestSummary> approveGroupLeaveRequest(
             @PathVariable("groupId") Long groupId,
             @PathVariable("leaveRequestId") Long leaveRequestId,
             @RequestBody LeaveRequestRespondDto requestDto
