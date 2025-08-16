@@ -1,11 +1,10 @@
 package com.zero.cohousesever.settlement.controller;
 
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
-import com.zero.cohousesever.settlement.dto.SettlementDto;
+import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,11 +26,11 @@ public class SettlementController {
 
     // 정산 등록
     @PostMapping
-    public ResponseEntity<SettlementDto> createSettlement(@RequestBody CreateSettlementRequest request) {
+    public ResponseEntity<SettlementResponseDto> createSettlement(@RequestBody CreateSettlementRequest request) {
         //TODO JWT 사용자 ID로 결제자 선정
         Long payerId = 2L;
-        SettlementDto settlementDto = settlementService.createSettlement(payerId, request);
-        return ResponseEntity.ok(settlementDto);
+        SettlementResponseDto settlementResponseDto = settlementService.createSettlement(payerId, request);
+        return ResponseEntity.ok(settlementResponseDto);
     }
 
     // 정산 상세 조회

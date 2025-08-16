@@ -3,7 +3,7 @@ package com.zero.cohousesever.settlement.service;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
-import com.zero.cohousesever.settlement.dto.SettlementDto;
+import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.entity.Participant;
 import com.zero.cohousesever.settlement.entity.PaymentStatus;
@@ -28,7 +28,7 @@ public class SettlementService {
     /**
      * 정산 등록
      */
-    public SettlementDto createSettlement(Long payerId, CreateSettlementRequest request) {
+    public SettlementResponseDto createSettlement(Long payerId, CreateSettlementRequest request) {
         Member payer = memberRepository.findById(payerId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + payerId));
 
@@ -36,56 +36,73 @@ public class SettlementService {
         settlement.setTitle(request.getTitle());
         settlement.setDescription(request.getDescription());
         settlement.setCategory(request.getCategory());
-
         settlement.setSettlementAmount(request.getSettlementAmount());
         settlement.setStatus(SettlementStatus.PENDING);
         settlement.setPayer(payer);
 
         Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
-        allParticipantIds.add(payerId); // 결제자 ID도 포함시킴
+        allParticipantIds.add(payerId); // 결제자 포함
 
+        List<Participant> participants;
         if (request.isEqualDistribution()) {
-            // 솜금 금액 균등 분배 시
-            Long shareAmount = calculateShareAmount(request.getSettlementAmount(), allParticipantIds.size());
-            Long roundingAmount = request.getSettlementAmount() % allParticipantIds.size();
-            settlement.setPlatformSupportAmount(roundingAmount);
-
-            List<Participant> participants = new ArrayList<>();
-            for (Long memberId : allParticipantIds) {
-                Member member = memberRepository.findById(memberId)
-                        .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
-
-                Participant participant = new Participant();
-                participant.setMember(member);
-                participant.setSettlement(settlement);
-
-                if (memberId.equals(payerId)) {
-                    participant.setStatus(PaymentStatus.PAID); // 결제자: 송금 완료 상태
-                } else {
-                    participant.setStatus(PaymentStatus.PENDING); // 참여자: 대기 상태
-                }
-                participant.setShareAmount(shareAmount);
-                participants.add(participant);
-            }
-            settlement.setParticipants(participants);
-
+            participants = createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
         } else {
-//            // 송금 금액 직접 분배 시
-//            Long manualShares = request.getManualSharedAmount();
-//            Long sumShares = manualShares.values().stream().mapToLong(Long::longValue).sum();
-//            if (!sumShares.equals(request.getSettlementAmount())) {
-//                throw new IllegalArgumentException("참여자별 분배 금액 합계가 총 정산 금액과 일치하지 않습니다.");
-//            }
-//
-//            settlement.setPlatformSupportAmount(0L); // 오차 없음
-//
-//            for (Long memberId : allParticipantIds) {
-//                participant.setShareAmount(manualShares.get(memberId));
-//            }
+//            participants = createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
         }
+
+        settlement.setParticipants(participants);
         Settlement savedSettlement = settlementRepository.save(settlement);
 
-        return SettlementDto.fromEntity(savedSettlement);
+        return SettlementResponseDto.fromEntity(savedSettlement);
+    }
+
+    // 균등 분배 참여자 생성 메서드
+    private List<Participant> createEqualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Long totalAmount) {
+        Long shareAmount = calculateShareAmount(totalAmount, participantIds.size());
+        Long remainder = totalAmount % participantIds.size();
+        settlement.setPlatformSupportAmount(remainder);
+
+        List<Participant> participants = new ArrayList<>();
+        for (Long memberId : participantIds) {
+            Member member = memberRepository.findById(memberId)
+                    .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
+
+            Participant participant = new Participant();
+            participant.setMember(member);
+            participant.setSettlement(settlement);
+            participant.setStatus(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING);
+            participant.setShareAmount(shareAmount);
+            participants.add(participant);
+        }
+        return participants;
+    }
+
+    // 수동 분배 참여자 생성 메서드
+    private List<Participant> createManualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Map<Long, Long> manualShares, Long totalAmount) {
+        if (manualShares == null || manualShares.isEmpty()) {
+            throw new IllegalArgumentException("Manual shares must be provided for manual distribution.");
+        }
+
+        Long sumShares = manualShares.values().stream().mapToLong(Long::longValue).sum();
+        if (!sumShares.equals(totalAmount)) {
+            throw new IllegalArgumentException("Sum of manual shares does not match total amount.");
+        }
+
+        settlement.setPlatformSupportAmount(0L); // 오차 없음
+
+        List<Participant> participants = new ArrayList<>();
+        for (Long memberId : participantIds) {
+            Member member = memberRepository.findById(memberId)
+                    .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
+
+            Participant participant = new Participant();
+            participant.setMember(member);
+            participant.setSettlement(settlement);
+            participant.setStatus(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING);
+            participant.setShareAmount(manualShares.getOrDefault(memberId, 0L));
+            participants.add(participant);
+        }
+        return participants;
     }
 
     // 배분 금액 계산 함수

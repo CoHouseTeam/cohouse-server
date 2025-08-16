@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 // 정산 요청 DTO
 @Getter
@@ -13,8 +14,8 @@ public class CreateSettlementRequest {
     private String title;
     private String description;
     private SettlementCategory category;
-    private boolean isEqualDistribution;
+    private boolean equalDistribution;
     private Long settlementAmount;
-    private Long manualSharedAmount;
+    private Map<Long, Long> manualShares; // 참여자 ID별 직접 분배 금액
     private List<Long> participantIds;
 }
