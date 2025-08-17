@@ -1,8 +1,11 @@
 package com.zero.cohousesever.settlement.service;
 
+
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.entity.*;
@@ -20,9 +23,9 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class SettlementService {
+    public final MemberRepository memberRepository;
     private final SettlementRepository settlementRepository;
     private final SettlementHistoryRepository settlementHistoryRepository;
-    private final MemberRepository memberRepository;
 
     /**
      * 정산 등록

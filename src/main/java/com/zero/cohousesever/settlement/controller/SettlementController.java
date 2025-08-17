@@ -39,7 +39,6 @@ public class SettlementController {
     @GetMapping
     public ResponseEntity<?> getSettlements() {
 
-        return ResponseEntity.ok().build();
     }
 
     // 정산 상세 조회
