@@ -1,14 +1,14 @@
 package com.zero.cohousesever.post.controller;
 
+import com.zero.cohousesever.post.dto.PostListResponse;
 import com.zero.cohousesever.post.dto.PostRequest;
 import com.zero.cohousesever.post.dto.PostResponse;
+import com.zero.cohousesever.post.dto.PostSummaryResponse;
 import com.zero.cohousesever.post.service.PostService;
+import com.zero.cohousesever.post.type.PostType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -19,12 +19,19 @@ public class PostController {
 
     /**
      * 게시글 목록 조회
+     * - 탭 전환: type 파라미터로 필터
+     * - 페이지네이션: page/size
      */
     @GetMapping("/{groupId}")
-    public ResponseEntity<List<PostResponse>> getPostListByGroup(
-            @PathVariable Long groupId
+    public ResponseEntity<PostListResponse<PostSummaryResponse>> getPostListByGroup(
+            @PathVariable Long groupId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) PostType type
     ) {
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                postService.getPostList(groupId,page, size, type)
+        );
     }
 
     /**
