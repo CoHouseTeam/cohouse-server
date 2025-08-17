@@ -48,4 +48,14 @@ public class GroupService {
 
         return GroupSummary.fromEntity(group);
     }
+
+    public GroupSummary getGroupByMemberID(Long memberId) {
+
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(); // TODO: 적절한 예외 던지기
+
+        Group group = groupMember.getGroup();
+
+        return GroupSummary.fromEntity(group);
+    }
 }
