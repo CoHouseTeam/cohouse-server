@@ -48,4 +48,11 @@ public class GroupService {
 
         return GroupSummary.fromEntity(group);
     }
+
+    public GroupSummary getGroup(Long groupId) {
+
+        Group group = groupRepository.findById(groupId).orElseThrow(); // TODO: 적절한 예외 던지기
+
+        return GroupSummary.fromEntity(group);
+    }
 }
