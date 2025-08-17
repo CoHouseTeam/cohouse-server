@@ -25,30 +25,26 @@ public class GroupService {
 
     public GroupSummary createGroup(Long memberId, GroupNameDto groupNameDto) {
 
-        Member member = memberRepository.findById(memberId).orElseThrow();
+        Member member = memberRepository.findById(memberId).orElseThrow(); // TODO: 적절한 예외 던지기
 
-        Group group = groupRepository.save(
-                Group.builder()
-                        .name(groupNameDto.getGroupName())
-                        .status(GroupStatus.ACTIVE)
-                        .build()
-        );
+        GroupMember leader = GroupMember.builder()
+                .member(member)
+                .nickname(member.getName()) // 이름을 기본 닉네임으로 사용
+                .isLeader(true)
+                .status(GroupMemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .build();
 
-        GroupMember leader = groupMemberRepository.save(
-                GroupMember.builder()
-                        .member(member)
-                        .group(group)
-                        .nickname(member.getName()) // 이름을 기본 닉네임으로 사용
-                        .isLeader(true)
-                        .status(GroupMemberStatus.ACTIVE)
-                        .joinedAt(LocalDateTime.now())
-                        .build()
-        );
+        Group group = Group.builder()
+                .name(groupNameDto.getGroupName())
+                .status(GroupStatus.ACTIVE)
+                .build();
+
 
         group.addMember(leader);
 
+        // Group만 저장하면 cascade로 GroupMember도 함께 저장됨
         groupRepository.save(group);
-        groupMemberRepository.save(leader);
 
         return GroupSummary.fromEntity(group);
     }
