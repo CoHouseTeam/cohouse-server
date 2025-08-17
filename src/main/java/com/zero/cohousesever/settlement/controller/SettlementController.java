@@ -26,6 +26,15 @@ public class SettlementController {
         return ResponseEntity.ok(settlementResponseDto);
     }
 
+    // 정산 취소
+    @DeleteMapping("/{settlementId}")
+    public ResponseEntity<?> cancelSettlement(@PathVariable Long settlementId) {
+        //TODO JWT 회원 정보 받기
+        Long memberId = 2L;
+        settlementService.cancelSettlement(memberId, settlementId);
+        return ResponseEntity.ok().build();
+    }
+
     // 정산 목록 조회
     @GetMapping
     public ResponseEntity<?> getSettlements() {
@@ -36,13 +45,6 @@ public class SettlementController {
     // 정산 상세 조회
     @GetMapping("/{settlementId}")
     public ResponseEntity<?> getSettlement() {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 정산 취소
-    @DeleteMapping("/{settlementId}")
-    public ResponseEntity<?> cancelSettlement() {
 
         return ResponseEntity.ok().build();
     }

@@ -132,6 +132,14 @@ public class SettlementService {
     }
 
     /**
+     * 정산 취소 처리
+     */
+    public void cancelSettlement(Long memberId, Long SettlementId) {
+        Member member = findMemberOrThrow(memberId);
+
+    }
+
+    /**
      * 정산 목록 조회 (페이징 및 필터링 포함)
      */
     public void getSettlements() {
@@ -144,27 +152,9 @@ public class SettlementService {
     }
 
     /**
-     * 정산 삭제 또는 취소 처리
-     */
-    public void deleteSettlement() {
-    }
-
-    /**
      * 정산 참여자 목록 조회
      */
     public void getParticipants() {
-    }
-
-    /**
-     * 정산 참여자 추가
-     */
-    public void addParticipant() {
-    }
-
-    /**
-     * 정산 참여자 제거
-     */
-    public void removeParticipant() {
     }
 
     /**
