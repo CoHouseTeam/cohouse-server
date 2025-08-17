@@ -26,6 +26,7 @@ public class Group extends BaseEntity {
     private GroupStatus status;
 
     @OneToMany(mappedBy = "group", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @Builder.Default
     private List<GroupMember> members = new ArrayList<>();
 
     public void addMember(GroupMember member) {
