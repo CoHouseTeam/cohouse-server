@@ -38,5 +38,9 @@ public class Group extends BaseEntity {
         members.remove(member);
         member.leaveGroup();
     }
+
+    public void updateName(String newName) {
+        this.name = newName;
+    }
 }
 
