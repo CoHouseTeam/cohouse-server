@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "groups")
+@Table(name = "`groups`")
 public class Group extends BaseEntity {
 
     private String name;

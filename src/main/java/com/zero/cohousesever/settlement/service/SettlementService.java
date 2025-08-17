@@ -1,5 +1,9 @@
 package com.zero.cohousesever.settlement.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.repository.ParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
@@ -12,11 +16,17 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SettlementService {
+    public final MemberRepository memberRepository;
     private final SettlementRepository settlementRepository;
     private final ParticipantRepository participantRepository;
 
-    // TODO: 실제 서비스 로직 구현 예정
 
+    //FIXME 공통예외 처리 예시입니다.(추후 삭제)
+    public void testGlobalException(){
+        Long memberId =6L;
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
     /**
      * 정산 목록 조회 (페이징 및 필터링 포함)
      */
