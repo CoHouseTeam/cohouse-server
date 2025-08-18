@@ -47,4 +47,8 @@ public class GroupMember extends BaseEntity {
         this.status = GroupMemberStatus.INACTIVE; // 예시 상태
         this.leavedAt = LocalDateTime.now();
     }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }
