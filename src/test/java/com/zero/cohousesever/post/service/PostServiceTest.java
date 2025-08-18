@@ -1,11 +1,9 @@
 package com.zero.cohousesever.post.service;
 
-import com.zero.cohousesever.post.dto.PostListResponse;
-import com.zero.cohousesever.post.dto.PostRequest;
-import com.zero.cohousesever.post.dto.PostResponse;
-import com.zero.cohousesever.post.dto.PostSummaryResponse;
+import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
+import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,12 +19,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,7 +56,7 @@ class PostServiceTest {
                 req.getTitle(),
                 req.getContent(),
                 now,
-                now
+                now // status=ACTIVE, likeCount=0 기본값 사용
         );
 
         when(postRepository.save(any(Post.class))).thenReturn(saved);
@@ -220,11 +218,80 @@ class PostServiceTest {
         assertThat(used2.getPageSize()).isEqualTo(100);
     }
 
+    @Test
+    @DisplayName("게시글 수정 - null 필드는 유지, 지정 필드만 변경")
+    void update_success_partial() {
+        // given: BaseEntity 필드는 Reflection으로 주입, status는 Enum 사용
+        Post origin = buildPost(
+                100L,
+                1L,
+                5L,
+                PostType.ANNOUNCEMENT,
+                "old-title",
+                "old-content",
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().minusDays(1),
+                PostStatus.ACTIVE,
+                0L
+        );
+
+        when(postRepository.findByIdAndStatus(100L, PostStatus.ACTIVE)).thenReturn(Optional.of(origin));
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PostUpdateRequest req = new PostUpdateRequest();
+        req.setTitle("new-title");          // 바꾸기
+        req.setContent(null);               // 유지
+        req.setType(PostType.FREE);         // 바꾸기
+
+        // when
+        PostResponse res = postService.update(100L, req);
+
+        // then
+        ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(captor.capture());
+        Post saved = captor.getValue();
+
+        assertThat(saved.getTitle()).isEqualTo("new-title");
+        assertThat(saved.getContent()).isEqualTo("old-content");
+        assertThat(saved.getType()).isEqualTo(PostType.FREE);
+        assertThat(res.getId()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("게시글 수정 - 존재하지 않거나 삭제된 경우 404(예외)")
+    void update_notFound_or_deleted() {
+        // 서비스는 ACTIVE 기준으로 조회 → 빈 값 리턴하면 404 예외 발생
+        when(postRepository.findByIdAndStatus(100L, PostStatus.ACTIVE)).thenReturn(Optional.empty());
+
+        PostUpdateRequest req = new PostUpdateRequest();
+        req.setTitle("x");
+
+        assertThatThrownBy(() -> postService.update(100L, req))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    // -------------------------
+    // 테스트용 헬퍼 (오버로드 포함)
+    // -------------------------
+
+    // 가장 자주 쓰는 형태(기본 status=ACTIVE, likeCount=0)
     private Post buildPost(Long id, Long groupId,
                            Long memberId, PostType type,
                            String title, String content,
                            LocalDateTime createdAt,
                            LocalDateTime updatedAt
+    ) {
+        return buildPost(id, groupId, memberId, type, title, content, createdAt, updatedAt, PostStatus.ACTIVE, 0L);
+    }
+
+    // 전체 필드 지정 버전
+    private Post buildPost(Long id, Long groupId,
+                           Long memberId, PostType type,
+                           String title, String content,
+                           LocalDateTime createdAt,
+                           LocalDateTime updatedAt,
+                           PostStatus status,
+                           Long likeCount
     ) {
         Post post = Post.builder()
                 .groupId(groupId)
@@ -232,6 +299,8 @@ class PostServiceTest {
                 .type(type)
                 .title(title)
                 .content(content)
+                .status(status != null ? status : PostStatus.ACTIVE)
+                .likeCount(likeCount != null ? likeCount : 0L)
                 .build();
         ReflectionTestUtils.setField(post, "id", id);
         ReflectionTestUtils.setField(post, "createdAt", createdAt);

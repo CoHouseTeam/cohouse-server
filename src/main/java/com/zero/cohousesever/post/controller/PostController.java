@@ -1,9 +1,6 @@
 package com.zero.cohousesever.post.controller;
 
-import com.zero.cohousesever.post.dto.PostListResponse;
-import com.zero.cohousesever.post.dto.PostRequest;
-import com.zero.cohousesever.post.dto.PostResponse;
-import com.zero.cohousesever.post.dto.PostSummaryResponse;
+import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.service.PostService;
 import com.zero.cohousesever.post.type.PostType;
 import lombok.RequiredArgsConstructor;
@@ -53,13 +50,15 @@ public class PostController {
 
     /**
      * 게시글 수정
+     *  존재하지 않거나 삭제(deleted=true)된 경우 404
      */
     @PutMapping("/{postId}")
     public ResponseEntity<PostResponse> updatePost(
-            @PathVariable Long postId,
-            @RequestBody PostRequest request
+            @PathVariable Long id,
+            @RequestBody PostUpdateRequest request
     ) {
-        return ResponseEntity.ok().build();
+        PostResponse updated = postService.update(id, request);
+        return ResponseEntity.ok(updated);
     }
 
     /**
