@@ -1,7 +1,9 @@
 package com.zero.cohousesever.tasks.repository;
 
 import com.zero.cohousesever.tasks.entity.RepeatDay;
+import java.time.DayOfWeek;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
@@ -11,5 +13,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface RepeatDayRepository extends JpaRepository<RepeatDay, Long> {
   List<RepeatDay> findByTaskTemplate_Id(Long templateId);
-
+  Optional<RepeatDay> findByTaskTemplate_IdAndDayOfWeek(Long templateId, DayOfWeek dayOfWeek);
+  long deleteByIdAndTaskTemplate_Id(Long id, Long templateId);
 }

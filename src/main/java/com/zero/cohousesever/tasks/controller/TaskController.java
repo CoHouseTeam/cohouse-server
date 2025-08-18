@@ -1,11 +1,5 @@
 package com.zero.cohousesever.tasks.controller;
 
-import com.zero.cohousesever.tasks.service.AssignmentOverrideHistoryService;
-import com.zero.cohousesever.tasks.service.AssignmentOverrideService;
-import com.zero.cohousesever.tasks.service.RepeatDayService;
-import com.zero.cohousesever.tasks.service.TaskAssignmentHistoryService;
-import com.zero.cohousesever.tasks.service.TaskAssignmentService;
-import com.zero.cohousesever.tasks.service.TaskTemplateService;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideRequest;
@@ -15,7 +9,13 @@ import com.zero.cohousesever.tasks.dto.repeat.RepeatDayResponse;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateRequest;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateResponse;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateUpdateRequest;
-import java.net.URI;
+import com.zero.cohousesever.tasks.entity.TaskTemplate;
+import com.zero.cohousesever.tasks.service.AssignmentOverrideHistoryService;
+import com.zero.cohousesever.tasks.service.AssignmentOverrideService;
+import com.zero.cohousesever.tasks.service.RepeatDayService;
+import com.zero.cohousesever.tasks.service.TaskAssignmentHistoryService;
+import com.zero.cohousesever.tasks.service.TaskAssignmentService;
+import com.zero.cohousesever.tasks.service.TaskTemplateService;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -42,24 +43,41 @@ public class TaskController {
   private final AssignmentOverrideHistoryService assignmentOverrideHistoryService;
 
   // 1. 템플릿 관련
+
+  // 조회
   @GetMapping("/templates")
-  public ResponseEntity<List<TaskTemplateResponse>> getTemplates() {
-    return null;
+  public ResponseEntity<?> getTemplates(@RequestParam Long groupId) {
+    List<TaskTemplateResponse> body = taskTemplateService.getAllTemplates(groupId).stream()
+        .map(TaskTemplateResponse::from)
+        .collect(java.util.stream.Collectors.toList());
+    return ResponseEntity.ok(body);
   }
 
+  // 생성
   @PostMapping("/templates")
-  public ResponseEntity<TaskTemplateResponse> createTemplate(@RequestBody TaskTemplateRequest request) {
-    return null;
+  public ResponseEntity<TaskTemplateResponse> createTemplate(
+      @RequestBody TaskTemplateRequest request) {
+    TaskTemplate saved = taskTemplateService.createTemplate(
+        request.getGroupId(),
+        request.getCategory(),
+        request.getRepeatDays()
+    );
+    return ResponseEntity.ok(TaskTemplateResponse.from(saved));
   }
 
+  // 수정
   @PutMapping("/templates/{templateId}")
-  public ResponseEntity<TaskTemplateResponse> updateTemplate(@PathVariable Long templateId, @RequestBody TaskTemplateUpdateRequest request) {
-    return null;
+  public ResponseEntity<TaskTemplateResponse> updateTemplate(@PathVariable Long templateId,
+      @RequestBody TaskTemplateUpdateRequest request) {
+    TaskTemplate updated = taskTemplateService.updateTemplate(templateId, request.getCategory());
+    return ResponseEntity.ok(TaskTemplateResponse.from(updated));
   }
 
+  // 삭제
   @DeleteMapping("/templates/{templateId}")
   public ResponseEntity<Void> deleteTemplate(@PathVariable Long templateId) {
-    return null;
+    taskTemplateService.deleteTemplate(templateId);
+    return ResponseEntity.noContent().build();
   }
 
   // 2. 반복 요일 관련
@@ -96,12 +114,14 @@ public class TaskController {
   }
 
   @PostMapping("/assignments")
-  public ResponseEntity<TaskAssignmentResponse> assignTask(@RequestBody TaskAssignmentRequest request) {
+  public ResponseEntity<TaskAssignmentResponse> assignTask(
+      @RequestBody TaskAssignmentRequest request) {
     return null;
   }
 
   @PutMapping("/assignments/{assignmentId}")
-  public ResponseEntity<TaskAssignmentResponse> updateAssignmentStatus(@PathVariable Long assignmentId, @RequestBody TaskAssignmentRequest request) {
+  public ResponseEntity<TaskAssignmentResponse> updateAssignmentStatus(
+      @PathVariable Long assignmentId, @RequestBody TaskAssignmentRequest request) {
     return null;
   }
 
@@ -120,7 +140,7 @@ public class TaskController {
   @GetMapping("/assignments/{assignmentId}/histories")
   public ResponseEntity<List<TaskAssignmentResponse>> getTaskAssignmentHistories(
       @PathVariable Long assignmentId
-      ) {
+  ) {
     return ResponseEntity.ok(Collections.emptyList()); // TODO
   }
 

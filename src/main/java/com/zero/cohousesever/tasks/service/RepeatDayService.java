@@ -28,23 +28,10 @@ public class RepeatDayService {
    * 반복 요일 조회
    */
   public List<RepeatDayResponse> getRepeatDaysByTemplateId(Long templateId) {
-    // 불변 리스트 방지를 위해 가변 리스트로 복사
-    List<RepeatDay> list = new ArrayList<>(repeatDayRepository.findByTaskTemplate_Id(templateId));
-
-    /**
-     * DayOfWeek는 MON=1 SUN=7 구조
-     * 일요일부터 시작해야하기 때문에 순서 변경
-     */
-    list.sort((a, b) ->
-        Integer.compare(a.getDayOfWeek().getValue() % 7, b.getDayOfWeek().getValue() % 7)
-    );
-
-    return list.stream()
-        .map(rd -> RepeatDayResponse.builder()
-            .repeatDayId(rd.getId())
-            .templateId(rd.getTaskTemplate().getId())
-            .dayOfWeek(rd.getDayOfWeek().name())
-            .build())
+    return repeatDayRepository.findByTaskTemplate_Id(templateId).stream()
+        .sorted(
+            java.util.Comparator.comparingInt(rd -> rd.getDayOfWeek().getValue() % 7)) // SUNDAY 먼저
+        .map(RepeatDayResponse::from)
         .toList();
   }
 
@@ -55,43 +42,32 @@ public class RepeatDayService {
     TaskTemplate template = taskTemplateRepository.findById(templateId)
         .orElseThrow(() -> new IllegalArgumentException("Template not found: " + templateId));
 
-    // 대소문자 허용
-    String norm = request.getDayOfWeek() == null ? "" : request.getDayOfWeek().trim().toUpperCase(
-        Locale.ROOT);
-    DayOfWeek dow = DayOfWeek.valueOf(norm);
+    String raw = request.getDayOfWeek();
+    if (raw == null)
+      throw new IllegalArgumentException("dayOfWeek is required");
 
-    // 이미 존재하면 그대로 반환(중복X)
-    for (RepeatDay rd : repeatDayRepository.findByTaskTemplate_Id(templateId)) {
-      if (rd.getDayOfWeek() == dow) {
-        return RepeatDayResponse.builder()
-            .repeatDayId(rd.getId())
-            .templateId(templateId)
-            .dayOfWeek(rd.getDayOfWeek().name())
-            .build();
-      }
-    }
+    DayOfWeek dow = DayOfWeek.valueOf(raw); // 대소문자/trim 정규화 제거
 
-    RepeatDay saved = repeatDayRepository.save(
-        RepeatDay.builder().taskTemplate(template).dayOfWeek(dow).build()
-    );
-
-    return RepeatDayResponse.builder()
-        .repeatDayId(saved.getId())
-        .templateId(templateId)
-        .dayOfWeek(saved.getDayOfWeek().name())
-        .build();
+    return repeatDayRepository.findByTaskTemplate_IdAndDayOfWeek(templateId, dow)
+        .map(RepeatDayResponse::from)
+        .orElseGet(() -> {
+          RepeatDay saved = repeatDayRepository.save(
+              RepeatDay.builder().taskTemplate(template).dayOfWeek(dow).build()
+          );
+          return RepeatDayResponse.from(saved);
+        });
   }
 
   /**
    * 반복 요일 삭제
    */
   public void deleteRepeatDay(Long templateId, Long repeatDayId) {
-    RepeatDay rd = repeatDayRepository.findById(repeatDayId)
-        .orElseThrow(() -> new IllegalArgumentException("RepeatDay not found: " + repeatDayId));
-    if (!rd.getTaskTemplate().getId().equals(templateId)) {
-      throw new IllegalArgumentException("RepeatDay does not belong to template: " + templateId);
+    long deleted = repeatDayRepository.deleteByIdAndTaskTemplate_Id(repeatDayId, templateId);
+    if (deleted == 0) {
+      throw new IllegalArgumentException("RepeatDay does not belong to template: " + templateId +
+          " (id=" + repeatDayId + ")");
     }
-    repeatDayRepository.deleteById(repeatDayId);
   }
+
 
 }

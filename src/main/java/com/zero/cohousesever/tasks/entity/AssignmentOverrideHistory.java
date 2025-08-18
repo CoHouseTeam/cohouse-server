@@ -27,10 +27,6 @@ import lombok.Setter;
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class AssignmentOverrideHistory extends BaseEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
-
   // 요청자, 어느 교체 요청의 결과인지
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "request_id", nullable = false)

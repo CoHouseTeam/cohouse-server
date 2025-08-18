@@ -36,9 +36,6 @@ import lombok.Setter;
 
 public class RepeatDay extends BaseEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-
   /**
    * 연관된 할일 템플릿
    * N:1 관계
