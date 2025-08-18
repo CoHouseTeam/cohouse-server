@@ -1,5 +1,6 @@
 package com.zero.cohousesever.post.controller;
 
+
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.service.PostService;
@@ -22,12 +23,14 @@ public class PostController {
      * - 탭 전환: type
      * - 페이지네이션: page/size
      * - 상태(status) 반영
+
      */
     @GetMapping("/{groupId}")
     public ResponseEntity<PostListResponse<PostSummaryResponse>> getPostListByGroup(
             @PathVariable Long groupId,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
+
             // 기본값을 ANNOUNCEMENT(공지)로 강제
             @RequestParam(name = "type", defaultValue = "ANNOUNCEMENT") PostType type,
             // 상태는 선택(미지정 시 Service에서 ACTIVE로 처리)
