@@ -1,11 +1,9 @@
 package com.zero.cohousesever.post.service;
 
-import com.zero.cohousesever.post.dto.PostListResponse;
-import com.zero.cohousesever.post.dto.PostRequest;
-import com.zero.cohousesever.post.dto.PostResponse;
-import com.zero.cohousesever.post.dto.PostSummaryResponse;
+import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
+import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -56,7 +55,6 @@ public class PostService {
         );
     }
 
-
     /**
      * 게시글 작성
      */
@@ -73,7 +71,6 @@ public class PostService {
         return PostResponse.from(saved);
     }
 
-
     /**
      * 게시글 상세 조회
      */
@@ -87,8 +84,23 @@ public class PostService {
     /**
      * 게시글 수정
      */
-    public PostResponse updatePost(Long postId, PostRequest request) {
-        return null;
+    public PostResponse update(Long id, PostUpdateRequest request) {
+        Post post = postRepository.findByIdAndStatus(id, PostStatus.ACTIVE)
+                .orElseThrow(() -> new NoSuchElementException("post not found or deleted"));
+
+        if (request.getTitle() != null) {
+            post.setTitle(request.getTitle());
+        }
+        if (request.getContent() != null) {
+            post.setContent(request.getContent());
+        }
+        if (request.getType() != null) {
+            post.setType(request.getType());
+        }
+
+        Post saved = postRepository.save(post);
+
+        return PostResponse.from(saved);
     }
 
     /**
