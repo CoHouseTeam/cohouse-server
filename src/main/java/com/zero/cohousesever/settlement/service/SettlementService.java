@@ -91,8 +91,7 @@ public class SettlementService {
 
         List<SettlementParticipant> settlementParticipants = new ArrayList<>();
         for (Long memberId : participantIds) {
-            Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
+            Member member = findMemberOrThrow(memberId);
 
             SettlementParticipant settlementParticipant = SettlementParticipant.builder()
                     .member(member)
@@ -108,12 +107,11 @@ public class SettlementService {
     // 수동 분배 참여자 생성 메서드
     private List<SettlementParticipant> createManualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Map<Long, Long> manualShares, Long totalAmount) {
         if (manualShares == null || manualShares.isEmpty()) {
-            throw new IllegalArgumentException("Manual shares must be provided for manual distribution.");
+            throw new CustomException(ErrorCode.INVALID_MANUAL_DISTRIBUTION);
         }
 
         // 참여자들의 금액의 합이 맞는지 계산
         Long sumShares = manualShares.values().stream().mapToLong(Long::longValue).sum();
-        System.out.println(sumShares);
         Long payerId = settlement.getPayer().getId();
 
         // 결제자 부담금 계산
@@ -121,7 +119,7 @@ public class SettlementService {
 
         // 분배 금액 합이 정산 금액을 초과하면 예외 처리
         if (payerShare < 0) {
-            throw new IllegalArgumentException("The sum of distributed amounts exceeds the total settlement amount");
+            throw new CustomException(ErrorCode.EXCEED_TOTAL_AMOUNT);
         }
 
         manualShares.put(payerId, payerShare);
@@ -144,7 +142,7 @@ public class SettlementService {
     // 배분 금액 계산 메서드
     public Long calculateShareAmount(Long totalAmount, int participantCount) {
         if (participantCount <= 0) {
-            throw new IllegalArgumentException("Participant count must be at least 1.");
+            throw new CustomException(ErrorCode.INVALID_PARTICIPANT_COUNT);
         }
         return totalAmount / participantCount;
     }

@@ -29,6 +29,9 @@ public enum ErrorCode {
     SETTLEMENT_STATUS_INVALID(HttpStatus.BAD_REQUEST, "정산 상태가 유효하지 않습니다."),
     SETTLEMENT_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "정산 생성에 실패했습니다."),
     SETTLEMENT_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "정산 삭제에 실패했습니다."),
+    INVALID_MANUAL_DISTRIBUTION(HttpStatus.BAD_REQUEST, "직접 분배 금액 정보가 올바르지 않습니다."),
+    EXCEED_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, "분배 금액 합이 총 정산 금액을 초과했습니다."),
+    INVALID_PARTICIPANT_COUNT(HttpStatus.BAD_REQUEST, "참여자 수는 1명 이상이어야 합니다."),
 
     // 정산 및 송금 히스토리 관련 오류
     PAYMENT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 송금 내역을 찾을 수 없습니다."),
