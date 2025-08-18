@@ -6,6 +6,7 @@ import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class SettlementController {
         Long payerId = 2L;
 
         SettlementResponseDto settlementResponseDto = settlementService.createSettlement(payerId, request);
-        return ResponseEntity.ok(settlementResponseDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(settlementResponseDto);
     }
 
     // 정산 취소
@@ -38,7 +39,7 @@ public class SettlementController {
         Long memberId = 2L;
 
         settlementService.cancelSettlement(memberId, settlementId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     // 정산 목록 조회
@@ -91,6 +92,6 @@ public class SettlementController {
         Long memberId = 4L;
 
         paymentService.processPayment(memberId, settlementId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
