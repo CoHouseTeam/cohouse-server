@@ -163,9 +163,6 @@ public class SettlementService {
 
         // 정산 참여자 상태 변경 및 송금 히스토리 생성
         for (SettlementParticipant participant : settlement.getSettlementParticipants()) {
-            if (!participant.getMember().getId().equals(memberId)) {
-                continue;
-            }
 
             PaymentStatus previousStatus = participant.getStatus();
 
