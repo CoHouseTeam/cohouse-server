@@ -1,7 +1,6 @@
 package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.post.dto.*;
-
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
 import com.zero.cohousesever.post.type.PostStatus;
@@ -10,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -71,7 +69,6 @@ public class PostService {
 
         return PostResponse.from(saved);
     }
-
 
     /**
      * 게시글 상세 조회
