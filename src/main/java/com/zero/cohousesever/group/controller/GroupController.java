@@ -113,11 +113,15 @@ public class GroupController {
     // 멤버 상세 조회
     @GetMapping("/{groupId}/members/{groupMemberId}")
     public ResponseEntity<GroupMemberSummary> getGroupMember(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long groupId,
             @PathVariable("groupMemberId") Long groupMemberId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupMemberSummary responseDto = groupService.getGroupMember(memberId, groupId, groupMemberId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 본인의 그룹 멤버 정보 수정
