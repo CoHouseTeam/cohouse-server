@@ -2,23 +2,26 @@ package com.zero.cohousesever.member.controller;
 
 import com.zero.cohousesever.member.dto.MessageDto;
 import com.zero.cohousesever.member.dto.auth.*;
-import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
-import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
+import com.zero.cohousesever.member.service.AuthService;
+import com.zero.cohousesever.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/members")
+@RequestMapping("/api/members")
 @RequiredArgsConstructor
-public class MemberController {
+public class AuthController {
+
+    private final AuthService authService;
+    private final MemberService memberService;
 
     // 이메일 회원 가입
     @PostMapping("/signup")
-    public ResponseEntity<MessageDto> signup(
+    public ResponseEntity<Void> signup(
             @RequestBody SignupRequestDto requestDto
     ) {
+        authService.registerMember(requestDto);
 
         return ResponseEntity.ok().build();
     }
@@ -28,17 +31,20 @@ public class MemberController {
     public ResponseEntity<EmailDuplicateCheckResponseDto> checkEmailDuplicate(
             @RequestBody EmailDuplicateCheckRequestDto requestDto
     ) {
+        boolean isDuplicated = authService.isEmailDuplicated(requestDto.getEmail());
+        EmailDuplicateCheckResponseDto responseDto = EmailDuplicateCheckResponseDto.builder()
+                .isDuplicate(isDuplicated)
+                .build();
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 이메일 로그인
     @PostMapping("/login")
-    public ResponseEntity<JwtTokenResponseDto> login(
-            @RequestBody LoginRequestDto requestDto
-    ) {
+    public ResponseEntity<JwtTokenResponseDto> login(@RequestBody LoginRequestDto requestDto) {
+        JwtTokenResponseDto responseDto = authService.loginAuthenticate(requestDto);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 소셜 로그인 요청
@@ -89,46 +95,5 @@ public class MemberController {
     public ResponseEntity<MessageDto> withdraw() {
 
         return ResponseEntity.ok().build();
-    }
-
-    // 회원 프로필 조회
-    @GetMapping("/profile")
-    public ResponseEntity<MemberProfileSummary> getProfile() {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 회원 프로필 수정
-    @PutMapping("/profile")
-    public ResponseEntity<MemberProfileSummary> updateProfile(
-            @RequestBody MemberProfileSummary requestDto
-    ) {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 알림 발송 설정 시간 변경
-    @PutMapping("/profile/alert-time")
-    public ResponseEntity<MemberProfileSummary> updateAlertTime(
-            @RequestBody MemberProfileSummary requestDto
-    ) {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 회원 프로필 이미지 수정
-    @PutMapping("/profile/profile-image")
-    public ResponseEntity<MemberProfileImageResponseDto> updateProfileImage(
-            @RequestPart("image") MultipartFile imageFile
-    ) {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 회원 프로필 이미지 삭제
-    @DeleteMapping("/profile/profile-image")
-    public ResponseEntity<Void> deleteProfileImage() {
-
-        return ResponseEntity.noContent().build();
     }
 }
