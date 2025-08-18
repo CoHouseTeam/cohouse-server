@@ -13,6 +13,8 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
 
     Optional<GroupMember> findByMemberIdAndStatus(Long memberId, GroupMemberStatus status);
 
+    Optional<GroupMember> findByMemberIdAndGroupIdAndStatus(Long memberId, Long groupId, GroupMemberStatus status);
+
     List<GroupMember> findAllByGroupIdAndStatus(Long groupId, GroupMemberStatus status);
 
     Boolean existsByMemberIdAndGroupIdAndStatus(Long memberId, Long groupId, GroupMemberStatus status);
