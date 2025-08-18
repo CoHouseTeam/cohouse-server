@@ -12,9 +12,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +34,6 @@ public class PostService {
     private static final int MAX_SIZE = 100;
 
     /**
-
      * 게시글 목록 조회 - 검색 없이 타입 필터 + 페이지네이션
      * - 상태(status)는 기본 ACTIVE
      */
@@ -42,16 +46,6 @@ public class PostService {
     ) {
         int p = (page == null || page < 0) ? DEFAULT_PAGE : page;
         int s = (size == null || size <= 0) ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
-
-     * 게시글 목록 조회 - 검색(키워드) 없이, 탭 전환용 타입 필터 + 페이지네이션만 제공합니다.
-     */
-    public PostListResponse<PostSummaryResponse> getPostList(Long groupId,
-                                                             Integer page,
-                                                             Integer size,
-                                                             PostType type) {
-        int p = (page == null || page < 0) ? 0 : page;
-        int s = (size == null || size <= 0) ? 10 : Math.min(size, 100);
-
 
         Sort sort = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
         Pageable pageable = PageRequest.of(p, s, sort);
@@ -118,10 +112,10 @@ public class PostService {
         }
 
         Post saved = postRepository.save(post);
+        return PostResponse.from(saved);
     }
 
     /**
-
      * 게시글 삭제(소프트 삭제)
      * - ACTIVE 상태만
      * - 작성자 본인만
@@ -136,14 +130,7 @@ public class PostService {
         if (!post.getMemberId().equals(currentUserId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
-      
-     * 게시글 삭제
-     * - ACTIVE인 글만 삭제 가능
-     * - 대상이 없거나 이미 삭제된 경우 NoSuchElementException
-     */
-    public void deletePost(Long id) {
-        Post post = postRepository.findByIdAndStatus(id, PostStatus.ACTIVE)
-                .orElseThrow(() -> new NoSuchElementException("post not found or already deleted"));
+
         post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
     }
@@ -155,8 +142,4 @@ public class PostService {
 //
 //    }
 
-
-        post.setStatus(PostStatus.DELETED);
-        postRepository.save(post);
-    }
 }
