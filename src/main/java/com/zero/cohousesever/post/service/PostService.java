@@ -1,0 +1,57 @@
+package com.zero.cohousesever.post.service;
+
+import com.zero.cohousesever.post.dto.PostRequest;
+import com.zero.cohousesever.post.dto.PostResponse;
+import com.zero.cohousesever.post.repository.PostRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class PostService {
+
+    private final PostRepository postRepository;
+
+    /**
+     * 게시글 전체 조회
+     */
+    public List<PostResponse> getAllPosts(Long groupId) {
+        return List.of();
+    }
+
+
+    /**
+     * 게시글 작성
+     */
+    public PostResponse createPost(PostRequest request) {
+        return null;
+    }
+
+    /**
+     * 게시글 상세 조회
+     */
+    public PostResponse getPostDetail(Long postId) {
+        return null;
+    }
+
+    /**
+     * 게시글 수정
+     */
+    public PostResponse updatePost(Long postId, PostRequest request) {
+        return null;
+    }
+
+    /**
+     * 게시글 삭제
+     */
+    public void deletePost(Long postId) {
+
+    }
+
+//    public void pinPost(Long postId) {
+//
+//    }
+
+}
