@@ -2,6 +2,7 @@ package com.zero.cohousesever.group.service;
 
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
+import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -57,5 +59,16 @@ public class GroupService {
         Group group = groupMember.getGroup();
 
         return GroupSummary.fromEntity(group);
+    }
+
+    public List<GroupMemberSummary> getGroupMembers(Long memberId, Long groupId) {
+
+        if (!groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)) {
+            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+        }
+
+        List<GroupMember> groupMembers = groupMemberRepository.findAllByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
+
+        return groupMembers.stream().map(GroupMemberSummary::fromEntity).toList();
     }
 }
