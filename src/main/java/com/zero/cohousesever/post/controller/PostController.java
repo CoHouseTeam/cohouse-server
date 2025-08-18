@@ -52,7 +52,7 @@ public class PostController {
      * 게시글 수정
      *  존재하지 않거나 삭제(deleted=true)된 경우 404
      */
-    @PutMapping("/{postId}")
+    @PutMapping("/{id}")
     public ResponseEntity<PostResponse> updatePost(
             @PathVariable Long id,
             @RequestBody PostUpdateRequest request
@@ -64,9 +64,9 @@ public class PostController {
     /**
      * 게시글 삭제
      */
-    @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable Long postId) {
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+        return ResponseEntity.noContent().build(); // 204
     }
 
 //    /**
