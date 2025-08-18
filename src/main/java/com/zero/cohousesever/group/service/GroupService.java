@@ -86,4 +86,18 @@ public class GroupService {
 
         return GroupMemberSummary.fromEntity(groupMember);
     }
+
+    public GroupMemberSummary updateGroupMember(Long memberId, Long groupId, GroupMemberSummary requestDto) {
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(); // TODO: 적절한 예외 던지기
+
+        if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
+            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+        }
+
+        // 그룹멤버 정보 수정
+        groupMember.updateNickname(requestDto.getNickname());
+
+        return GroupMemberSummary.fromEntity(groupMemberRepository.save(groupMember));
+    }
 }
