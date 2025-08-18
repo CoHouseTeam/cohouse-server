@@ -6,6 +6,7 @@ import com.zero.cohousesever.post.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -38,9 +39,9 @@ public class PostController {
     /**
      * 게시글 상세 조회
      */
-    @GetMapping("/{postId}")
-    public ResponseEntity<PostResponse> getPostDetail(@PathVariable Long postId) {
-        return ResponseEntity.ok().build();
+    @GetMapping("/{id}")
+    public ResponseEntity<PostResponse> getPostDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(postService.getPostDetail(id));
     }
 
     /**
