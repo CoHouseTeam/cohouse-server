@@ -76,9 +76,7 @@ public class TaskController {
       @PathVariable Long templateId,
       @RequestBody RepeatDayRequest request) {
     RepeatDayResponse created = repeatDayService.addRepeatDay(templateId, request);
-    return ResponseEntity
-        .created(URI.create("/api/tasks/templates/" + templateId + "/repeat-days/" + created.getRepeatDayId()))
-        .body(created);
+    return ResponseEntity.ok(created);
   }
 
   // 삭제

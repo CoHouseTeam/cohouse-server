@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -33,11 +34,10 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 
-public class RepeatDay {
+public class RepeatDay extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
 
   /**
    * 연관된 할일 템플릿

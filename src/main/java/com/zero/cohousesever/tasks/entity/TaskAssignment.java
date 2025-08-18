@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,11 +30,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TaskAssignment {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+public class TaskAssignment extends BaseEntity {
 
   /**
    * 어떤 템플릿 할일인지
@@ -55,18 +52,9 @@ public class TaskAssignment {
   @Column(nullable = false)
   private AssignmentStatus status;
 
-  private LocalDateTime createdAt;
-  private LocalDateTime updatedAt;
-
   @PrePersist
   public void prePersist() {
     if (this.status == null) this.status = AssignmentStatus.PENDING;
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = this.createdAt;
   }
 
-  @PreUpdate
-  public void preUpdate() {
-    this.updatedAt = LocalDateTime.now();
-  }
 }

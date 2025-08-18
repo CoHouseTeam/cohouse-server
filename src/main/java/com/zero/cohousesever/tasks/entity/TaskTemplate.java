@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,11 +23,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 
-public class TaskTemplate {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+public class TaskTemplate extends BaseEntity {
 
   @Column(nullable = false)
   private Long groupId;
@@ -34,11 +31,4 @@ public class TaskTemplate {
   @Column(nullable = false)
   private String category;
 
-  @Column(nullable = false)
-  private LocalDateTime createdAt;
-
-  @PrePersist
-  public void prePersist() {
-    this.createdAt = LocalDateTime.now();
-  }
 }

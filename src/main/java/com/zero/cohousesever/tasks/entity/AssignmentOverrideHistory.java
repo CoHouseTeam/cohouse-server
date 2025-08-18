@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.tasks.entity.enums.OverrideStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,7 +25,7 @@ import lombok.Setter;
 @Table(name = "tasks_override_request_histories")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
-public class AssignmentOverrideHistory {
+public class AssignmentOverrideHistory extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

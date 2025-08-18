@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.tasks.entity.enums.OverrideStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,11 +29,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AssignmentOverride {
+public class AssignmentOverride extends BaseEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
 
   /**
    * 변경 대상 할일

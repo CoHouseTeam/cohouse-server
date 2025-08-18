@@ -15,7 +15,6 @@ public class AssignmentOverrideHistoryService {
 
   private final AssignmentOverrideHistoryRepository historyRepository;
 
-  @Transactional(readOnly = true)
   public List<AssignmentOverrideResponse> getOverrideHistories(
       Long memberId, LocalDate fromDate, LocalDate toDate
   ) {

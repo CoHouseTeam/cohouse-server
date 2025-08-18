@@ -12,14 +12,12 @@ import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 반복 요일 설정 관련 비즈니스 로직 처리
  */
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class RepeatDayService {
 
   private final RepeatDayRepository repeatDayRepository;
@@ -29,7 +27,6 @@ public class RepeatDayService {
   /**
    * 반복 요일 조회
    */
-  @Transactional(readOnly = true)
   public List<RepeatDayResponse> getRepeatDaysByTemplateId(Long templateId) {
     // 불변 리스트 방지를 위해 가변 리스트로 복사
     List<RepeatDay> list = new ArrayList<>(repeatDayRepository.findByTaskTemplate_Id(templateId));
