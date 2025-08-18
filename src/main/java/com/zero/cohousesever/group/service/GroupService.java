@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -70,5 +71,19 @@ public class GroupService {
         List<GroupMember> groupMembers = groupMemberRepository.findAllByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
 
         return groupMembers.stream().map(GroupMemberSummary::fromEntity).toList();
+    }
+
+    public GroupMemberSummary getGroupMember(Long memberId, Long groupId, Long groupMemberId) {
+
+        if (!groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)) {
+            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+        }
+
+        GroupMember groupMember = groupMemberRepository.findById(groupMemberId).orElseThrow();
+        if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
+            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+        }
+
+        return GroupMemberSummary.fromEntity(groupMember);
     }
 }
