@@ -1,5 +1,6 @@
 package com.zero.cohousesever.member.security;
 
+import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -23,7 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -31,21 +31,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-
         String token = resolveToken(request);
 
+        if (StringUtils.hasText(token)) {
+            TokenValidationStatus status = jwtTokenProvider.validateToken(token);
 
-        try {
-            if (jwtTokenProvider.validateToken(token)) {
-                String email = jwtTokenProvider.getEmailFromToken(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (status == TokenValidationStatus.VALID ||
+                    (status == TokenValidationStatus.EXPIRED && request.getRequestURI().equals("/members/login/refresh"))) {
+                try {
+                    String email = jwtTokenProvider.getEmailFromToken(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (RuntimeException e) {
+                    // TODO: CustomUserDetailsService에서 던지는 예외 받기
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
+            } else if (status == TokenValidationStatus.EXPIRED) {
+                // TODO: 토큰 만료 예외 작성
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            } else if (status == TokenValidationStatus.INVALID) {
+                // TODO: 토큰 무효 예외 작성
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
-        } catch (RuntimeException e) { // TODO: userDetailsService.loadUserByUsername()에서 던지는 예외를 캐치하도록 변경
-            // 사용자를 찾지 못하면 인증 실패 처리
-            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);

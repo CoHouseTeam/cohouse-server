@@ -1,5 +1,6 @@
 package com.zero.cohousesever.member.security;
 
+import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtParser;
@@ -46,7 +47,7 @@ class JwtTokenProviderTest {
         // 토큰 유효성 검증
         assertThat(jwtTokenProvider.getEmailFromToken(token)).isEqualTo(email);
         assertThat(getNameFromToken(token)).isEqualTo(name);
-        assertThat(jwtTokenProvider.validateToken(token)).isTrue();
+        assertThat(jwtTokenProvider.validateToken(token)).isEqualTo(TokenValidationStatus.VALID);
     }
 
     @Test
@@ -60,7 +61,7 @@ class JwtTokenProviderTest {
         assertThat(token).isNotEmpty();
 
         // 토큰 유효성 검증
-        assertThat(jwtTokenProvider.validateToken(token)).isTrue();
+        assertThat(jwtTokenProvider.validateToken(token)).isEqualTo(TokenValidationStatus.VALID);
     }
 
     @Test
@@ -70,10 +71,10 @@ class JwtTokenProviderTest {
         String emptyToken = "";
 
         // when
-        boolean isValid = jwtTokenProvider.validateToken(emptyToken);
+        TokenValidationStatus isValid = jwtTokenProvider.validateToken(emptyToken);
 
         // then
-        assertThat(isValid).isFalse();
+        assertThat(isValid).isEqualTo(TokenValidationStatus.INVALID);
     }
 
     @Test
@@ -83,10 +84,10 @@ class JwtTokenProviderTest {
         String nullToken = null;
 
         // when
-        boolean isValid = jwtTokenProvider.validateToken(nullToken);
+        TokenValidationStatus isValid = jwtTokenProvider.validateToken(nullToken);
 
         // then
-        assertThat(isValid).isFalse();
+        assertThat(isValid).isEqualTo(TokenValidationStatus.INVALID);
     }
 
     @Test
@@ -98,10 +99,25 @@ class JwtTokenProviderTest {
         String expiredToken = generateExpiredToken(email, name);
 
         // when
-        boolean isValid = jwtTokenProvider.validateToken(expiredToken);
+        TokenValidationStatus isValid = jwtTokenProvider.validateToken(expiredToken);
 
         // then
-        assertThat(isValid).isFalse();
+        assertThat(isValid).isEqualTo(TokenValidationStatus.EXPIRED);
+    }
+
+    @Test
+    @DisplayName("다른 키로 서명된 토큰 검증 실패")
+    void shouldFailValidationForInvalidSecretKeyToken() {
+        // given
+        String email = "test@example.com";
+        String name = "테스트 사용자";
+        String invalidSecretKeyToken = generateInvalidSecretKeyToken(email, name);
+
+        // when
+        TokenValidationStatus isValid = jwtTokenProvider.validateToken(invalidSecretKeyToken);
+
+        // then
+        assertThat(isValid).isEqualTo(TokenValidationStatus.INVALID);
     }
 
     /**
@@ -114,6 +130,24 @@ class JwtTokenProviderTest {
         Date now = new Date();
         // 만료 시간을 현재보다 과거로 설정 (예: 1초 전)
         Date expiration = new Date(now.getTime() - 1000);
+
+        return Jwts.builder()
+                .issuer(issuer)
+                .claims()
+                .add("email", email)
+                .add("name", name)
+                .and()
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    // 다른 키로 토큰을 생성하는 메서드
+    private String generateInvalidSecretKeyToken(String email, String name) {
+        SecretKey secretKey = Keys.hmacShaKeyFor((secret+"test").getBytes());
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + 1000_000);
 
         return Jwts.builder()
                 .issuer(issuer)
