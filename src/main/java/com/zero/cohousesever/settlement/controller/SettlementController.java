@@ -88,7 +88,7 @@ public class SettlementController {
     public ResponseEntity<?> completePayment(@AuthenticationPrincipal CustomUserDetails userDetails,
                                              @PathVariable Long settlementId) throws AccessDeniedException {
 //        Long memberId = userDetails.getId();
-        Long memberId = 3L;
+        Long memberId = 4L;
 
         paymentService.processPayment(memberId, settlementId);
         return ResponseEntity.ok().build();

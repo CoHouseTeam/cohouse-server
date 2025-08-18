@@ -13,11 +13,10 @@ import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.entity.*;
-import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
+import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +55,7 @@ public class SettlementService {
                 .status(SettlementStatus.PENDING)
                 .payer(payer)
                 .group(group)
+                .isEqualDistribution(request.isEqualDistribution())
                 .build();
 
         Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
@@ -154,32 +154,49 @@ public class SettlementService {
      */
     @Transactional
     public void cancelSettlement(Long memberId, Long settlementId) {
-        Member member = findMemberOrThrow(memberId);
+        findMemberOrThrow(memberId);
         Settlement settlement = findSettlementOrThrow(settlementId);
 
-        PaymentHistory paymentHistory = paymentHistoryRepository
-                .findBySenderAndSettlementId(member, settlementId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_HISTORY_NOT_FOUND));
+        if (!settlement.getPayer().getId().equals(memberId)) {
+            throw new CustomException(ErrorCode.SETTLEMENT_PERMISSION_DENIED);
+        }
+
+        // 정산 참여자 상태 변경 및 송금 히스토리 생성
+        for (SettlementParticipant participant : settlement.getSettlementParticipants()) {
+            if (!participant.getMember().getId().equals(memberId)) {
+                continue;
+            }
+
+            PaymentStatus previousStatus = participant.getStatus();
+
+            if (previousStatus == PaymentStatus.PAID) {
+                participant.setStatus(PaymentStatus.REFUNDED);
+                // 송금 히스토리 생성: 환불 기록 추가
+                PaymentHistory refundHistory = PaymentHistory.builder()
+                        .sender(participant.getMember())
+                        .receiver(settlement.getPayer())
+                        .settlement(settlement)
+                        .amount(participant.getShareAmount())
+                        .status(PaymentStatus.REFUNDED)
+                        .transferDate(LocalDateTime.now())
+                        .build();
+                paymentHistoryRepository.save(refundHistory);
+
+            } else if (previousStatus == PaymentStatus.PENDING) {
+                participant.setStatus(PaymentStatus.CANCELED);
+            }
+        }
+
+        SettlementHistory.builder()
+                .settlement(settlement)
+                .changedBy(findMemberOrThrow(memberId))
+                .title(settlement.getTitle())
+                .status(SettlementStatus.CANCELED)
+                .changedAt(LocalDateTime.now())
+                .build();
 
         settlement.setStatus(SettlementStatus.CANCELED);
         settlementRepository.save(settlement);
-
-        if (paymentHistory.getStatus() == PaymentStatus.PAID) {
-            paymentHistory.setStatus(PaymentStatus.REFUNDED);
-            paymentHistoryRepository.save(paymentHistory);
-        }
-
-        // 정산 참여자 상태도 함께 업데이트
-        settlement.getSettlementParticipants()
-                .stream()
-                .filter(p -> p.getMember().getId().equals(memberId))
-                .forEach(p -> {
-                    if (p.getStatus() == PaymentStatus.PAID) {
-                        p.setStatus(PaymentStatus.REFUNDED);
-                    } else if (p.getStatus() == PaymentStatus.PENDING) {
-                        p.setStatus(PaymentStatus.CANCELED);
-                    }
-                });
         settlementParticipantRepository.saveAll(settlement.getSettlementParticipants());
     }
 
