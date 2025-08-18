@@ -3,6 +3,8 @@ package com.zero.cohousesever.group.service;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
+import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
+import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -13,6 +15,7 @@ import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -99,5 +102,29 @@ public class GroupService {
         groupMember.updateNickname(requestDto.getNickname());
 
         return GroupMemberSummary.fromEntity(groupMemberRepository.save(groupMember));
+    }
+
+    @Transactional
+    public LeaderTransferResponseDto transferLeader(Long memberId, Long groupId, LeaderTransferRequestDto requestDto) {
+
+        // 요청자가 그룹장인지 확인
+        GroupMember prevLeader = groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(); // TODO: 적절한 예외 던지기
+        if (!prevLeader.getIsLeader()) {
+            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+        }
+
+        // 이양 받을 멤버가 같은 그룹인지 확인
+        GroupMember newLeader = groupMemberRepository.findById(requestDto.getNewLeaderId()).orElseThrow();
+        if (!Objects.equals(newLeader.getGroup().getId(), groupId)) {
+            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+        }
+
+        prevLeader.transferLeader(newLeader);
+
+        return LeaderTransferResponseDto.builder()
+                .previousLeaderId(prevLeader.getId())
+                .newLeaderId(newLeader.getId())
+                .build();
     }
 }
