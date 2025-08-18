@@ -18,6 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -267,6 +268,41 @@ class PostServiceTest {
         req.setTitle("x");
 
         assertThatThrownBy(() -> postService.update(100L, req))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("삭제 성공 - ACTIVE 글을 DELETED로 전환")
+    void delete_success() {
+        // given
+        Post post = Post.builder()
+                .groupId(1L)
+                .memberId(5L)
+                .type(PostType.FREE)
+                .title("t")
+                .content("c")
+                .status(PostStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(post, "id", 100L);
+        ReflectionTestUtils.setField(post, "createdAt", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(post, "updatedAt", LocalDateTime.now().minusHours(1));
+
+        when(postRepository.findByIdAndStatus(100L, PostStatus.ACTIVE)).thenReturn(Optional.of(post));
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        postService.deletePost(100L);
+
+        // then
+        verify(postRepository).save(argThat(p -> p.getStatus() == PostStatus.DELETED));
+    }
+
+    @Test
+    @DisplayName("삭제 실패 - 대상 없음 또는 이미 삭제됨 → 404 매핑용 예외")
+    void delete_notFound_or_alreadyDeleted() {
+        when(postRepository.findByIdAndStatus(999L, PostStatus.ACTIVE)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.deletePost(999L))
                 .isInstanceOf(NoSuchElementException.class);
     }
 

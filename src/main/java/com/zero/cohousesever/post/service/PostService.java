@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -105,11 +104,19 @@ public class PostService {
 
     /**
      * 게시글 삭제
+     * - ACTIVE인 글만 삭제 가능
+     * - 대상이 없거나 이미 삭제된 경우 NoSuchElementException
      */
-    public void deletePost(Long postId) {
-
+    public void deletePost(Long id) {
+        Post post = postRepository.findByIdAndStatus(id, PostStatus.ACTIVE)
+                .orElseThrow(() -> new NoSuchElementException("post not found or already deleted"));
+        post.setStatus(PostStatus.DELETED);
+        postRepository.save(post);
     }
 
+//    /**
+//     * 게시글 상단 고정
+//     */
 //    public void pinPost(Long postId) {
 //
 //    }
