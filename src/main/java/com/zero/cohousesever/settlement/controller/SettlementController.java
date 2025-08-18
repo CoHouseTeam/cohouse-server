@@ -1,11 +1,13 @@
 package com.zero.cohousesever.settlement.controller;
 
+import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
@@ -17,40 +19,44 @@ public class SettlementController {
     private final SettlementService settlementService;
     private final PaymentService paymentService;
 
-     // 정산 등록
+    // 정산 등록
     @PostMapping
-    public ResponseEntity<SettlementResponseDto> createSettlement(@RequestBody CreateSettlementRequest request) {
-        //TODO JWT 사용자 ID로 결제자 선정
+    public ResponseEntity<SettlementResponseDto> createSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                  @RequestBody CreateSettlementRequest request) {
+//        Long payerId = userDetails.getId();
         Long payerId = 2L;
+
         SettlementResponseDto settlementResponseDto = settlementService.createSettlement(payerId, request);
         return ResponseEntity.ok(settlementResponseDto);
     }
 
     // 정산 취소
     @DeleteMapping("/{settlementId}")
-    public ResponseEntity<?> cancelSettlement(@PathVariable Long settlementId) {
-        //TODO JWT 회원 정보 받기
+    public ResponseEntity<?> cancelSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                              @PathVariable Long settlementId) {
+//        Long memberId = userDetails.getId();
         Long memberId = 2L;
+
         settlementService.cancelSettlement(memberId, settlementId);
         return ResponseEntity.ok().build();
     }
 
     // 정산 목록 조회
     @GetMapping
-    public ResponseEntity<?> getSettlements() {
-
+    public ResponseEntity<?> getSettlements(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok().build();
     }
 
     // 정산 상세 조회
     @GetMapping("/{settlementId}")
-    public ResponseEntity<?> getSettlement() {
+    public ResponseEntity<?> getSettlement(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         return ResponseEntity.ok().build();
     }
 
     // 정산 참여자 목록 조회
     @GetMapping("/{settlementId}/participants")
-    public ResponseEntity<?> getParticipants() {
+    public ResponseEntity<?> getParticipants(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         return ResponseEntity.ok().build();
     }
@@ -72,17 +78,16 @@ public class SettlementController {
 
     // 영수증 이미지 업로드
     @PostMapping("/{settlementId}/image")
-    public ResponseEntity<?> uploadReceiptImage() {
+    public ResponseEntity<?> uploadReceiptImage(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         return ResponseEntity.ok().build();
     }
 
     // 송금 완료 처리
     @PostMapping("/{settlementId}/payment")
-    public ResponseEntity<?> completePayment(
-            @PathVariable Long settlementId) throws AccessDeniedException {
-        //FIXME JWT에서 회원 ID 추출하여 사용
-        //Long memberId = userDetails.getId();
+    public ResponseEntity<?> completePayment(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                             @PathVariable Long settlementId) throws AccessDeniedException {
+//        Long memberId = userDetails.getId();
         Long memberId = 3L;
 
         paymentService.processPayment(memberId, settlementId);

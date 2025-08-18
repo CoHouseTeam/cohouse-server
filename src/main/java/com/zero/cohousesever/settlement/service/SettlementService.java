@@ -1,20 +1,26 @@
 package com.zero.cohousesever.settlement.service;
 
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.group.entity.Group;
+import com.zero.cohousesever.group.entity.GroupMember;
+import com.zero.cohousesever.group.enums.GroupMemberStatus;
+import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
-import com.zero.cohousesever.common.exception.CustomException;
-import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
 import com.zero.cohousesever.settlement.entity.*;
-import com.zero.cohousesever.settlement.repository.ParticipantRepository;
+import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
+import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,15 +30,23 @@ import java.util.*;
 @RequiredArgsConstructor
 public class SettlementService {
     public final MemberRepository memberRepository;
+    public final GroupMemberRepository groupMemberRepository;
+    public final SettlementParticipantRepository settlementParticipantRepository;
     private final SettlementRepository settlementRepository;
     private final SettlementHistoryRepository settlementHistoryRepository;
+    private final PaymentHistoryRepository paymentHistoryRepository;
 
     /**
      * 정산 등록
      */
     public SettlementResponseDto createSettlement(Long payerId, CreateSettlementRequest request) {
         Member payer = memberRepository.findById(payerId)
-                .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + payerId));
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        Group group = groupMemberRepository
+                .findByMemberIdAndStatus(payerId, GroupMemberStatus.ACTIVE)
+                .map(GroupMember::getGroup)
+                .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
 
         Settlement settlement = Settlement.builder()
                 .title(request.getTitle())
@@ -41,19 +55,20 @@ public class SettlementService {
                 .settlementAmount(request.getSettlementAmount())
                 .status(SettlementStatus.PENDING)
                 .payer(payer)
+                .group(group)
                 .build();
 
         Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
         allParticipantIds.add(payerId); // 결제자 포함
 
-        List<Participant> participants = new ArrayList<>();
+        List<SettlementParticipant> settlementParticipants = new ArrayList<>();
         if (request.isEqualDistribution()) {
-            participants = createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
+            settlementParticipants = createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
         } else {
-            participants = createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
+            settlementParticipants = createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
         }
 
-        settlement.setParticipants(participants);
+        settlement.setSettlementParticipants(settlementParticipants);
         Settlement savedSettlement = settlementRepository.save(settlement);
 
         SettlementHistory history = SettlementHistory.builder()
@@ -69,29 +84,29 @@ public class SettlementService {
     }
 
     // 균등 분배 참여자 생성 메서드
-    private List<Participant> createEqualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Long totalAmount) {
+    private List<SettlementParticipant> createEqualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Long totalAmount) {
         Long shareAmount = calculateShareAmount(totalAmount, participantIds.size());
         Long remainder = totalAmount % participantIds.size();
         settlement.setPlatformSupportAmount(remainder);
 
-        List<Participant> participants = new ArrayList<>();
+        List<SettlementParticipant> settlementParticipants = new ArrayList<>();
         for (Long memberId : participantIds) {
             Member member = memberRepository.findById(memberId)
                     .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
 
-            Participant participant = Participant.builder()
+            SettlementParticipant settlementParticipant = SettlementParticipant.builder()
                     .member(member)
                     .settlement(settlement)
                     .status(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING)
                     .shareAmount(shareAmount)
                     .build();
-            participants.add(participant);
+            settlementParticipants.add(settlementParticipant);
         }
-        return participants;
+        return settlementParticipants;
     }
 
     // 수동 분배 참여자 생성 메서드
-    private List<Participant> createManualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Map<Long, Long> manualShares, Long totalAmount) {
+    private List<SettlementParticipant> createManualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Map<Long, Long> manualShares, Long totalAmount) {
         if (manualShares == null || manualShares.isEmpty()) {
             throw new IllegalArgumentException("Manual shares must be provided for manual distribution.");
         }
@@ -113,17 +128,17 @@ public class SettlementService {
 
         settlement.setPlatformSupportAmount(0L); // 플랫폼 오차 지원금 없음
 
-        List<Participant> participants = new ArrayList<>();
+        List<SettlementParticipant> settlementParticipants = new ArrayList<>();
         for (Long memberId : participantIds) {
             Member member = findMemberOrThrow(memberId);
-            Participant participant = new Participant();
-            participant.setMember(member);
-            participant.setSettlement(settlement);
-            participant.setStatus(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING);
-            participant.setShareAmount(manualShares.getOrDefault(memberId, 0L));
-            participants.add(participant);
+            SettlementParticipant settlementParticipant = new SettlementParticipant();
+            settlementParticipant.setMember(member);
+            settlementParticipant.setSettlement(settlement);
+            settlementParticipant.setStatus(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING);
+            settlementParticipant.setShareAmount(manualShares.getOrDefault(memberId, 0L));
+            settlementParticipants.add(settlementParticipant);
         }
-        return participants;
+        return settlementParticipants;
     }
 
     // 배분 금액 계산 메서드
@@ -136,10 +151,38 @@ public class SettlementService {
 
     /**
      * 정산 취소 처리
+     *
+     * - 정산 취소 시 송금을 한 정산 참여자만 환불 상태로 변경
      */
-    public void cancelSettlement(Long memberId, Long SettlementId) {
+    @Transactional
+    public void cancelSettlement(Long memberId, Long settlementId) {
         Member member = findMemberOrThrow(memberId);
+        Settlement settlement = findSettlementOrThrow(settlementId);
 
+        PaymentHistory paymentHistory = paymentHistoryRepository
+                .findBySenderAndSettlementId(member, settlementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_HISTORY_NOT_FOUND));
+
+        settlement.setStatus(SettlementStatus.CANCELED);
+        settlementRepository.save(settlement);
+
+        if (paymentHistory.getStatus() == PaymentStatus.PAID) {
+            paymentHistory.setStatus(PaymentStatus.REFUNDED);
+            paymentHistoryRepository.save(paymentHistory);
+        }
+
+        // 정산 참여자 상태도 함께 업데이트
+        settlement.getSettlementParticipants()
+                .stream()
+                .filter(p -> p.getMember().getId().equals(memberId))
+                .forEach(p -> {
+                    if (p.getStatus() == PaymentStatus.PAID) {
+                        p.setStatus(PaymentStatus.REFUNDED);
+                    } else if (p.getStatus() == PaymentStatus.PENDING) {
+                        p.setStatus(PaymentStatus.CANCELED);
+                    }
+                });
+        settlementParticipantRepository.saveAll(settlement.getSettlementParticipants());
     }
 
     /**
@@ -183,6 +226,12 @@ public class SettlementService {
     // 회원 엔티티 조회 메서드
     private Member findMemberOrThrow(Long memberId) {
         return memberRepository.findById(memberId)
-                .orElseThrow(() -> new EntityNotFoundException("Member not found with id: " + memberId));
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    // 정산 엔티티 조회 메서드
+    private Settlement findSettlementOrThrow(Long settlementId) {
+        return settlementRepository.findById(settlementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
     }
 }

@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "settlement_participants")
-public class Participant extends BaseEntity {
+public class SettlementParticipant extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "settlement_id", nullable = false)

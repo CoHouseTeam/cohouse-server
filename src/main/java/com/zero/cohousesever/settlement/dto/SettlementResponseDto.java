@@ -31,7 +31,7 @@ public class SettlementResponseDto {
     private LocalDateTime updatedAt;
 
     public static SettlementResponseDto fromEntity(Settlement settlement) {
-        List<ParticipantDto> participantDtos = settlement.getParticipants().stream()
+        List<ParticipantDto> participantDtos = settlement.getSettlementParticipants().stream()
                 .map(participant -> new ParticipantDto(
                         participant.getId(),
                         participant.getMember().getId(),

@@ -1,6 +1,7 @@
 package com.zero.cohousesever.settlement.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,6 +20,10 @@ public class Settlement extends BaseEntity {
     @Column(nullable = false)
     private String title;
     private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private Group group;
 
     @Enumerated(EnumType.STRING)
     private SettlementCategory category;
@@ -46,5 +51,5 @@ public class Settlement extends BaseEntity {
 
     // 정산 참여자 목록
     @OneToMany(mappedBy = "settlement", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Participant> participants;
+    private List<SettlementParticipant> settlementParticipants;
 }

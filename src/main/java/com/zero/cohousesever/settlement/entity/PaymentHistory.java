@@ -1,6 +1,7 @@
 package com.zero.cohousesever.settlement.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,11 +24,11 @@ public class PaymentHistory extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
-    private Participant sender; // 송금하는 정산 참여자
+    private Member sender; // 송금하는 정산 참여자
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receiver_id", nullable = false)
-    private Participant receiver; // 송금 받는 정산 참여자
+    private Member receiver; // 송금 받는 정산 참여자
 
     private Long amount;             // 송금 금액
 
