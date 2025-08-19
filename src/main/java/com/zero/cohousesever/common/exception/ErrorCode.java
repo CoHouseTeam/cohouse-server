@@ -14,6 +14,7 @@ public enum ErrorCode {
     MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 회원입니다."),
 
     // 그룹 관련 오류
+    GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 그룹을 찾을 수 없습니다."),
 
     // 할일 관련 오류
 
