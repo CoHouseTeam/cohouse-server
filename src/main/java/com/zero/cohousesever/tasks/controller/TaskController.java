@@ -108,17 +108,29 @@ public class TaskController {
   }
 
   // 3. 할일 배정 관련
+
+  // 조회
   @GetMapping("/assignments")
   public ResponseEntity<List<TaskAssignmentResponse>> getAssignments() {
     return null;
   }
 
+  // 생성
   @PostMapping("/assignments")
   public ResponseEntity<TaskAssignmentResponse> assignTask(
       @RequestBody TaskAssignmentRequest request) {
-    return null;
+    // 템플릿의 반복요일을 확인 후 한 사람 랜덤
+    List<TaskAssignmentResponse> created =
+        taskAssignmentService.assignTaskManuallyOrRandomly(request, request.getCandidateMemberIds());
+
+    if (created == null || created.isEmpty()) {
+      return ResponseEntity.noContent().build(); // 생성된 게 없으면 204
+    }
+    // 템플릿 하나당 1건만 응답
+    return ResponseEntity.ok(created.get(0));
   }
 
+  // 할 일 상태 변경
   @PutMapping("/assignments/{assignmentId}")
   public ResponseEntity<TaskAssignmentResponse> updateAssignmentStatus(
       @PathVariable Long assignmentId, @RequestBody TaskAssignmentRequest request) {

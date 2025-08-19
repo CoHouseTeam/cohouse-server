@@ -1,9 +1,10 @@
 package com.zero.cohousesever.tasks.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.tasks.dto.repeat.RepeatDayRequest;
 import com.zero.cohousesever.tasks.entity.TaskTemplate;
 import com.zero.cohousesever.tasks.repository.TaskTemplateRepository;
-import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,6 @@ public class TaskTemplateService {
 
   private final TaskTemplateRepository taskTemplateRepository;
   private final RepeatDayService repeatDayService;
-// private final GroupService groupService; 그룹장 확인 여부를 위해 그룹 서비스 머지후 사용
-
 
   /**
    * 할일 템플릿 목록 조회
@@ -53,22 +52,18 @@ public class TaskTemplateService {
    * 템플릿 카테고리 수정
    */
   public TaskTemplate updateTemplate(Long templateId, String category) {
-    TaskTemplate template =
-        taskTemplateRepository.findById(templateId)
-            .orElseThrow(
-                () -> new EntityNotFoundException("TaskTemplate not found: " + templateId));
+    TaskTemplate template = taskTemplateRepository.findById(templateId)
+        .orElseThrow(() -> new CustomException(ErrorCode.TEMPLATE_NOT_FOUND));
     template.setCategory(category);
     return taskTemplateRepository.save(template);
   }
-
-
 
   /**
    * 템플릿 삭제
    */
   public void deleteTemplate(Long templateId) {
     if (!taskTemplateRepository.existsById(templateId)) {
-      throw new EntityNotFoundException("TaskTemplate not found: " + templateId);
+      throw new CustomException(ErrorCode.TEMPLATE_NOT_FOUND);
     }
     taskTemplateRepository.deleteById(templateId);
   }

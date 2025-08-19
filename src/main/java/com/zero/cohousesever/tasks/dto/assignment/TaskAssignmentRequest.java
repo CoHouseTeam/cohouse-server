@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.dto.assignment;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,4 +13,5 @@ public class TaskAssignmentRequest {
   private Long groupId;
   private String date;
   private Long templateId;
+  private List<Long> candidateMemberIds; // 랜덤 배정 후보자 목록
 }

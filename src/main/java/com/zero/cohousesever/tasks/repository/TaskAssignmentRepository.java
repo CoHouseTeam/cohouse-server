@@ -11,4 +11,6 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
 
   List<TaskAssignment> findByDateBetween(LocalDate start, LocalDate end);
 
+  boolean existsByTemplate_IdAndDate(Long templateId, LocalDate date);
+
 }
