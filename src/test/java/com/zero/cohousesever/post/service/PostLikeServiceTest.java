@@ -1,6 +1,8 @@
 package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.post.dto.PostLikeStatusResponse;
+import com.zero.cohousesever.post.dto.PostLikeToggleResponse;
+import com.zero.cohousesever.post.entity.PostLike;
 import com.zero.cohousesever.post.repository.PostLikeRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,41 @@ class PostLikeServiceTest {
 
     @InjectMocks
     private PostLikeService postLikeService;
+
+    @Test
+    @DisplayName("존재X → 저장(좋아요) → isLiked=true & 최신 count 반환")
+    void toggle_create_like_then_count() {
+        Long postId = 10L;
+        Long memberId = 7L;
+
+        when(postLikeRepository.existsByPostIdAndMemberId(postId, memberId)).thenReturn(false);
+        when(postLikeRepository.save(any(PostLike.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(postLikeRepository.countByPostId(postId)).thenReturn(1L);
+
+        PostLikeToggleResponse res = postLikeService.updateLikeStatus(postId, memberId);
+
+        assertThat(res.isLiked()).isTrue();
+        assertThat(res.getLikeCount()).isEqualTo(1L);
+        verify(postLikeRepository, times(1)).save(any(PostLike.class));
+        verify(postLikeRepository, never()).deleteByPostIdAndMemberId(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("존재O → 삭제(해제) → isLiked=false & 최신 count 반환")
+    void toggle_delete_unlike_then_count() {
+        Long postId = 10L;
+        Long memberId = 7L;
+
+        when(postLikeRepository.existsByPostIdAndMemberId(postId, memberId)).thenReturn(true);
+        when(postLikeRepository.countByPostId(postId)).thenReturn(0L);
+
+        PostLikeToggleResponse res = postLikeService.updateLikeStatus(postId, memberId);
+
+        assertThat(res.isLiked()).isFalse();
+        assertThat(res.getLikeCount()).isEqualTo(0L);
+        verify(postLikeRepository, times(1)).deleteByPostIdAndMemberId(postId, memberId);
+        verify(postLikeRepository, never()).save(any(PostLike.class));
+    }
 
     @Test
     @DisplayName("좋아요 상태 조회 - 존재할 때 liked=true")

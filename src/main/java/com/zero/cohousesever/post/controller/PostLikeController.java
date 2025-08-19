@@ -1,12 +1,8 @@
 package com.zero.cohousesever.post.controller;
 
 import com.zero.cohousesever.member.security.CustomUserDetails;
-import com.zero.cohousesever.post.dto.PostLikeCountResponse;
-import com.zero.cohousesever.post.dto.PostLikeListResponse;
-import com.zero.cohousesever.post.dto.PostLikeRequest;
-import com.zero.cohousesever.post.dto.PostLikeSimpleResponse;
+import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.service.PostLikeService;
-import com.zero.cohousesever.post.dto.PostLikeStatusResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,13 +17,17 @@ public class PostLikeController {
 
     /**
      * 좋아요/취소
+     * - 하트 아이콘 클릭 시 호출되는 엔드포인트입니다.
      */
     @PostMapping("/{postId}/likes")
-    public ResponseEntity<PostLikeSimpleResponse> likeOrUnlike(
+    public ResponseEntity<PostLikeToggleResponse> likeOrUnlike(
             @PathVariable Long postId,
-            @RequestBody PostLikeRequest request
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        return ResponseEntity.ok(postLikeService.updateLikeStatus(postId, request));
+        Long memberId = user.getId();
+        PostLikeToggleResponse response = postLikeService.updateLikeStatus(postId, memberId);
+
+        return ResponseEntity.ok(response);
     }
 
     /**
