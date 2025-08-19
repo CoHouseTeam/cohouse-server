@@ -1,5 +1,6 @@
 package com.zero.cohousesever.group.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.entity.Group;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -105,10 +107,9 @@ class GroupServiceTest {
         when(memberRepository.findById(memberId)).thenReturn(Optional.empty());
 
         // when & then
-        org.junit.jupiter.api.Assertions.assertThrows(
-                RuntimeException.class, // TODO: 적절한 예외 던지기
-                () -> groupService.createGroup(memberId, groupNameDto)
-        );
+        assertThatThrownBy(() -> groupService.createGroup(memberId, groupNameDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 회원을 찾을 수 없습니다.");
 
         verify(memberRepository, times(1)).findById(memberId);
         verify(groupRepository, never()).save(any(Group.class));
