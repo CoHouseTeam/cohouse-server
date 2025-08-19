@@ -10,8 +10,12 @@ import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestReasonDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestRespondDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestSummary;
+import com.zero.cohousesever.group.service.GroupService;
+import com.zero.cohousesever.member.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,13 +25,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GroupController {
 
+    private final GroupService groupService;
+
     // 그룹 생성
     @PostMapping
     public ResponseEntity<GroupSummary> createGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody GroupNameDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupSummary responseDto = groupService.createGroup(memberId, requestDto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     // 그룹 정보 상세 조회
