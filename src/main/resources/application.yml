@@ -15,3 +15,7 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+jwt:
+  secret: Y29ob3VzZXByb2plY3Rzand0c2VjcmV0c3RyaW5nc3dpdGhiYXNlNjRlbmNvZGluZ3M=
+  issuer: cohouse
