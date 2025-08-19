@@ -24,9 +24,8 @@ public class SettlementController {
     @PostMapping
     public ResponseEntity<SettlementResponseDto> createSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                   @RequestBody CreateSettlementRequest request) {
-//        Long payerId = userDetails.getId();
-        Long payerId = 2L;
-
+        Long payerId = userDetails.getId();
+        System.out.println(payerId);
         SettlementResponseDto settlementResponseDto = settlementService.createSettlement(payerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(settlementResponseDto);
     }

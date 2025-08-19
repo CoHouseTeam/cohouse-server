@@ -32,13 +32,7 @@ public class SettlementResponseDto {
 
     public static SettlementResponseDto fromEntity(Settlement settlement) {
         List<ParticipantDto> participantDtos = settlement.getSettlementParticipants().stream()
-                .map(participant -> new ParticipantDto(
-                        participant.getId(),
-                        participant.getMember().getId(),
-                        participant.getMember().getName(),
-                        participant.getShareAmount(),
-                        participant.getStatus()
-                ))
+                .map(ParticipantDto::fromEntity)
                 .collect(Collectors.toList());
 
         return new SettlementResponseDto(
@@ -46,7 +40,7 @@ public class SettlementResponseDto {
                 settlement.getCategory(),
                 settlement.getTitle(),
                 settlement.getDescription(),
-                settlement.getSettlementAmount().longValue(),
+                settlement.getSettlementAmount(),
                 settlement.getStatus(),
                 settlement.getImageUrl(),
                 settlement.getPayer().getId(),

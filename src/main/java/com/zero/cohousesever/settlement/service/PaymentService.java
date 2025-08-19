@@ -44,8 +44,10 @@ public class PaymentService {
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.NOT_A_SETTLEMENT_PARTICIPANT));
 
-        Member receiver = Optional.ofNullable(settlement.getPayer())
-                .orElseThrow(() -> new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER));
+        Member receiver = settlement.getPayer();
+        if (receiver == null) {
+            throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+        }
 
         PaymentHistory paymentHistory = PaymentHistory.builder()
                 .settlement(settlement)
