@@ -198,7 +198,7 @@ class GroupServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessage("그룹장만 접근할 수 있습니다.");
 
-        verify(groupMemberRepository).findByMemberIdAndGroupId(groupId, memberId);
+        verify(groupMemberRepository).findByMemberIdAndGroupId(memberId, groupId);
         verify(groupRepository, never()).save(any(Group.class));
     }
 
