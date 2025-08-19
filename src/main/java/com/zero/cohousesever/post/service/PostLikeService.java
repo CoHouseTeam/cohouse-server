@@ -28,8 +28,13 @@ public class PostLikeService {
     /**
      * 현재 사용자 기준 좋아요 여부 조회
      */
-    public PostLikeStatusResponse getMyLikeStatus(Long postId) {
-        return null;
+    public PostLikeStatusResponse getMyLikeStatus(Long postId, Long memberId) {
+        boolean isLiked = postLikeRepository.existsByPostIdAndMemberId(postId, memberId);
+
+        return PostLikeStatusResponse.builder()
+                .postId(postId)
+                .isLiked(isLiked)
+                .build();
     }
 
     /**

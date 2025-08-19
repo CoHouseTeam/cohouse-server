@@ -1,11 +1,16 @@
 package com.zero.cohousesever.post.controller;
 
-import com.zero.cohousesever.post.dto.*;
+import com.zero.cohousesever.member.security.CustomUserDetails;
+import com.zero.cohousesever.post.dto.PostLikeCountResponse;
+import com.zero.cohousesever.post.dto.PostLikeListResponse;
+import com.zero.cohousesever.post.dto.PostLikeRequest;
+import com.zero.cohousesever.post.dto.PostLikeSimpleResponse;
 import com.zero.cohousesever.post.service.PostLikeService;
+import com.zero.cohousesever.post.dto.PostLikeStatusResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
@@ -37,8 +42,14 @@ public class PostLikeController {
      * 현재 사용자 기준 좋아요 여부 조회
      */
     @GetMapping("/{postId}/likes/status")
-    public ResponseEntity<PostLikeStatusResponse> getMyLikeStatus(@PathVariable Long postId) {
-        return ResponseEntity.ok(postLikeService.getMyLikeStatus(postId));
+    public ResponseEntity<PostLikeStatusResponse> getMyLikeStatus(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
+        PostLikeStatusResponse response = postLikeService.getMyLikeStatus(postId, memberId);
+
+        return ResponseEntity.ok(response);
     }
 
     /**
