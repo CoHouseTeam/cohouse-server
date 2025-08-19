@@ -18,6 +18,8 @@ public class TaskTemplateService {
 
   private final TaskTemplateRepository taskTemplateRepository;
   private final RepeatDayService repeatDayService;
+// private final GroupService groupService; 그룹장 확인 여부를 위해 그룹 서비스 머지후 사용
+
 
   /**
    * 할일 템플릿 목록 조회
@@ -59,6 +61,8 @@ public class TaskTemplateService {
     return taskTemplateRepository.save(template);
   }
 
+
+
   /**
    * 템플릿 삭제
    */
@@ -69,8 +73,4 @@ public class TaskTemplateService {
     taskTemplateRepository.deleteById(templateId);
   }
 
-  /**
-   *
-   */
 }
-

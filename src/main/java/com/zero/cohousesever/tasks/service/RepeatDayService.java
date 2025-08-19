@@ -59,6 +59,12 @@ public class RepeatDayService {
   }
 
   /**
+   * 반복 요일 수정
+   */
+
+
+
+  /**
    * 반복 요일 삭제
    */
   public void deleteRepeatDay(Long templateId, Long repeatDayId) {

@@ -16,7 +16,9 @@ public enum ErrorCode {
     // 그룹 관련 오류
 
     // 할일 관련 오류
-
+    TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 템플릿을 찾을 수 없습니다."),
+    REPEAT_DAY_NOT_FOUND(HttpStatus.NOT_FOUND, "반복 요일을 찾을 수 없습니다."),
+    REPEAT_DAY_ALREADY_EXISTS(HttpStatus.CONFLICT, "해당 요일은 이미 존재합니다."),
     // 게시물 관련 오류
 
     // 정산 관련 오류
