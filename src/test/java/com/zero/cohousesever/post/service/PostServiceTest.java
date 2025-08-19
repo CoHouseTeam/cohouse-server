@@ -2,7 +2,7 @@ package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
-import com.zero.cohousesever.post.dto.*;
+import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
 import com.zero.cohousesever.post.type.PostStatus;
@@ -98,8 +98,7 @@ class PostServiceTest {
                 "상세내용",
                 created,
                 updated,
-                PostStatus.ACTIVE,
-                0L
+                PostStatus.ACTIVE
         );
 
         when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(post));
@@ -212,8 +211,7 @@ class PostServiceTest {
                 "old-content",
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().minusDays(1),
-                PostStatus.ACTIVE,
-                0L
+                PostStatus.ACTIVE
         );
 
         when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(origin));
@@ -268,8 +266,7 @@ class PostServiceTest {
                 "content",
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().minusDays(1),
-                PostStatus.ACTIVE,
-                0L
+                PostStatus.ACTIVE
         );
         when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(origin));
         when(postRepository.findById(eq(100L))).thenReturn(Optional.of(origin));
@@ -352,7 +349,7 @@ class PostServiceTest {
                            LocalDateTime createdAt,
                            LocalDateTime updatedAt
     ) {
-        return buildPost(id, groupId, memberId, type, title, content, createdAt, updatedAt, PostStatus.ACTIVE, 0L);
+        return buildPost(id, groupId, memberId, type, title, content, createdAt, updatedAt, PostStatus.ACTIVE);
     }
 
     // 전체 필드 지정 버전
@@ -361,8 +358,7 @@ class PostServiceTest {
                            String title, String content,
                            LocalDateTime createdAt,
                            LocalDateTime updatedAt,
-                           PostStatus status,
-                           Long likeCount
+                           PostStatus status
     ) {
         Post post = Post.builder()
                 .groupId(groupId)
@@ -371,7 +367,6 @@ class PostServiceTest {
                 .title(title)
                 .content(content)
                 .status(status != null ? status : PostStatus.ACTIVE)
-                .likeCount(likeCount != null ? likeCount : 0L)
                 .build();
         ReflectionTestUtils.setField(post, "id", id);
         ReflectionTestUtils.setField(post, "createdAt", createdAt);

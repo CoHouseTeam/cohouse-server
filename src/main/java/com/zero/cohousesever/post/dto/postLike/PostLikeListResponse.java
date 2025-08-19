@@ -1,4 +1,4 @@
-package com.zero.cohousesever.post.dto;
+package com.zero.cohousesever.post.dto.postLike;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,6 @@ import java.util.List;
  * - likers: 사용자 목록 (최소 memberId)
  */
 @Getter
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PostLikeListResponse {

@@ -1,4 +1,4 @@
-package com.zero.cohousesever.post.dto;
+package com.zero.cohousesever.post.dto.postLike;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +15,7 @@ import lombok.Getter;
 @Builder
 public class PostLikerDto {
 
-    private final Long memberId;
-    private final String displayName;
-    private final String avatarUrl;
+    private Long memberId;
+    private String displayName;
+    private String avatarUrl;
 }

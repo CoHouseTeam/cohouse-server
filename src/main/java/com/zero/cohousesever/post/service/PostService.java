@@ -2,7 +2,7 @@ package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
-import com.zero.cohousesever.post.dto.*;
+import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
 import com.zero.cohousesever.post.type.PostStatus;

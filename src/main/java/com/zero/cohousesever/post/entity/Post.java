@@ -31,10 +31,6 @@ public class Post extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Builder.Default
-    @Column(nullable = false)
-    private Long likeCount = 0L;
-
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(nullable = false)

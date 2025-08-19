@@ -1,4 +1,4 @@
-package com.zero.cohousesever.post.dto;
+package com.zero.cohousesever.post.dto.post;
 
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.type.PostType;

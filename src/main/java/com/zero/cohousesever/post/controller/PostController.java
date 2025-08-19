@@ -1,7 +1,7 @@
 package com.zero.cohousesever.post.controller;
 
 import com.zero.cohousesever.member.security.CustomUserDetails;
-import com.zero.cohousesever.post.dto.*;
+import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.service.PostService;
 import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;

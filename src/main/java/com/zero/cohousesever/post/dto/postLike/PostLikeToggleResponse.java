@@ -1,4 +1,4 @@
-package com.zero.cohousesever.post.dto;
+package com.zero.cohousesever.post.dto.postLike;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,7 @@ import lombok.Getter;
 @Builder
 public class PostLikeToggleResponse {
 
-    private final Long postId;
-    private final boolean isLiked;
-    private final long likeCount;
+    private Long postId;
+    private boolean isLiked;
+    private long likeCount;
 }

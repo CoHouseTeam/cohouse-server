@@ -1,6 +1,6 @@
 package com.zero.cohousesever.post.service;
 
-import com.zero.cohousesever.post.dto.*;
+import com.zero.cohousesever.post.dto.postLike.*;
 import com.zero.cohousesever.post.entity.PostLike;
 import com.zero.cohousesever.post.repository.PostLikeRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +21,8 @@ public class PostLikeService {
      */
     @Transactional // 트랜잭션 경계: 저장/삭제를 원자적으로 처리하기 위해 @Transactional을 사용합니다.
     public PostLikeToggleResponse updateLikeStatus(Long postId, Long memberId) {
-        boolean exists = postLikeRepository.existsByPostIdAndMemberId(postId, memberId);
 
-        if (exists) {
+        if (postLikeRepository.existsByPostIdAndMemberId(postId, memberId)) {
             postLikeRepository.deleteByPostIdAndMemberId(postId, memberId);
             long count = postLikeRepository.countByPostId(postId);
             return PostLikeToggleResponse.builder()
@@ -41,9 +40,8 @@ public class PostLikeService {
             postLikeRepository.save(like);
 
         } catch (DataIntegrityViolationException e) {
-            // 드문 동시성 상황: 거의 동시에 같은 (postId, memberId)을 저장 시도하면
-            // DB의 유니크 제약(uk_post_like_post_member) 위반 예외가 발생할 수 있습니다.
-            // 이 경우 '다른 트랜잭션이 먼저 좋아요를 만든 것'으로 보고 최종 상태를 좋아요로 수렴합니다.
+            boolean nowExists = postLikeRepository.existsByPostIdAndMemberId(postId, memberId);
+            if (!nowExists) throw e;
         }
 
         long count = postLikeRepository.countByPostId(postId);

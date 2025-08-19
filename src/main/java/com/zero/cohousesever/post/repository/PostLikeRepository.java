@@ -1,6 +1,6 @@
 package com.zero.cohousesever.post.repository;
 
-import com.zero.cohousesever.post.dto.PostLikerDto;
+import com.zero.cohousesever.post.dto.postLike.PostLikerDto;
 import com.zero.cohousesever.post.entity.PostLike;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

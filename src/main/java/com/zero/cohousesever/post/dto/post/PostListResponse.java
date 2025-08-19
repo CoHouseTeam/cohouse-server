@@ -1,4 +1,4 @@
-package com.zero.cohousesever.post.dto;
+package com.zero.cohousesever.post.dto.post;
 
 import lombok.Builder;
 import lombok.Getter;

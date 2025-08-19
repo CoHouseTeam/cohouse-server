@@ -1,6 +1,6 @@
 package com.zero.cohousesever.post.service;
 
-import com.zero.cohousesever.post.dto.*;
+import com.zero.cohousesever.post.dto.postLike.*;
 import com.zero.cohousesever.post.entity.PostLike;
 import com.zero.cohousesever.post.repository.PostLikeRepository;
 import org.junit.jupiter.api.DisplayName;

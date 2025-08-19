@@ -1,7 +1,10 @@
 package com.zero.cohousesever.post.controller;
 
 import com.zero.cohousesever.member.security.CustomUserDetails;
-import com.zero.cohousesever.post.dto.*;
+import com.zero.cohousesever.post.dto.postLike.PostLikeCountResponse;
+import com.zero.cohousesever.post.dto.postLike.PostLikeListResponse;
+import com.zero.cohousesever.post.dto.postLike.PostLikeStatusResponse;
+import com.zero.cohousesever.post.dto.postLike.PostLikeToggleResponse;
 import com.zero.cohousesever.post.service.PostLikeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
