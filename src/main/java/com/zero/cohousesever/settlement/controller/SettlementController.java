@@ -34,8 +34,7 @@ public class SettlementController {
     @DeleteMapping("/{settlementId}")
     public ResponseEntity<?> cancelSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
                                               @PathVariable Long settlementId) {
-//        Long memberId = userDetails.getId();
-        Long memberId = 2L;
+        Long memberId = userDetails.getId();
 
         settlementService.cancelSettlement(memberId, settlementId);
         return ResponseEntity.noContent().build();
@@ -87,8 +86,7 @@ public class SettlementController {
     @PostMapping("/{settlementId}/payment")
     public ResponseEntity<?> completePayment(@AuthenticationPrincipal CustomUserDetails userDetails,
                                              @PathVariable Long settlementId) throws AccessDeniedException {
-//        Long memberId = userDetails.getId();
-        Long memberId = 4L;
+        Long memberId = userDetails.getId();
 
         paymentService.processPayment(memberId, settlementId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
