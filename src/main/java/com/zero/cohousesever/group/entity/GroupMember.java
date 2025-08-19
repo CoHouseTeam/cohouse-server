@@ -26,15 +26,25 @@ public class GroupMember extends BaseEntity {
     @JoinColumn(name = "group_id")
     private Group group;
 
-    @Column(columnDefinition = "TINYINT")
+    @Column(columnDefinition = "TINYINT", nullable = false)
     private Boolean isLeader;
 
     private String nickname;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private GroupMemberStatus status;
 
     private LocalDateTime joinedAt;
 
     private LocalDateTime leavedAt;
+
+    protected void setGroup(Group group) {
+        this.group = group;
+    }
+
+    protected void leaveGroup() {
+        this.status = GroupMemberStatus.INACTIVE; // 예시 상태
+        this.leavedAt = LocalDateTime.now();
+    }
 }

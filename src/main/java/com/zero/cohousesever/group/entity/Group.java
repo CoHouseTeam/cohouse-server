@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -21,9 +22,21 @@ public class Group extends BaseEntity {
     private String name;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private GroupStatus status;
 
-    @OneToMany
-    private List<GroupMember> members;
+    @OneToMany(mappedBy = "group", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @Builder.Default
+    private List<GroupMember> members = new ArrayList<>();
+
+    public void addMember(GroupMember member) {
+        members.add(member);
+        member.setGroup(this);
+    }
+
+    public void removeMember(GroupMember member) {
+        members.remove(member);
+        member.leaveGroup();
+    }
 }
 
