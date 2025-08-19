@@ -3,12 +3,12 @@ package com.zero.cohousesever.post.controller;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.service.PostService;
+import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 
 @RestController
 @RequestMapping("/api/posts")

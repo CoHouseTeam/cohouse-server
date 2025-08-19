@@ -1,6 +1,9 @@
 package com.zero.cohousesever.post.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 좋아요 여부와 개수를 동시에 응답.

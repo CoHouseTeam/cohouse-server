@@ -5,7 +5,6 @@ import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "posts")

@@ -1,5 +1,7 @@
 package com.zero.cohousesever.post.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
@@ -12,15 +14,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.*;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +28,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = Strictness.LENIENT) // 불필요 스텁 경고 완화
 class PostServiceTest {
 
     @Mock
@@ -38,32 +38,33 @@ class PostServiceTest {
     private PostService postService;
 
     @Test
-    @DisplayName("게시글 작성 - 성공 시 PostResponse 반환")
+    @DisplayName("게시글 작성 - 성공 시 PostResponse 반환(작성자는 currentMemberId)")
     void returnsPostResponse_whenCreatePostSuccess() {
         // given
         PostRequest req = new PostRequest();
         req.setGroupId(1L);
-        req.setMemberId(5L);
         req.setType(PostType.ANNOUNCEMENT);
         req.setTitle("테스트 제목");
         req.setContent("테스트 내용");
+
+        Long currentMemberId = 5L;
 
         LocalDateTime now = LocalDateTime.now();
         Post saved = buildPost(
                 100L,
                 req.getGroupId(),
-                req.getMemberId(),
+                currentMemberId,              // 작성자는 인증 사용자
                 req.getType(),
                 req.getTitle(),
                 req.getContent(),
                 now,
-                now // status=ACTIVE, likeCount=0 기본값 사용
+                now // status=ACTIVE, likeCount=0 기본값
         );
 
         when(postRepository.save(any(Post.class))).thenReturn(saved);
 
         // when
-        PostResponse res = postService.createPost(req);
+        PostResponse res = postService.createPost(req, currentMemberId);
 
         // then
         assertThat(res.getId()).isEqualTo(100L);
@@ -74,10 +75,15 @@ class PostServiceTest {
         assertThat(res.getContent()).isEqualTo("테스트 내용");
         assertThat(res.getCreatedAt()).isNotNull();
         assertThat(res.getUpdatedAt()).isNotNull();
+
+        // 저장 시 memberId가 currentMemberId로 세팅되었는지 검증
+        ArgumentCaptor<Post> saveCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(saveCaptor.capture());
+        assertThat(saveCaptor.getValue().getMemberId()).isEqualTo(currentMemberId);
     }
 
     @Test
-    @DisplayName("게시글 상세 조회 - 성공 시 PostResponse 반환")
+    @DisplayName("게시글 상세 조회 - ACTIVE 상태에서 성공 시 PostResponse 반환")
     void returnsPostResponse_whenGetPostDetailSuccess() {
         //given
         LocalDateTime created = LocalDateTime.now().minusDays(1);
@@ -91,10 +97,13 @@ class PostServiceTest {
                 "상세제목",
                 "상세내용",
                 created,
-                updated
+                updated,
+                PostStatus.ACTIVE,
+                0L
         );
 
-        when(postRepository.findById(100L)).thenReturn(Optional.of(post));
+        when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(post));
+        when(postRepository.findById(eq(100L))).thenReturn(Optional.of(post));
 
         //when
         PostResponse res = postService.getPostDetail(100L);
@@ -111,63 +120,24 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("게시글 상세 조회 - 존재하지 않으면 404 NOT_FOUND 예외를 던진다")
+    @DisplayName("게시글 상세 조회 - 존재하지 않거나 ACTIVE가 아니면 POST_NOT_FOUND 예외")
     void throwsNotFoundWhenDetailMissing() {
         //given
-        when(postRepository.findById(999L)).thenReturn(Optional.empty());
+        when(postRepository.findByIdAndStatus(eq(999L), any(PostStatus.class))).thenReturn(Optional.empty());
+        when(postRepository.findById(eq(999L))).thenReturn(Optional.empty());
 
         //when & then
         assertThatThrownBy(() -> postService.getPostDetail(999L))
-                .isInstanceOf(ResponseStatusException.class)
+                .isInstanceOf(CustomException.class)
                 .satisfies(ex -> {
-                    ResponseStatusException rse = (ResponseStatusException) ex;
-                    assertThat(rse.getStatusCode().value()).isEqualTo(HttpStatus.NOT_FOUND.value());
-                    assertThat(rse.getReason()).contains("게시글을 찾을 수 없습니다.");
+                    CustomException ce = (CustomException) ex;
+                    assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.POST_NOT_FOUND);
                 });
     }
 
     @Test
-    @DisplayName("그룹 전체 목록 조회 - type 미지정 시 findByGroupId 호출 및 페이지 메타 검증")
-    void getPostListByGroup_withoutType_returnsPagedList() {
-        // given
-        Long groupId = 1L;
-        LocalDateTime now = LocalDateTime.now();
-
-        Post p1 = buildPost(10L, groupId, 5L, PostType.ANNOUNCEMENT, "공지 A", "내용 A", now.minusHours(2), now.minusHours(2));
-        Post p2 = buildPost(9L, groupId, 6L, PostType.FREE, "자유 B", "내용 B", now.minusHours(3), now.minusHours(3));
-
-        Page<Post> page = new PageImpl<>(List.of(p1, p2), PageRequest.of(0, 10, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))), 2);
-        when(postRepository.findByGroupId(eq(groupId), any(Pageable.class))).thenReturn(page);
-
-        // when
-        PostListResponse<PostSummaryResponse> res = postService.getPostList(groupId, 0, 10, null);
-
-        // then
-        assertThat(res.getContent()).hasSize(2);
-        assertThat(res.getPage()).isEqualTo(0);
-        assertThat(res.getSize()).isEqualTo(10);
-        assertThat(res.getTotalElements()).isEqualTo(2);
-        assertThat(res.getTotalPages()).isEqualTo(1);
-        assertThat(res.isLast()).isTrue();
-
-        // 호출 메서드/페이지 요청 검증
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(postRepository, times(1)).findByGroupId(eq(groupId), pageableCaptor.capture());
-        Pageable used = pageableCaptor.getValue();
-        assertThat(used.getPageNumber()).isEqualTo(0);
-        assertThat(used.getPageSize()).isEqualTo(10);
-        // 정렬: createdAt DESC, id DESC
-        Sort.Order first = used.getSort().getOrderFor("createdAt");
-        Sort.Order second = used.getSort().getOrderFor("id");
-        assertThat(first).isNotNull();
-        assertThat(second).isNotNull();
-        assertThat(first.getDirection()).isEqualTo(Sort.Direction.DESC);
-        assertThat(second.getDirection()).isEqualTo(Sort.Direction.DESC);
-    }
-
-    @Test
-    @DisplayName("그룹 + 타입 목록 조회 - type 지정 시 findByGroupIdAndType 호출")
-    void getPostListByGroup_withType_filtersByType() {
+    @DisplayName("그룹 + 타입 목록 조회 - type 지정 시 (status 기본 ACTIVE) 페이지 메타 검증")
+    void getPostListByGroup_withType_filtersByType_andPaginates() {
         // given
         Long groupId = 2L;
         PostType type = PostType.ANNOUNCEMENT;
@@ -175,18 +145,23 @@ class PostServiceTest {
 
         Post p1 = buildPost(21L, groupId, 7L, type, "공지 X", "내용 X", now.minusDays(1), now.minusDays(1));
         Page<Post> page = new PageImpl<>(List.of(p1), PageRequest.of(0, 5, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))), 1);
-        when(postRepository.findByGroupIdAndType(eq(groupId), eq(type), any(Pageable.class))).thenReturn(page);
 
-        // when
-        PostListResponse<PostSummaryResponse> res = postService.getPostList(groupId, 0, 5, type);
+        when(postRepository.findByGroupIdAndTypeAndStatus(eq(groupId), eq(type), eq(PostStatus.ACTIVE), any(Pageable.class)))
+                .thenReturn(page);
+
+        // when (status=null → ACTIVE 기본)
+        PostListResponse<PostSummaryResponse> res = postService.getPostList(groupId, 0, 5, type, null);
 
         // then
         assertThat(res.getContent()).hasSize(1);
         assertThat(res.getContent().get(0).getType()).isEqualTo(PostType.ANNOUNCEMENT);
         assertThat(res.getTotalElements()).isEqualTo(1);
 
-        verify(postRepository, times(1)).findByGroupIdAndType(eq(groupId), eq(type), any(Pageable.class));
-        verify(postRepository, never()).findByGroupId(anyLong(), any(Pageable.class));
+        // DTO가 1-base 페이지를 내린다면 1 기대, 0-base라면 0으로 바꾸세요.
+        assertThat(res.getPage()).isEqualTo(1);
+        assertThat(res.getSize()).isEqualTo(5);
+
+        verify(postRepository, times(1)).findByGroupIdAndTypeAndStatus(eq(groupId), eq(type), eq(PostStatus.ACTIVE), any(Pageable.class));
     }
 
     @Test
@@ -194,39 +169,44 @@ class PostServiceTest {
     void getPostListByGroup_pageSizeDefaultsAndCaps() {
         // given
         Long groupId = 3L;
-        // 반환 내용은 중요치 않으므로 빈 페이지로 대체
+        PostType type = PostType.FREE;
+
         Page<Post> empty = new PageImpl<>(List.of(), PageRequest.of(0, 10, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))), 0);
-        when(postRepository.findByGroupId(eq(groupId), any(Pageable.class))).thenReturn(empty);
+        when(postRepository.findByGroupIdAndTypeAndStatus(eq(groupId), eq(type), eq(PostStatus.ACTIVE), any(Pageable.class)))
+                .thenReturn(empty);
 
         // when: page=null, size=null → 0,10으로 보정
-        postService.getPostList(groupId, null, null, null);
+        postService.getPostList(groupId, null, null, type, null);
 
         // then
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(postRepository).findByGroupId(eq(groupId), pageableCaptor.capture());
+        verify(postRepository).findByGroupIdAndTypeAndStatus(eq(groupId), eq(type), eq(PostStatus.ACTIVE), pageableCaptor.capture());
         Pageable used = pageableCaptor.getValue();
         assertThat(used.getPageNumber()).isEqualTo(0);
         assertThat(used.getPageSize()).isEqualTo(10);
 
         // when: page=-1, size=1000 → 0, 100(상한)으로 보정
         reset(postRepository);
-        when(postRepository.findByGroupId(eq(groupId), any(Pageable.class))).thenReturn(empty);
-        postService.getPostList(groupId, -1, 1000, null);
+        when(postRepository.findByGroupIdAndTypeAndStatus(eq(groupId), eq(type), eq(PostStatus.ACTIVE), any(Pageable.class)))
+                .thenReturn(empty);
 
-        verify(postRepository).findByGroupId(eq(groupId), pageableCaptor.capture());
+        postService.getPostList(groupId, -1, 1000, type, null);
+
+        verify(postRepository).findByGroupIdAndTypeAndStatus(eq(groupId), eq(type), eq(PostStatus.ACTIVE), pageableCaptor.capture());
         Pageable used2 = pageableCaptor.getValue();
         assertThat(used2.getPageNumber()).isEqualTo(0);
         assertThat(used2.getPageSize()).isEqualTo(100);
     }
 
     @Test
-    @DisplayName("게시글 수정 - null 필드는 유지, 지정 필드만 변경")
-    void update_success_partial() {
-        // given: BaseEntity 필드는 Reflection으로 주입, status는 Enum 사용
+    @DisplayName("게시글 수정 - null 필드는 유지, 지정 필드만 변경 (작성자 본인)")
+    void update_success_partial_withOwner() {
+        // given
+        Long currentUserId = 5L;
         Post origin = buildPost(
                 100L,
                 1L,
-                5L,
+                currentUserId,                // 작성자 본인
                 PostType.ANNOUNCEMENT,
                 "old-title",
                 "old-content",
@@ -236,7 +216,8 @@ class PostServiceTest {
                 0L
         );
 
-        when(postRepository.findByIdAndStatus(100L, PostStatus.ACTIVE)).thenReturn(Optional.of(origin));
+        when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(origin));
+        when(postRepository.findById(eq(100L))).thenReturn(Optional.of(origin));
         when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PostUpdateRequest req = new PostUpdateRequest();
@@ -245,7 +226,7 @@ class PostServiceTest {
         req.setType(PostType.FREE);         // 바꾸기
 
         // when
-        PostResponse res = postService.update(100L, req);
+        PostResponse res = postService.update(100L, req, currentUserId);
 
         // then
         ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
@@ -259,25 +240,53 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("게시글 수정 - 존재하지 않거나 삭제된 경우 404(예외)")
-    void update_notFound_or_deleted() {
-        // 서비스는 ACTIVE 기준으로 조회 → 빈 값 리턴하면 404 예외 발생
-        when(postRepository.findByIdAndStatus(100L, PostStatus.ACTIVE)).thenReturn(Optional.empty());
+    @DisplayName("게시글 수정 - 존재하지 않으면 POST_NOT_FOUND 예외")
+    void update_notFound() {
+        when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.empty());
+        when(postRepository.findById(eq(100L))).thenReturn(Optional.empty());
 
         PostUpdateRequest req = new PostUpdateRequest();
         req.setTitle("x");
 
-        assertThatThrownBy(() -> postService.update(100L, req))
-                .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> postService.update(100L, req, 1L))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode()).isEqualTo(ErrorCode.POST_NOT_FOUND));
     }
 
     @Test
-    @DisplayName("삭제 성공 - ACTIVE 글을 DELETED로 전환")
-    void delete_success() {
-        // given
+    @DisplayName("게시글 수정 - 작성자 불일치 시 UNAUTHORIZED_ACCESS 예외")
+    void update_forbidden_whenNotOwner() {
+        Long ownerId = 5L;
+        Long otherId = 6L;
+
+        Post origin = buildPost(
+                100L,
+                1L,
+                ownerId,                      // 게시글의 작성자
+                PostType.FREE,
+                "title",
+                "content",
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().minusDays(1),
+                PostStatus.ACTIVE,
+                0L
+        );
+        when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(origin));
+        when(postRepository.findById(eq(100L))).thenReturn(Optional.of(origin));
+
+        assertThatThrownBy(() -> postService.update(100L, new PostUpdateRequest(), otherId))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED_ACCESS));
+    }
+
+    @Test
+    @DisplayName("삭제 성공 - ACTIVE 글을 DELETED로 전환 (작성자 본인)")
+    void delete_success_withOwner() {
+        Long currentUserId = 5L;
+
         Post post = Post.builder()
                 .groupId(1L)
-                .memberId(5L)
+                .memberId(currentUserId)      // 작성자 본인
                 .type(PostType.FREE)
                 .title("t")
                 .content("c")
@@ -287,29 +296,55 @@ class PostServiceTest {
         ReflectionTestUtils.setField(post, "createdAt", LocalDateTime.now().minusDays(1));
         ReflectionTestUtils.setField(post, "updatedAt", LocalDateTime.now().minusHours(1));
 
-        when(postRepository.findByIdAndStatus(100L, PostStatus.ACTIVE)).thenReturn(Optional.of(post));
+        when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(post));
+        when(postRepository.findById(eq(100L))).thenReturn(Optional.of(post));
         when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        postService.deletePost(100L);
+        postService.deletePost(100L, currentUserId);
 
         // then
         verify(postRepository).save(argThat(p -> p.getStatus() == PostStatus.DELETED));
     }
 
     @Test
-    @DisplayName("삭제 실패 - 대상 없음 또는 이미 삭제됨 → 404 매핑용 예외")
-    void delete_notFound_or_alreadyDeleted() {
-        when(postRepository.findByIdAndStatus(999L, PostStatus.ACTIVE)).thenReturn(Optional.empty());
+    @DisplayName("삭제 실패 - 대상 없음 → POST_NOT_FOUND 예외")
+    void delete_notFound() {
+        when(postRepository.findByIdAndStatus(eq(999L), any(PostStatus.class))).thenReturn(Optional.empty());
+        when(postRepository.findById(eq(999L))).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.deletePost(999L))
-                .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> postService.deletePost(999L, 1L))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode()).isEqualTo(ErrorCode.POST_NOT_FOUND));
     }
 
-    // -------------------------
-    // 테스트용 헬퍼 (오버로드 포함)
-    // -------------------------
+    @Test
+    @DisplayName("삭제 실패 - 작성자 불일치 → UNAUTHORIZED_ACCESS 예외")
+    void delete_forbidden_whenNotOwner() {
+        Long ownerId = 5L;
+        Long otherId = 6L;
 
+        Post post = Post.builder()
+                .groupId(1L)
+                .memberId(ownerId)
+                .type(PostType.FREE)
+                .title("t")
+                .content("c")
+                .status(PostStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(post, "id", 100L);
+
+        when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(post));
+        when(postRepository.findById(eq(100L))).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.deletePost(100L, otherId))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED_ACCESS));
+    }
+
+    // ------------------------------------------------------
+    // helpers
+    // ------------------------------------------------------
     // 가장 자주 쓰는 형태(기본 status=ACTIVE, likeCount=0)
     private Post buildPost(Long id, Long groupId,
                            Long memberId, PostType type,

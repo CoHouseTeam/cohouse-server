@@ -18,10 +18,10 @@ public class PostListResponse<T> {
     private int totalPages;
     private boolean last;
 
-    public static <T> PostListResponse<T> of(List<T> content,
-                                             int page, int size,
-                                             long totalElements, int totalPages,
-                                             boolean last) {
+    public static <T> PostListResponse<T> from(List<T> content,
+                                               int page, int size,
+                                               long totalElements, int totalPages,
+                                               boolean last) {
         return PostListResponse.<T>builder()
                 .content(content)
                 .page(page)

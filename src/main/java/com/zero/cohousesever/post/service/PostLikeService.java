@@ -1,7 +1,6 @@
 package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.post.dto.*;
-import com.zero.cohousesever.post.entity.PostLike;
 import com.zero.cohousesever.post.repository.PostLikeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

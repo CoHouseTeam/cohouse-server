@@ -1,6 +1,9 @@
 package com.zero.cohousesever.post.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 특정 게시글의 좋아요 개수만 응답.

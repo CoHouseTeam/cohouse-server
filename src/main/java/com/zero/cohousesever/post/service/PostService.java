@@ -2,7 +2,6 @@ package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
-
 import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
@@ -13,20 +12,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
 public class PostService {
 
     private final PostRepository postRepository;
-
 
     // 페이지네이션 기본 상수
     private static final int DEFAULT_PAGE = 0;
@@ -54,8 +46,16 @@ public class PostService {
 
         // type은 Controller에서 항상 세팅되므로, 상태 + 타입 동시 필터
         Page<Post> result = postRepository.findByGroupIdAndTypeAndStatus(groupId, type, st, pageable);
+        Page<PostSummaryResponse> pageResult = result.map(PostSummaryResponse::from);
 
-        return PostListResponse.from(result.map(PostSummaryResponse::from));
+        return PostListResponse.from(
+                pageResult.getContent(),
+                pageResult.getNumber() + 1,
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages(),
+                pageResult.isLast()
+        );
     }
 
     /**
