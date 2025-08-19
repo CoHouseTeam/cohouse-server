@@ -170,4 +170,5 @@ class GroupServiceTest {
 
         verify(groupRepository).findById(groupId);
     }
+
 }
