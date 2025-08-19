@@ -3,19 +3,19 @@ package com.zero.cohousesever.settlement.entity;
 import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 /**
  * 정산 히스토리
  */
-@Entity
 @Table(name = "settlement_histories")
+@Entity
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class SettlementHistory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)

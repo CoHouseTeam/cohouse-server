@@ -1,35 +1,34 @@
 package com.zero.cohousesever.settlement.entity;
 
+import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 /**
  * 송금 히스토리
  */
-@Entity
 @Table(name = "payment_histories")
 @Getter
 @Setter
+@Entity
+@Builder
 @NoArgsConstructor
-public class PaymentHistory {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    // 송금하는 참여자
+@AllArgsConstructor
+public class PaymentHistory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payer_id", nullable = false)
-    private Participant payer;
+    @JoinColumn(name = "settlement_id", nullable = false)
+    private Settlement settlement;
 
-    // 송금 받는 참여자
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payee_id", nullable = false)
-    private Participant payee;
+    @JoinColumn(name = "sender_id", nullable = false)
+    private Member sender; // 송금하는 정산 참여자
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private Member receiver; // 송금 받는 정산 참여자
 
     private Long amount;             // 송금 금액
 
