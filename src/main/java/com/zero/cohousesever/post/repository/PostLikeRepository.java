@@ -1,10 +1,12 @@
 package com.zero.cohousesever.post.repository;
 
+import com.zero.cohousesever.post.dto.PostLikerDto;
 import com.zero.cohousesever.post.entity.PostLike;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
 
@@ -23,5 +25,22 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
      * 특정 게시글의 좋아요 개수
      */
     long countByPostId(Long postId);
+
+    /**
+     * PostLike ↔ Member 조인 후 바로 PostLikerDto로 매핑 (최신 생성순)
+     */
+    @Query("""
+            select new com.zero.cohousesever.postlike.dto.PostLikerDto(
+                     m.id,
+                     m.name,
+                     m.profileImageUrl
+                   )
+            from PostLike pl
+              join com.zero.cohousesever.member.entity.Member m
+                on m.id = pl.memberId
+            where pl.postId = :postId
+            order by pl.createdAt desc
+            """)
+    List<PostLikerDto> findLikerDtosByPostIdOrderByCreatedDesc(@Param("postId") Long postId);
 
 }

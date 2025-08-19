@@ -1,8 +1,6 @@
 package com.zero.cohousesever.post.service;
 
-import com.zero.cohousesever.post.dto.PostLikeCountResponse;
-import com.zero.cohousesever.post.dto.PostLikeStatusResponse;
-import com.zero.cohousesever.post.dto.PostLikeToggleResponse;
+import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.entity.PostLike;
 import com.zero.cohousesever.post.repository.PostLikeRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -108,4 +106,46 @@ class PostLikeServiceTest {
         verifyNoMoreInteractions(postLikeRepository);
     }
 
+    @Test
+    @DisplayName("좋아요한 사용자 목록 - 비어 있을 때 totalCount=0 & likers 빈 배열")
+    void getLikers_returnsEmptyList_whenNoLikes() {
+        Long postId = 100L;
+        when(postLikeRepository.findLikerDtosByPostIdOrderByCreatedDesc(postId))
+                .thenReturn(java.util.List.of());
+
+        PostLikeListResponse res = postLikeService.getLikers(postId);
+
+        assertThat(res.getPostId()).isEqualTo(postId);
+        assertThat(res.getTotalCount()).isEqualTo(0);
+        assertThat(res.getLikers()).isEmpty();
+
+        verify(postLikeRepository, times(1)).findLikerDtosByPostIdOrderByCreatedDesc(postId);
+        verifyNoMoreInteractions(postLikeRepository);
+    }
+
+    @Test
+    @DisplayName("좋아요한 사용자 목록 - 존재할 때 memberId/이름/아바타가 순서대로 매핑")
+    void getLikers_returnsDtos_inCreatedDescOrder() {
+        Long postId = 200L;
+
+        var d1 = new PostLikerDto(3L, "그룹원3", "/img3.png");
+        var d2 = new PostLikerDto(2L, "그룹원2", "/img2.png");
+        var d3 = new PostLikerDto(1L, "그룹원1", "/img1.png");
+        when(postLikeRepository.findLikerDtosByPostIdOrderByCreatedDesc(postId))
+                .thenReturn(java.util.List.of(d1, d2, d3));
+
+        PostLikeListResponse res = postLikeService.getLikers(postId);
+
+        assertThat(res.getPostId()).isEqualTo(postId);
+        assertThat(res.getTotalCount()).isEqualTo(3);
+        assertThat(res.getLikers()).extracting(PostLikerDto::getMemberId)
+                .containsExactly(3L, 2L, 1L);
+        assertThat(res.getLikers()).extracting(PostLikerDto::getDisplayName)
+                .containsExactly("그룹원3", "그룹원2", "그룹원1");
+        assertThat(res.getLikers()).extracting(PostLikerDto::getAvatarUrl)
+                .containsExactly("/img3.png", "/img2.png", "/img1.png");
+
+        verify(postLikeRepository, times(1)).findLikerDtosByPostIdOrderByCreatedDesc(postId);
+        verifyNoMoreInteractions(postLikeRepository);
+    }
 }

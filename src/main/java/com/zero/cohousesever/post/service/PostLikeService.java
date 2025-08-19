@@ -1,15 +1,14 @@
 package com.zero.cohousesever.post.service;
 
-import com.zero.cohousesever.post.dto.PostLikeCountResponse;
-import com.zero.cohousesever.post.dto.PostLikeListResponse;
-import com.zero.cohousesever.post.dto.PostLikeStatusResponse;
-import com.zero.cohousesever.post.dto.PostLikeToggleResponse;
+import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.entity.PostLike;
 import com.zero.cohousesever.post.repository.PostLikeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -60,12 +59,12 @@ public class PostLikeService {
      * 특정 게시글 좋아요 개수만 조회
      */
     public PostLikeCountResponse getLikeCount(Long postId) {
-            long count = postLikeRepository.countByPostId(postId);
+        long count = postLikeRepository.countByPostId(postId);
 
-            return PostLikeCountResponse.builder()
-                    .postId(postId)
-                    .count(count)
-                    .build();
+        return PostLikeCountResponse.builder()
+                .postId(postId)
+                .count(count)
+                .build();
     }
 
     /**
@@ -84,6 +83,13 @@ public class PostLikeService {
      * 특정 게시글 좋아요 사용자 목록
      */
     public PostLikeListResponse getLikers(Long postId) {
-        return null;
+        List<PostLikerDto> likers = postLikeRepository.findLikerDtosByPostIdOrderByCreatedDesc(postId);
+        int total = likers.size();
+
+        return PostLikeListResponse.builder()
+                .postId(postId)
+                .totalCount(total)
+                .likers(likers)
+                .build();
     }
 }

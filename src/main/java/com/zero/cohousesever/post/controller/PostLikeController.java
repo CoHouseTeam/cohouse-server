@@ -60,6 +60,8 @@ public class PostLikeController {
      */
     @GetMapping("/{postId}/likes")
     public ResponseEntity<PostLikeListResponse> getLikeUsers(@PathVariable Long postId) {
-        return ResponseEntity.ok(postLikeService.getLikers(postId));
+        PostLikeListResponse response = postLikeService.getLikers(postId);
+
+        return ResponseEntity.ok(response);
     }
 }

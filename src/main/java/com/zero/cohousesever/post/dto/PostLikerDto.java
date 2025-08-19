@@ -3,19 +3,19 @@ package com.zero.cohousesever.post.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 /**
- * 좋아요를 누른 사용자 요약 정보.
+ * 좋아요한 사용자 정보 DTO
+ * - memberId: 사용자 PK
+ * - displayName: 사용자 표시명(닉네임/이름)
+ * - avatarUrl: 프로필 이미지 URL
  */
 @Getter
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PostLikerDto {
-    private Long memberId;
-    private String name;
-    private LocalDateTime likedAt;
+
+    private final Long memberId;
+    private final String displayName;
+    private final String avatarUrl;
 }
