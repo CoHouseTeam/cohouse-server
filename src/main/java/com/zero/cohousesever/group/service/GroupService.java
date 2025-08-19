@@ -1,5 +1,6 @@
 package com.zero.cohousesever.group.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.entity.Group;
@@ -12,8 +13,11 @@ import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+
+import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -23,9 +27,11 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
 
+    @Transactional
     public GroupSummary createGroup(Long memberId, GroupNameDto groupNameDto) {
 
-        Member member = memberRepository.findById(memberId).orElseThrow(); // TODO: 적절한 예외 던지기
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
 
         GroupMember leader = GroupMember.builder()
                 .member(member)

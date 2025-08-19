@@ -20,6 +20,14 @@ public class SettlementController {
     private final SettlementService settlementService;
     private final PaymentService paymentService;
 
+    //FIXME 글로벌 예외 처리 테스트
+    @GetMapping("/exception-test")
+    public ResponseEntity<?> testGlobalException() {
+        System.out.println("HELLO");
+        settlementService.testGlobalException();
+        return ResponseEntity.ok().build();
+    }
+
     // 정산 목록 조회
     @GetMapping
     public ResponseEntity<?> getSettlements() {
