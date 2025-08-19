@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
@@ -48,7 +50,9 @@ public class PostController {
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
         PostResponse response = postService.createPost(request, principal.getId());
-        return ResponseEntity.ok(response);
+        URI location = URI.create("/api/posts/" + response.getId());
+
+        return ResponseEntity.created(location).body(response);
     }
 
     /**
