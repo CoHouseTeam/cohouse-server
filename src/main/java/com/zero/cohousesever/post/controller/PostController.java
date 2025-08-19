@@ -1,14 +1,12 @@
 package com.zero.cohousesever.post.controller;
 
-import com.zero.cohousesever.post.dto.PostRequest;
-import com.zero.cohousesever.post.dto.PostResponse;
+import com.zero.cohousesever.post.dto.*;
 import com.zero.cohousesever.post.service.PostService;
+import com.zero.cohousesever.post.type.PostType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -19,12 +17,19 @@ public class PostController {
 
     /**
      * 게시글 목록 조회
+     * - 탭 전환: type 파라미터로 필터
+     * - 페이지네이션: page/size
      */
     @GetMapping("/{groupId}")
-    public ResponseEntity<List<PostResponse>> getPostListByGroup(
-            @PathVariable Long groupId
+    public ResponseEntity<PostListResponse<PostSummaryResponse>> getPostListByGroup(
+            @PathVariable Long groupId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) PostType type
     ) {
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                postService.getPostList(groupId,page, size, type)
+        );
     }
 
     /**
@@ -46,21 +51,23 @@ public class PostController {
 
     /**
      * 게시글 수정
+     *  존재하지 않거나 삭제(deleted=true)된 경우 404
      */
-    @PutMapping("/{postId}")
+    @PutMapping("/{id}")
     public ResponseEntity<PostResponse> updatePost(
-            @PathVariable Long postId,
-            @RequestBody PostRequest request
+            @PathVariable Long id,
+            @RequestBody PostUpdateRequest request
     ) {
-        return ResponseEntity.ok().build();
+        PostResponse updated = postService.update(id, request);
+        return ResponseEntity.ok(updated);
     }
 
     /**
      * 게시글 삭제
      */
-    @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable Long postId) {
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+        return ResponseEntity.noContent().build(); // 204
     }
 
 //    /**
