@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.file.AccessDeniedException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -139,25 +140,19 @@ class SettlementServiceTest {
     }
 
     @Test
-    @DisplayName("결제자일 때 정산 취소 시 참여자 상태와 히스토리 정상 변경")
+    @DisplayName("결제자일 때 정산 취소 시 참여자 상태와 히스토리 상태 'REFUNDED'로 변경")
     void cancelSettlement_ByPayer_Success() {
         Long payerId = 1L;
         Long settlementId = 100L;
 
-        Member payer = Member.builder().name("박결제").build();
-        ReflectionTestUtils.setField(payer, "id", payerId);
-
-        Member member1 = Member.builder().name("김참여").build();
-        ReflectionTestUtils.setField(member1, "id", 2L);
-
         SettlementParticipant participantPaid = SettlementParticipant.builder()
-                .member(payer)
+                .member(participant1)
                 .status(PaymentStatus.PAID)
                 .shareAmount(10000L)
                 .build();
 
         SettlementParticipant participantPending = SettlementParticipant.builder()
-                .member(member1)
+                .member(participant2)
                 .status(PaymentStatus.PENDING)
                 .shareAmount(5000L)
                 .build();
@@ -173,7 +168,7 @@ class SettlementServiceTest {
         when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
         when(settlementParticipantRepository.saveAll(anyList())).thenReturn(null);
         when(settlementRepository.save(any())).thenReturn(settlement);
-        when(paymentHistoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(paymentHistoryRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         settlementService.cancelSettlement(payerId, settlementId);
 
@@ -184,33 +179,33 @@ class SettlementServiceTest {
     }
 
     @Test
-    @DisplayName("송금 실패 시 예외 발생")
-    void transfer_Failure_ThrowsException() {
-        Long payerId = 1L;
+    @DisplayName("송금 처리 중 예외 발생 시 참여자와 PaymentHistory 상태가 FAILED로 변경됨")
+    void transfer_Exception_SetsFailedStatusForParticipant() throws AccessDeniedException {
         Long settlementId = 100L;
 
-        Member payer = Member.builder().name("Alice").build();
-        ReflectionTestUtils.setField(payer, "id", payerId);
+        SettlementParticipant participant = SettlementParticipant.builder()
+                .member(participant1)
+                .status(PaymentStatus.PENDING)
+                .shareAmount(10000L)
+                .build();
 
         Settlement settlement = Settlement.builder()
                 .payer(payer)
                 .status(SettlementStatus.PENDING)
-                .settlementParticipants(Collections.emptyList())
+                .settlementParticipants(List.of(participant))
                 .build();
         ReflectionTestUtils.setField(settlement, "id", settlementId);
 
-        when(memberRepository.findById(payerId)).thenReturn(Optional.of(payer));
+        when(memberRepository.findById(participant1.getId())).thenReturn(Optional.of(participant1));
         when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
 
-        doThrow(new CustomException(ErrorCode.PAYMENT_TRANSFER_FAILED))
-                .when(settlementParticipantRepository).saveAll(anyList());
+        // settlementParticipantRepository.save 호출 시 예외 발생
+        doThrow(new RuntimeException("DB 저장 실패"))
+                .when(settlementParticipantRepository).save(any());
 
-        CustomException exception = assertThrows(CustomException.class, () -> {
-            paymentService.processPayment(payerId, settlementId);
-        });
+        PaymentHistory paymentHistory = paymentService.processPayment(participant1.getId(), settlementId);
 
-//        then
-        assertEquals(ErrorCode.PAYMENT_TRANSFER_FAILED, exception.getErrorCode());
+        // try-catch 안에서 예외 발생 → catch 블록 수행
+        assertEquals(PaymentStatus.FAILED, paymentHistory.getStatus());
     }
-
 }

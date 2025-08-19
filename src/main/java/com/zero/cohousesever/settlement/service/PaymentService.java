@@ -6,6 +6,7 @@ import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
 import com.zero.cohousesever.settlement.entity.*;
+import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
@@ -25,6 +26,7 @@ public class PaymentService {
 
     private final SettlementRepository settlementRepository;
     private final MemberRepository memberRepository;
+    private final SettlementHistoryRepository settlementHistoryRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final SettlementParticipantRepository settlementParticipantRepository;
 
@@ -71,6 +73,13 @@ public class PaymentService {
 
                 if (allPaid) {
                     settlement.setStatus(SettlementStatus.COMPLETED);
+                    SettlementHistory completionHistory = SettlementHistory.builder()
+                            .settlement(settlement)
+                            .status(SettlementStatus.COMPLETED)
+                            .changedAt(LocalDateTime.now())
+                            .build();
+
+                    settlementHistoryRepository.save(completionHistory);
                     settlementRepository.save(settlement);
                 }
 
