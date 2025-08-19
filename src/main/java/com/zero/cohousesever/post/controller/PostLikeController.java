@@ -35,7 +35,10 @@ public class PostLikeController {
      */
     @GetMapping("/{postId}/likes/count")
     public ResponseEntity<PostLikeCountResponse> getLikeCount(@PathVariable Long postId) {
-        return ResponseEntity.ok(postLikeService.getLikeCount(postId));
+
+        PostLikeCountResponse response = postLikeService.getLikeCount(postId);
+
+        return ResponseEntity.ok(response);
     }
 
     /**

@@ -60,7 +60,12 @@ public class PostLikeService {
      * 특정 게시글 좋아요 개수만 조회
      */
     public PostLikeCountResponse getLikeCount(Long postId) {
-        return null;
+            long count = postLikeRepository.countByPostId(postId);
+
+            return PostLikeCountResponse.builder()
+                    .postId(postId)
+                    .count(count)
+                    .build();
     }
 
     /**

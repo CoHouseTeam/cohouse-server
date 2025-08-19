@@ -1,5 +1,6 @@
 package com.zero.cohousesever.post.service;
 
+import com.zero.cohousesever.post.dto.PostLikeCountResponse;
 import com.zero.cohousesever.post.dto.PostLikeStatusResponse;
 import com.zero.cohousesever.post.dto.PostLikeToggleResponse;
 import com.zero.cohousesever.post.entity.PostLike;
@@ -58,6 +59,21 @@ class PostLikeServiceTest {
         assertThat(res.getLikeCount()).isEqualTo(0L);
         verify(postLikeRepository, times(1)).deleteByPostIdAndMemberId(postId, memberId);
         verify(postLikeRepository, never()).save(any(PostLike.class));
+    }
+
+    @Test
+    @DisplayName("게시글 좋아요 개수 조회 - count 반환")
+    void getLikeCount_returnsCorrectCount() {
+        Long postId = 99L;
+
+        when(postLikeRepository.countByPostId(postId)).thenReturn(5L);
+
+        PostLikeCountResponse res = postLikeService.getLikeCount(postId);
+
+        assertThat(res.getPostId()).isEqualTo(postId);
+        assertThat(res.getCount()).isEqualTo(5L);
+
+        verify(postLikeRepository, times(1)).countByPostId(postId);
     }
 
     @Test
