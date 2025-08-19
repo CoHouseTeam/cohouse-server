@@ -5,15 +5,13 @@ import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
-import com.zero.cohousesever.settlement.entity.SettlementParticipant;
-import com.zero.cohousesever.settlement.entity.PaymentHistory;
-import com.zero.cohousesever.settlement.entity.PaymentStatus;
-import com.zero.cohousesever.settlement.entity.Settlement;
+import com.zero.cohousesever.settlement.entity.*;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
@@ -33,6 +31,7 @@ public class PaymentService {
     /**
      * 참여자가 송금 버튼을 눌러 송금 처리
      */
+    @Transactional
     public PaymentHistory processPayment(Long memberId, Long settlementId) throws AccessDeniedException {
         Member member = findMemberOrThrow(memberId);
         Settlement settlement = settlementRepository.findById(settlementId)
@@ -60,11 +59,20 @@ public class PaymentService {
 
         try {
             boolean paymentSuccess = true; // 송금 성공
-//            boolean paymentSuccess = false; // 송금 실패 가정
-
+//        boolean paymentSuccess = false; // 송금 실패 가정
             if (paymentSuccess) {
                 sender.setStatus(PaymentStatus.PAID);
                 settlementParticipantRepository.save(sender);
+
+                // 모든 참여자 상태가 PAID인지 검사
+                boolean allPaid = settlement.getSettlementParticipants()
+                        .stream()
+                        .allMatch(p -> p.getStatus() == PaymentStatus.PAID);
+
+                if (allPaid) {
+                    settlement.setStatus(SettlementStatus.COMPLETED);
+                    settlementRepository.save(settlement);
+                }
 
                 paymentHistory.setStatus(PaymentStatus.PAID);
             } else {

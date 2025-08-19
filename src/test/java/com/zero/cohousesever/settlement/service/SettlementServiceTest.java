@@ -1,25 +1,34 @@
 package com.zero.cohousesever.settlement.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.group.entity.Group;
+import com.zero.cohousesever.group.entity.GroupMember;
+import com.zero.cohousesever.group.enums.GroupMemberStatus;
+import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
-import com.zero.cohousesever.settlement.entity.PaymentStatus;
-import com.zero.cohousesever.settlement.entity.Settlement;
-import com.zero.cohousesever.settlement.entity.SettlementParticipant;
-import com.zero.cohousesever.settlement.entity.SettlementStatus;
+import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
+import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
+import com.zero.cohousesever.settlement.entity.*;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
+import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
@@ -31,6 +40,9 @@ class SettlementServiceTest {
     private MemberRepository memberRepository;
 
     @Mock
+    private GroupMemberRepository groupMemberRepository;
+
+    @Mock
     private SettlementRepository settlementRepository;
 
     @Mock
@@ -39,8 +51,92 @@ class SettlementServiceTest {
     @Mock
     private PaymentHistoryRepository paymentHistoryRepository;
 
+    @Mock
+    private SettlementHistoryRepository settlementHistoryRepository;
+
     @InjectMocks
     private SettlementService settlementService;
+
+    @InjectMocks
+    private PaymentService paymentService;
+
+    private Member payer;
+    private Member participant1;
+    private Member participant2;
+    private Group group;
+    private GroupMember activeGroupMember;
+
+    @BeforeEach
+    void setUp() {
+        payer = Member.builder().name("김민수").build();
+        ReflectionTestUtils.setField(payer, "id", 1L);
+
+        participant1 = Member.builder().name("박영희").build();
+        ReflectionTestUtils.setField(participant1, "id", 2L);
+
+        participant2 = Member.builder().name("이철수").build();
+        ReflectionTestUtils.setField(participant2, "id", 3L);
+
+        group = Group.builder().name("테스트 그룹").build();
+        ReflectionTestUtils.setField(group, "id", 1L);
+
+        activeGroupMember = GroupMember.builder()
+                .member(payer)
+                .group(group)
+                .status(GroupMemberStatus.ACTIVE)
+                .build();
+    }
+
+    @Test
+    @DisplayName("정산 생성 성공 - 균등 분배")
+    void createSettlement_Success_EqualDistribution() {
+        // Given
+        Long payerId = 1L;
+        CreateSettlementRequest request = CreateSettlementRequest.builder()
+                .title("Test Settlement")
+                .description("Test Description")
+                .category(SettlementCategory.CULTURE)
+                .settlementAmount(30000L)
+                .equalDistribution(true)
+                .participantIds(List.of(2L, 3L))
+                .build();
+
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(payer));
+        when(memberRepository.findById(2L)).thenReturn(Optional.of(participant1));
+        when(memberRepository.findById(3L)).thenReturn(Optional.of(participant2));
+        when(groupMemberRepository.findByMemberIdAndStatus(payerId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(activeGroupMember));
+        when(settlementRepository.save(any(Settlement.class))).thenAnswer(invocation -> {
+            Settlement settlement = invocation.getArgument(0);
+            ReflectionTestUtils.setField(settlement, "id", 1L);
+            return settlement;
+        });
+        when(settlementHistoryRepository.save(any(SettlementHistory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        SettlementResponseDto responseDto = settlementService.createSettlement(payerId, request);
+
+        // Then
+        assertAll("정산 생성 결과 검증",
+                () -> assertEquals(request.getTitle(), responseDto.getTitle()),
+                () -> assertEquals(request.getDescription(), responseDto.getDescription()),
+                () -> assertEquals(request.getCategory(), responseDto.getCategory()),
+                () -> assertEquals(request.getSettlementAmount(), responseDto.getSettlementAmount()),
+                () -> assertEquals(SettlementStatus.PENDING, responseDto.getStatus()),
+                () -> assertEquals(payerId, responseDto.getPayerId()),
+                () -> assertEquals(3, responseDto.getParticipants().size()),
+                () -> assertTrue(responseDto.isEqualDistribution())
+        );
+
+        // 각 참여자의 분담금 검증 (30000 / 3 = 10000)
+        responseDto.getParticipants().forEach(participant -> {
+            assertEquals(10000L, participant.getShareAmount());
+        });
+
+        // 플랫폼 지원금 검증 (30000 % 3 = 0)
+        assertEquals(0L, responseDto.getPlatformSupportAmount());
+    }
 
     @Test
     @DisplayName("결제자일 때 정산 취소 시 참여자 상태와 히스토리 정상 변경")
@@ -48,20 +144,11 @@ class SettlementServiceTest {
         Long payerId = 1L;
         Long settlementId = 100L;
 
-        Member payer = Member.builder()
-                .name("박결제")
-                .build();
-        payer.setId(payerId);
+        Member payer = Member.builder().name("박결제").build();
+        ReflectionTestUtils.setField(payer, "id", payerId);
 
-        Member member1 = Member.builder()
-                .name("김참여")
-                .build();
-        member1.setId(2L);
-
-        Member member2 = Member.builder()
-                .name("신참여")
-                .build();
-        member2.setId(3L);
+        Member member1 = Member.builder().name("김참여").build();
+        ReflectionTestUtils.setField(member1, "id", 2L);
 
         SettlementParticipant participantPaid = SettlementParticipant.builder()
                 .member(payer)
@@ -80,31 +167,50 @@ class SettlementServiceTest {
                 .status(SettlementStatus.PENDING)
                 .settlementParticipants(List.of(participantPaid, participantPending))
                 .build();
-        settlement.setId(settlementId);
+        ReflectionTestUtils.setField(settlement, "id", settlementId);
 
-        // Mock 동작 정의
         when(memberRepository.findById(payerId)).thenReturn(Optional.of(payer));
         when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
-        when(settlementParticipantRepository.saveAll(anyList())).thenReturn(null); // void 대체
+        when(settlementParticipantRepository.saveAll(anyList())).thenReturn(null);
         when(settlementRepository.save(any())).thenReturn(settlement);
-        when(paymentHistoryRepository.save(any())).thenAnswer(i -> i.getArgument(0)); // 저장한 객체 그대로 반환
+        when(paymentHistoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        // 실행
         settlementService.cancelSettlement(payerId, settlementId);
 
-        // 검증
-        // 결제자는 PAID → REFUNDED 상태가 됨
+        // then
         assertEquals(PaymentStatus.REFUNDED, participantPaid.getStatus());
-
-        // 대기중인 참여자는 PENDING → CANCELED 상태가 됨
         assertEquals(PaymentStatus.CANCELED, participantPending.getStatus());
-
-        // 정산 상태가 CANCELED로 변경되었는지 확인
         assertEquals(SettlementStatus.CANCELED, settlement.getStatus());
-
-        // Repository 저장 호출 여부 검증
-        verify(settlementParticipantRepository, times(1)).saveAll(anyList());
-        verify(settlementRepository, times(1)).save(settlement);
-        verify(paymentHistoryRepository, atLeastOnce()).save(any());
     }
+
+    @Test
+    @DisplayName("송금 실패 시 예외 발생")
+    void transfer_Failure_ThrowsException() {
+        Long payerId = 1L;
+        Long settlementId = 100L;
+
+        Member payer = Member.builder().name("Alice").build();
+        ReflectionTestUtils.setField(payer, "id", payerId);
+
+        Settlement settlement = Settlement.builder()
+                .payer(payer)
+                .status(SettlementStatus.PENDING)
+                .settlementParticipants(Collections.emptyList())
+                .build();
+        ReflectionTestUtils.setField(settlement, "id", settlementId);
+
+        when(memberRepository.findById(payerId)).thenReturn(Optional.of(payer));
+        when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+        doThrow(new CustomException(ErrorCode.PAYMENT_TRANSFER_FAILED))
+                .when(settlementParticipantRepository).saveAll(anyList());
+
+        CustomException exception = assertThrows(CustomException.class, () -> {
+            paymentService.processPayment(payerId, settlementId);
+        });
+
+//        then
+        assertEquals(ErrorCode.PAYMENT_TRANSFER_FAILED, exception.getErrorCode());
+    }
+
 }

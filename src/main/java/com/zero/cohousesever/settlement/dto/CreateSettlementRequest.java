@@ -1,15 +1,18 @@
 package com.zero.cohousesever.settlement.dto;
 
 import com.zero.cohousesever.settlement.entity.SettlementCategory;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
 
 // 정산 요청 DTO
 @Getter
-@NoArgsConstructor
+@Setter
+@Builder
 public class CreateSettlementRequest {
     private String title;
     private String description;

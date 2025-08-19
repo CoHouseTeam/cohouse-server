@@ -33,6 +33,9 @@ public enum ErrorCode {
     EXCEED_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, "분배 금액 합이 총 정산 금액을 초과했습니다."),
     INVALID_PARTICIPANT_COUNT(HttpStatus.BAD_REQUEST, "참여자 수는 1명 이상이어야 합니다."),
 
+    // 송금 관련 오류
+    PAYMENT_TRANSFER_FAILED (HttpStatus.INTERNAL_SERVER_ERROR, "송금 처리에 실패했습니다."),
+
     // 정산 및 송금 히스토리 관련 오류
     PAYMENT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 송금 내역을 찾을 수 없습니다."),
     PAYMENT_HISTORY_ALREADY_REFUNDED(HttpStatus.BAD_REQUEST, "이미 환불 처리된 송금 내역입니다."),

@@ -26,6 +26,7 @@ public class SettlementResponseDto {
     private Long payerId;
     private String payerName;
     private Long platformSupportAmount;
+    private boolean equalDistribution;
     private List<ParticipantDto> participants;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -46,6 +47,7 @@ public class SettlementResponseDto {
                 settlement.getPayer().getId(),
                 settlement.getPayer().getName(),
                 settlement.getPlatformSupportAmount(),
+                settlement.isEqualDistribution(),
                 participantDtos,
                 settlement.getCreatedAt(),
                 settlement.getUpdatedAt()
