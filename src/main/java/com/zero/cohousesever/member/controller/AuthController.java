@@ -96,8 +96,14 @@ public class AuthController {
 
     // 회원 탈퇴
     @DeleteMapping("/withdraw")
-    public ResponseEntity<MessageDto> withdraw() {
+    public ResponseEntity<MessageDto> withdraw(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
 
-        return ResponseEntity.ok().build();
+        Long memberId = userDetails.getId();
+
+        memberService.deleteMember(memberId);
+
+        return ResponseEntity.noContent().build();
     }
 }
