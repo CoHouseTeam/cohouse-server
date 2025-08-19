@@ -13,6 +13,7 @@ import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestSummary;
 import com.zero.cohousesever.group.service.GroupService;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +37,7 @@ public class GroupController {
 
         GroupSummary responseDto = groupService.createGroup(memberId, requestDto);
 
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     // 그룹 정보 상세 조회
