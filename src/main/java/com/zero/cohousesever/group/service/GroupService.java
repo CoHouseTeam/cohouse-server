@@ -70,7 +70,7 @@ public class GroupService {
     public List<GroupMemberSummary> getGroupMembers(Long memberId, Long groupId) {
 
         if (!groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)) {
-            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+            throw new CustomException(NOT_GROUP_MEMBER);
         }
 
         List<GroupMember> groupMembers = groupMemberRepository.findAllByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
