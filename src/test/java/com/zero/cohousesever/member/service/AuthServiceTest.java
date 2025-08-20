@@ -2,10 +2,13 @@ package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.member.dto.auth.JwtTokenResponseDto;
 import com.zero.cohousesever.member.dto.auth.LoginRequestDto;
+import com.zero.cohousesever.member.dto.auth.RefreshRequestDto;
 import com.zero.cohousesever.member.dto.auth.SignupRequestDto;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
+import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
+import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.member.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +34,9 @@ class AuthServiceTest {
     private MemberService memberService;
 
     @Mock
+    private RefreshTokenService refreshTokenService;
+
+    @Mock
     private MemberRepository memberRepository;
 
     @Mock
@@ -45,6 +51,8 @@ class AuthServiceTest {
     private Member testMember;
     private SignupRequestDto signupRequestDto;
     private LoginRequestDto loginRequestDto;
+    private CustomUserDetails testUserDetails;
+    private RefreshRequestDto refreshRequestDto;
 
     @BeforeEach
     void setUp() {
@@ -68,6 +76,13 @@ class AuthServiceTest {
         loginRequestDto = new LoginRequestDto();
         ReflectionTestUtils.setField(loginRequestDto, "email", "test@example.com");
         ReflectionTestUtils.setField(loginRequestDto, "password", "password123");
+
+        // CustomUserDetails
+        testUserDetails = new CustomUserDetails(testMember);
+
+        // 토큰 리프레시 요청 DTO
+        refreshRequestDto = new RefreshRequestDto();
+        ReflectionTestUtils.setField(refreshRequestDto, "refreshToken", "validRefreshToken");
     }
 
     @Test
@@ -207,5 +222,105 @@ class AuthServiceTest {
         // then
         assertThat(result).isTrue();
         verify(memberRepository).existsByEmail("existing@example.com");
+    }
+
+    @Test
+    @DisplayName("액세스 토큰 재발급 성공 - 유효한 리프레시 토큰으로 재발급")
+    void reissueAccessToken_Success() {
+        // given
+        String serverRefreshToken = "validRefreshToken";
+        String newAccessToken = "newAccessToken";
+        
+        when(refreshTokenService.getRefreshToken(anyLong())).thenReturn(serverRefreshToken);
+        when(jwtTokenProvider.validateToken(anyString())).thenReturn(TokenValidationStatus.VALID);
+        when(jwtTokenProvider.generateAccessToken(anyString(), anyString())).thenReturn(newAccessToken);
+
+        // when
+        JwtTokenResponseDto result = authService.reissueAccessToken(testUserDetails, refreshRequestDto);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getAccessToken()).isEqualTo(newAccessToken);
+        assertThat(result.getRefreshToken()).isEqualTo(serverRefreshToken);
+
+        verify(refreshTokenService).getRefreshToken(1L);
+        verify(jwtTokenProvider, times(2)).validateToken("validRefreshToken");
+        verify(jwtTokenProvider).generateAccessToken("test@example.com", "테스트유저");
+    }
+
+    @Test
+    @DisplayName("액세스 토큰 재발급 실패 - 클라이언트 리프레시 토큰이 유효하지 않음")
+    void reissueAccessToken_Failure_InvalidClientRefreshToken() {
+        // given
+        when(jwtTokenProvider.validateToken("validRefreshToken")).thenReturn(TokenValidationStatus.INVALID);
+
+        // when & then
+        assertThatThrownBy(() -> authService.reissueAccessToken(testUserDetails, refreshRequestDto))
+                .isInstanceOf(RuntimeException.class); // TODO: '유효하지 않은 리프레시 토큰입니다' 예외 작성 후 메시지 검증 추가
+
+        verify(jwtTokenProvider).validateToken("validRefreshToken");
+        verify(jwtTokenProvider, never()).generateAccessToken(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("액세스 토큰 재발급 실패 - 서버 리프레시 토큰이 만료됨")
+    void reissueAccessToken_Failure_ExpiredServerRefreshToken() {
+        // given
+        String serverRefreshToken = "expiredRefreshToken";
+        
+        when(refreshTokenService.getRefreshToken(anyLong())).thenReturn(serverRefreshToken);
+        when(jwtTokenProvider.validateToken("validRefreshToken")).thenReturn(TokenValidationStatus.VALID);
+        when(jwtTokenProvider.validateToken("expiredRefreshToken")).thenReturn(TokenValidationStatus.EXPIRED);
+
+        // when & then
+        assertThatThrownBy(() -> authService.reissueAccessToken(testUserDetails, refreshRequestDto))
+                .isInstanceOf(RuntimeException.class); // TODO: '리프레시 토큰이 만료되었습니다.' 예외 작성 후 메시지 검증 추가
+
+        verify(refreshTokenService).getRefreshToken(1L);
+        verify(jwtTokenProvider, times(2)).validateToken(anyString());
+        verify(jwtTokenProvider).validateToken("validRefreshToken");
+        verify(jwtTokenProvider).validateToken("expiredRefreshToken");
+        verify(jwtTokenProvider, never()).generateAccessToken(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("액세스 토큰 재발급 실패 - 클라이언트와 서버 리프레시 토큰이 일치하지 않음")
+    void reissueAccessToken_Failure_RefreshTokenMismatch() {
+        // given
+        String serverRefreshToken = "differentRefreshToken";
+        
+        when(refreshTokenService.getRefreshToken(anyLong())).thenReturn(serverRefreshToken);
+        when(jwtTokenProvider.validateToken(anyString())).thenReturn(TokenValidationStatus.VALID);
+
+        // when & then
+        assertThatThrownBy(() -> authService.reissueAccessToken(testUserDetails, refreshRequestDto))
+                .isInstanceOf(RuntimeException.class); // TODO: '유효하지 않은 리프레시 토큰입니다' 예외 작성 후 메시지 검증 추가
+
+        verify(refreshTokenService).getRefreshToken(1L);
+        verify(jwtTokenProvider, times(2)).validateToken(anyString());
+        verify(jwtTokenProvider).validateToken("validRefreshToken");
+        verify(jwtTokenProvider).validateToken("differentRefreshToken");
+        verify(jwtTokenProvider, never()).generateAccessToken(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("액세스 토큰 재발급 실패 - 서버 리프레시 토큰이 유효하지 않음")
+    void reissueAccessToken_Failure_InvalidServerRefreshToken() {
+        // given
+        String serverRefreshToken = "invalidRefreshToken";
+        
+        when(refreshTokenService.getRefreshToken(anyLong())).thenReturn(serverRefreshToken);
+        when(jwtTokenProvider.validateToken("validRefreshToken")).thenReturn(TokenValidationStatus.VALID);
+        when(jwtTokenProvider.validateToken("invalidRefreshToken")).thenReturn(TokenValidationStatus.INVALID);
+
+        // when & then
+        assertThatThrownBy(() -> authService.reissueAccessToken(testUserDetails, refreshRequestDto))
+                .isInstanceOf(RuntimeException.class); // TODO: '리프레시 토큰이 만료되었습니다.' 예외 작성 후 메시지 검증 추가
+
+        verify(refreshTokenService).getRefreshToken(1L);
+        verify(jwtTokenProvider, times(2)).validateToken(anyString());
+        verify(jwtTokenProvider).validateToken("validRefreshToken");
+        verify(jwtTokenProvider).validateToken("invalidRefreshToken");
+        verify(jwtTokenProvider, never()).generateAccessToken(anyString(), anyString());
     }
 }
