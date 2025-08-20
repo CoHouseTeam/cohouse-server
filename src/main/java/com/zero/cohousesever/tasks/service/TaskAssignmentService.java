@@ -15,21 +15,12 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/**
- * 실제 주간/일간 할일 배정 및 스케줄 생성, 조회 등 담당
- */
 @Service
 @RequiredArgsConstructor
 public class TaskAssignmentService {
@@ -38,60 +29,67 @@ public class TaskAssignmentService {
   private final TaskTemplateRepository taskTemplateRepository;
   private final RepeatDayRepository repeatDayRepository;
 
-  /**
-   * 템플릿의 반복요일을 확인한 뒤, 후보 목록(그룹 멤버 ID들) 중
-   * "해당 주의 작업량(담당 템플릿 수)이 가장 적은 멤버"를 골라,
-   * 그 주의 모든 반복요일에 동일 담당자로 배정한다.
-   * 이미 같은 (templateId, date)이 존재하면 생성하지 않고 스킵한다.
-   */
+  // 생성: 이번 주(일→토) 기준. randomEnabled=true 이면 랜덤, 아니면 "직전 주 담당자 그대로"
   public List<TaskAssignmentResponse> assignTaskManuallyOrRandomly(TaskAssignmentRequest req) {
-
-    // 0) 기본 검증
-    if (req.getTemplateId() == null || req.getGroupId() == null) {
+    // 0) 검증
+    if (req.getTemplateId() == null || req.getGroupId() == null)
       throw new CustomException(ErrorCode.INVALID_REQUEST);
-    }
-    List<Long> candidateIds = req.getGroupMemberId(); // DTO 변경 반영
-    if (candidateIds == null || candidateIds.isEmpty()) {
+    List<Long> candidates = req.getGroupMemberId();
+    if (candidates == null || candidates.isEmpty())
       throw new CustomException(ErrorCode.CANDIDATE_MEMBERS_REQUIRED);
-    }
 
     // 1) 템플릿 + 그룹 소유 검증
     TaskTemplate template = taskTemplateRepository.findById(req.getTemplateId())
         .orElseThrow(() -> new CustomException(ErrorCode.TEMPLATE_NOT_FOUND));
-    if (!req.getGroupId().equals(template.getGroupId())) {
+    if (!req.getGroupId().equals(template.getGroupId()))
       throw new CustomException(ErrorCode.INVALID_REQUEST);
-    }
 
-    // 2) 반복 요일 확보 (없으면 생성 불가)
+    // 2) 반복요일 확보
     List<RepeatDay> days = repeatDayRepository.findByTaskTemplate_Id(req.getTemplateId());
-    if (days.isEmpty()) {
+    if (days.isEmpty())
       throw new CustomException(ErrorCode.REPEAT_DAY_NOT_FOUND);
-    }
 
-    // 3) 기준 주 계산: 입력 없으면 오늘 기준 '다음 주', 있으면 파싱 후 '다음 주'
-    final LocalDate base;
+    // 3) 기준 주 계산 (일→토). 기본: 이번 주부터 적용
+    final boolean applyThisWeek = (req.getApplyThisWeek() == null) || req.getApplyThisWeek();
+    LocalDate base;
     try {
       base = (req.getDate() == null || req.getDate().isBlank())
-          ? LocalDate.now(ZoneId.of("Asia/Seoul")).plusWeeks(1)
-          : LocalDate.parse(req.getDate()).plusWeeks(1);
+          ? LocalDate.now(ZoneId.of("Asia/Seoul"))
+          : LocalDate.parse(req.getDate());
     } catch (DateTimeParseException e) {
       throw new CustomException(ErrorCode.DATE_FORMAT_INVALID);
     }
+    if (!applyThisWeek) base = base.plusWeeks(1); // 옵션 유지: false면 다음 주로 밀기
     LocalDate sunday = base.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
     LocalDate weekStart = sunday;
     LocalDate weekEnd   = sunday.plusDays(6);
 
-    // 3-1) 해당 템플릿의 기존 배정들 중 이번 주만 골라 중복 날짜 Skip 용 집합 구성
-    List<TaskAssignment> existingAll = taskAssignmentRepository.findByTemplate_Id(req.getTemplateId());
-    Set<LocalDate> alreadyInWeek = existingAll.stream()
+    // 3-1) 이번 주 동일 템플릿의 기존 배정 날짜들(중복 방지)
+    Set<LocalDate> alreadyInWeek = taskAssignmentRepository.findByTemplate_Id(req.getTemplateId())
+        .stream()
         .map(TaskAssignment::getDate)
-        .filter(d -> !d.isBefore(weekStart) && !d.isAfter(weekEnd)) // weekStart <= d <= weekEnd
+        .filter(d -> !d.isBefore(weekStart) && !d.isAfter(weekEnd))
         .collect(Collectors.toSet());
 
-    // 4) 이번 주 작업량(담당 템플릿 수)
-    Long pickedMemberId = pickMemberByWeeklyLoad(req.getGroupId(), weekStart, weekEnd, candidateIds);
+    // 4) 담당자 선택
+    boolean randomEnabled = Boolean.TRUE.equals(req.getRandomEnabled());
+    Long pickedMemberId;
+    if (randomEnabled) {
+      // 랜덤 배정(주마다 체크박스)
+      pickedMemberId = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+    } else {
+      // "담당 그대로" = 직전 주(weekStart 이전)의 가장 최근 배정 담당자 유지
+      TaskAssignment last = taskAssignmentRepository
+          .findTopByTemplate_IdAndDateLessThanOrderByDateDesc(req.getTemplateId(), weekStart);
+      if (last != null) {
+        pickedMemberId = last.getGroupMemberId();
+      } else {
+        // 첫 주 등 이전 이력이 없으면 후보에서 랜덤 fallback
+        pickedMemberId = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+      }
+    }
 
-    // 5) 생성
+    // 5) 저장
     List<TaskAssignment> toSave = new ArrayList<>();
     for (RepeatDay rd : days) {
       LocalDate d = sunday.plusDays(rd.getDayOfWeek().getValue() % 7); // SUN=0
@@ -102,70 +100,24 @@ public class TaskAssignmentService {
           .date(d)
           .build()); // @PrePersist → PENDING
     }
-
     if (toSave.isEmpty()) return List.of();
     return TaskAssignmentResponse.fromAll(taskAssignmentRepository.saveAll(toSave));
   }
 
-  // 후보들 중 이번 주(weekStart~weekEnd) 작업량(담당 템플릿 수)이 가장 적은 멤버 선택 (동률 랜덤)
-  private Long pickMemberByWeeklyLoad(Long groupId, LocalDate weekStart, LocalDate weekEnd, List<Long> candidates) {
-    // 이번 주, 해당 그룹의 모든 배정 조회 (모든 템플릿 포함)
-    List<TaskAssignment> weeklyAll =
-        taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(groupId, weekStart, weekEnd);
-
-    // 멤버별 "이번 주 맡은 템플릿 id 집합" → 템플릿 수가 작업량
-    Map<Long, Set<Long>> memberToTemplateSet = new HashMap<>();
-    for (TaskAssignment a : weeklyAll) {
-      Long mId = a.getGroupMemberId();
-      if (mId == null) continue;
-      memberToTemplateSet.computeIfAbsent(mId, k -> new HashSet<>())
-          .add(a.getTemplate().getId());
-    }
-
-    List<Long> tied = new ArrayList<>();
-    int best = Integer.MAX_VALUE;
-    for (Long c : candidates) {
-      int load = memberToTemplateSet.getOrDefault(c, java.util.Collections.emptySet()).size();
-      if (load < best) {
-        best = load;
-        tied.clear();
-        tied.add(c);
-      } else if (load == best) {
-        tied.add(c);
-      }
-    }
-    int idx = ThreadLocalRandom.current().nextInt(tied.size());
-    return tied.get(idx);
-  }
-
-  /**
-   * 할일 배정 목록 조회 (최소 단위: 주)
-   * - from/to가 비면 이번 주(월~일)
-   * - 한쪽만 오면 그 날짜의 주(월~일)
-   * - 둘 다 오면 from의 월요일 ~ to의 일요일 (여러 주 포함 가능)
-   * - memberId가 있으면 해당 멤버만, 없으면 전체
-   */
-  public List<TaskAssignmentResponse> getAssignments(
-      Long groupId,
-      LocalDate from,  // 기간 시작(옵션)
-      LocalDate to,    // 기간 종료(옵션)
-      Long memberId    // 멤버 ID(옵션)
-  ) {
+  /** 목록 조회: 주간 스냅을 '일→토'로 통일 */
+  public List<TaskAssignmentResponse> getAssignments(Long groupId, LocalDate from, LocalDate to, Long memberId) {
     if (groupId == null) throw new CustomException(ErrorCode.INVALID_REQUEST);
 
-    // 1) 주간 범위 계산 (월~일로 스냅; 둘 다 null이면 이번 주)
-    LocalDate[] range = computeWeekRange(from, to);
+    LocalDate[] range = computeWeekRangeSunSat(from, to); // [Sun, Sat]
     LocalDate start = range[0], end = range[1];
 
-    // 2) 레포 호출 (전체/멤버)
     List<TaskAssignment> list = (memberId == null)
         ? taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(groupId, start, end)
         : taskAssignmentRepository.findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(groupId, memberId, start, end);
 
-    // 3) 정렬(일요일 우선) + repeatType 매핑
     return list.stream()
         .sorted(Comparator
-            .comparing((TaskAssignment a) -> a.getDate().getDayOfWeek().getValue() % 7)
+            .comparing((TaskAssignment a) -> a.getDate().getDayOfWeek().getValue() % 7) // Sun=0
             .thenComparing(TaskAssignment::getDate)
             .thenComparing(TaskAssignment::getId))
         .map(a -> {
@@ -175,22 +127,20 @@ public class TaskAssignmentService {
         .collect(Collectors.toList());
   }
 
-  /** 주간 범위 계산 규칙
-   * - 둘 다 null → 이번 주(월~일)
-   * - 한쪽만 주어지면 그 날짜의 주(월~일)
-   * - 둘 다 주어지면: from의 월요일 ~ to의 일요일 (여러 주 포함 가능)
-   */
-  private static LocalDate[] computeWeekRange(LocalDate from, LocalDate to) {
+  /** 주간 범위 계산: 일요일 시작 ~ 토요일 종료 */
+  private static LocalDate[] computeWeekRangeSunSat(LocalDate from, LocalDate to) {
+    ZoneId KST = ZoneId.of("Asia/Seoul");
     if (from == null && to == null) {
-      LocalDate mon = LocalDate.now(ZoneId.of("Asia/Seoul")).with(DayOfWeek.MONDAY);
-      return new LocalDate[]{mon, mon.plusDays(6)};
+      LocalDate base = LocalDate.now(KST);
+      LocalDate sun = base.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+      return new LocalDate[]{sun, sun.plusDays(6)};
     }
     if (from == null) from = to;
     if (to == null)   to   = from;
     if (to.isBefore(from)) { LocalDate tmp = from; from = to; to = tmp; }
 
-    LocalDate start = from.with(DayOfWeek.MONDAY);
-    LocalDate end   = to.with(DayOfWeek.MONDAY).plusDays(6);
+    LocalDate start = from.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+    LocalDate end   = to.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
     return new LocalDate[]{start, end};
   }
 }
