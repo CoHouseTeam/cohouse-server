@@ -20,6 +20,7 @@ public enum ErrorCode {
     GROUP_MEMBER_ALREADY_INACTIVE(HttpStatus.UNAUTHORIZED, "비활성화된 그룹 멤버입니다."),
     NOT_GROUP_LEADER(HttpStatus.UNAUTHORIZED, "그룹장만 접근할 수 있습니다."),
     INVITE_CODE_INVALID(HttpStatus.BAD_REQUEST, "초대 코드가 잘못되었거나 만료되었습니다."),
+    ALREADY_IN_GROUP(HttpStatus.BAD_REQUEST, "이미 소속된 그룹이 있습니다."),
 
     // 할일 관련 오류
 
