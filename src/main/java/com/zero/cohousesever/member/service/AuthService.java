@@ -5,10 +5,10 @@ import com.zero.cohousesever.member.dto.auth.LoginRequestDto;
 import com.zero.cohousesever.member.dto.auth.RefreshRequestDto;
 import com.zero.cohousesever.member.dto.auth.SignupRequestDto;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.member.security.JwtTokenProvider;
-import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -97,5 +97,11 @@ public class AuthService {
                 .accessToken(newAccessToken)
                 .refreshToken(serverRefreshToken)
                 .build();
+    }
+
+    public void logout(Long memberId) {
+        // 로그아웃 시 액세스 토큰은 프론트에서 폐기
+        // 백엔드는 리프레시 토큰만 폐기
+        refreshTokenService.deleteRefreshToken(memberId);
     }
 }
