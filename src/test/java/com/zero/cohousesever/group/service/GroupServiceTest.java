@@ -3,8 +3,10 @@ package com.zero.cohousesever.group.service;
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
+import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
+import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -278,7 +280,7 @@ class GroupServiceTest {
     }
 
     @Test
-    @DisplayName("그룹 초대코드 생성시 그룹 멤버가 존재하지 않으면 예외를 던진다")
+    @DisplayName("그룹 초대코드 생성시 그룹 멤버가 존재하지 않으면 예외 발생")
     void groupInvite_groupMemberNotFound() {
         // given
         Long memberId = 1L;
@@ -287,14 +289,14 @@ class GroupServiceTest {
         when(groupMemberRepository.findByMemberIdAndGroupId(anyLong(), anyLong()))
                 .thenReturn(Optional.empty());
 
-        // expect
+        // when & then
         assertThatThrownBy(() -> groupService.groupInvite(memberId, groupId))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining(GROUP_MEMBER_NOT_FOUND.getMessage());
     }
 
     @Test
-    @DisplayName("그룹 초대코드 생성시 그룹장이 아닌 경우 예외를 던진다")
+    @DisplayName("그룹 초대코드 생성시 그룹장이 아닌 경우 예외 발생")
     void groupInvite_notLeader() {
         // given
         Long memberId = 1L;
@@ -304,9 +306,104 @@ class GroupServiceTest {
         when(groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId))
                 .thenReturn(Optional.of(testGroupMember));
 
-        // expect
+        // when & then
         assertThatThrownBy(() -> groupService.groupInvite(memberId, groupId))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining(NOT_GROUP_LEADER.getMessage());
+    }
+
+    @Test
+    @DisplayName("그룹 가입 성공 테스트")
+    void joinGroup_Success() {
+        // given
+        Long memberId = 2L;
+        String inviteCode = "INVITE123";
+        String nickname = "새로운 멤버";
+
+        Member newMember = Member.builder()
+                .name("새로운 사용자")
+                .email("newuser@example.com")
+                .password("password123")
+                .status(MemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(newMember, "id", 2L);
+
+        GroupJoinDto groupJoinDto = new GroupJoinDto();
+        ReflectionTestUtils.setField(groupJoinDto, "nickname", nickname);
+        ReflectionTestUtils.setField(groupJoinDto, "inviteCode", inviteCode);
+
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)).thenReturn(false);
+        when(inviteCodeService.validateInviteCode(inviteCode)).thenReturn(1L);
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(newMember));
+        when(groupRepository.findById(1L)).thenReturn(Optional.of(testGroup));
+        when(groupRepository.save(any(Group.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        GroupMemberSummary result = groupService.joinGroup(memberId, groupJoinDto);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getMemberId()).isEqualTo(memberId);
+        assertThat(result.getGroupId()).isEqualTo(1L);
+        assertThat(result.getNickname()).isEqualTo(nickname);
+        assertThat(result.getIsLeader()).isFalse();
+        assertThat(result.getStatus()).isEqualTo(GroupMemberStatus.ACTIVE);
+        assertThat(result.getJoinedAt()).isNotNull();
+
+        verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
+        verify(inviteCodeService).validateInviteCode(inviteCode);
+        verify(memberRepository).findById(memberId);
+        verify(groupRepository).findById(1L);
+        verify(groupRepository).save(any(Group.class));
+    }
+
+    @Test
+    @DisplayName("이미 그룹에 가입한 사용자가 가입 시도시 예외 발생")
+    void joinGroup_ThrowsException_WhenAlreadyInGroup() {
+        // given
+        Long memberId = 1L;
+        GroupJoinDto groupJoinDto = new GroupJoinDto();
+        ReflectionTestUtils.setField(groupJoinDto, "nickname", "닉네임");
+        ReflectionTestUtils.setField(groupJoinDto, "inviteCode", "INVITE123");
+
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)).thenReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> groupService.joinGroup(memberId, groupJoinDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining(ALREADY_IN_GROUP.getMessage());
+
+        verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
+        verify(inviteCodeService, never()).validateInviteCode(any());
+        verify(memberRepository, never()).findById(any());
+        verify(groupRepository, never()).findById(any());
+        verify(groupRepository, never()).save(any(Group.class));
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 초대코드로 그룹 가입 시도시 예외 발생")
+    void joinGroup_ThrowsException_WhenInvalidInviteCode() {
+        // given
+        Long memberId = 2L;
+        String invalidInviteCode = "INVALID_CODE";
+
+        GroupJoinDto groupJoinDto = new GroupJoinDto();
+        ReflectionTestUtils.setField(groupJoinDto, "nickname", "닉네임");
+        ReflectionTestUtils.setField(groupJoinDto, "inviteCode", invalidInviteCode);
+
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)).thenReturn(false);
+        when(inviteCodeService.validateInviteCode(invalidInviteCode))
+                .thenThrow(new CustomException(INVITE_CODE_INVALID));
+
+        // when & then
+        assertThatThrownBy(() -> groupService.joinGroup(memberId, groupJoinDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining(INVITE_CODE_INVALID.getMessage());
+
+        verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
+        verify(inviteCodeService).validateInviteCode(invalidInviteCode);
+        verify(memberRepository, never()).findById(any());
+        verify(groupRepository, never()).findById(any());
+        verify(groupRepository, never()).save(any(Group.class));
     }
 }
