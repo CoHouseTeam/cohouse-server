@@ -2,6 +2,7 @@ package com.zero.cohousesever.tasks.controller;
 
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
+import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentStatusUpdateRequest;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideRequest;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideResponse;
 import com.zero.cohousesever.tasks.dto.repeat.RepeatDayRequest;
@@ -138,8 +139,12 @@ public class TaskController {
   // 할 일 상태 변경
   @PutMapping("/assignments/{assignmentId}")
   public ResponseEntity<TaskAssignmentResponse> updateAssignmentStatus(
-      @PathVariable Long assignmentId, @RequestBody TaskAssignmentRequest request) {
-    return null;
+      @PathVariable Long assignmentId,
+      @RequestBody TaskAssignmentStatusUpdateRequest request
+  ) {
+    TaskAssignmentResponse body =
+        taskAssignmentService.updateAssignmentStatus(assignmentId, request.getStatus());
+    return ResponseEntity.ok(body);
   }
 
   // 4. 담당자 변경 요청 관련

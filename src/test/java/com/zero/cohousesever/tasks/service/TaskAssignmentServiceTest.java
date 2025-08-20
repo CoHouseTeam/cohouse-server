@@ -154,4 +154,19 @@ class TaskAssignmentServiceTest {
     verify(repeatRepo).existsByTaskTemplate_Id(10L);
     verify(repeatRepo).existsByTaskTemplate_Id(20L);
   }
+
+  @Test
+  void updateStatus_complete() {
+    var t = tpl(10L,1L,"청소");
+    var a = ta(1,10,1,11,"청소", LocalDate.of(2025,8,19), AssignmentStatus.PENDING);
+
+    when(assignmentRepo.findById(1L)).thenReturn(Optional.of(a));
+    when(assignmentRepo.save(any(TaskAssignment.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(repeatRepo.existsByTaskTemplate_Id(10L)).thenReturn(true);
+
+    var res = service.updateAssignmentStatus(1L, AssignmentStatus.COMPLETED);
+
+    assertEquals(AssignmentStatus.COMPLETED, res.getStatus());
+    assertEquals("WEEKLY", res.getRepeatType());
+  }
 }
