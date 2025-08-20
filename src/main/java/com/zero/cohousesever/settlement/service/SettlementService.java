@@ -7,9 +7,11 @@ import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
+import com.zero.cohousesever.settlement.dto.ParticipantResponse;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.entity.*;
@@ -18,17 +20,22 @@ import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class SettlementService {
     public final MemberRepository memberRepository;
+    public final GroupRepository groupRepository;
     public final GroupMemberRepository groupMemberRepository;
     public final SettlementParticipantRepository settlementParticipantRepository;
     private final SettlementRepository settlementRepository;
@@ -73,7 +80,7 @@ public class SettlementService {
 
         SettlementHistory history = SettlementHistory.builder()
                 .settlement(savedSettlement)
-                .changedBy(payer)
+                .payer(payer)
                 .title(savedSettlement.getTitle())
                 .status(savedSettlement.getStatus())
                 .changedAt(LocalDateTime.now())
@@ -186,7 +193,7 @@ public class SettlementService {
 
         SettlementHistory.builder()
                 .settlement(settlement)
-                .changedBy(findMemberOrThrow(memberId))
+                .payer(findMemberOrThrow(memberId))
                 .title(settlement.getTitle())
                 .status(SettlementStatus.CANCELED)
                 .changedAt(LocalDateTime.now())
@@ -198,41 +205,98 @@ public class SettlementService {
     }
 
     /**
-     * 정산 목록 조회 (페이징 및 필터링 포함)
+     * 영수증 이미지 업로드 및 처리
      */
-    public void getSettlements() {
+    public void uploadReceiptImage(Long memberId, Long settlementId, MultipartFile receiptImage) {
+        Settlement settlement = findSettlementOrThrow(settlementId);
+        //TODO 이미지 저장 구현
+    }
+
+
+    /**
+     * 나의 정산 목록 조회
+     */
+    public List<SettlementResponse> getMySettlements(Long memberId) {
+        // 해당 멤버가 참여한 모든 정산 조회
+        Member member = findMemberOrThrow(memberId);
+        List<Settlement> settlements = settlementRepository.findAllByParticipantMember(member);
+
+        return settlements.stream()
+                .map(SettlementResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
-     * 특정 정산 상세 정보 조회
+     * 나의 특정 정산 상세 조회
      */
-    public void getSettlement() {
+    public SettlementResponse getSettlementDetail(Long memberId, Long settlementId) {
+        Member member = findMemberOrThrow(memberId);
+        Settlement settlement = settlementRepository.findById(settlementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
+
+        // 해당 멤버가 이 정산에 참여하고 있는지 확인
+        boolean isParticipant = settlementParticipantRepository.existsBySettlementIdAndMember(settlementId, member);
+        if (!isParticipant) {
+            throw new CustomException(ErrorCode.NOT_A_SETTLEMENT_PARTICIPANT);
+        }
+
+        return SettlementResponse.fromEntity(settlement);
+    }
+
+    /**
+     * 그룹의 정산 목록 조회 (그룹장용)
+     */
+    public List<SettlementResponse> getGroupSettlements(Long memberId, Long groupId) {
+        Member member = findMemberOrThrow(memberId);
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
+
+        // 그룹 멤버 중에서 해당 회원이 그룹장인지 확인
+        boolean isGroupOwner = groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, member);
+
+        if (!isGroupOwner) {
+            throw new CustomException(ErrorCode.NOT_GROUP_OWNER);
+        }
+
+        List<Settlement> settlements = settlementRepository.findAllByGroupOrderByCreatedAtDesc(group);
+
+        return settlements.stream()
+                .map(SettlementResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
      * 정산 참여자 목록 조회
      */
-    public void getParticipants() {
+    public List<ParticipantResponse> getSettlementParticipants(Long memberId, Long settlementId) {
+        Member member = findMemberOrThrow(memberId);
+        Settlement settlement = settlementRepository.findById(settlementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
+
+        // 해당 멤버가 이 정산에 참여하고 있는지 확인
+        boolean isParticipant = settlementParticipantRepository.existsBySettlementIdAndMember(settlementId, member);
+        if (!isParticipant) {
+            throw new CustomException(ErrorCode.NOT_A_SETTLEMENT_PARTICIPANT);
+        }
+
+        List<SettlementParticipant> participants = settlementParticipantRepository.findAllBySettlement(settlement);
+
+        return participants.stream()
+                .map(ParticipantResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
-     * 영수증 이미지 업로드 및 처리
+     * 나의 정산 히스토리 조회
      */
-    public void uploadReceiptImage() {
-    }
+    public List<SettlementHistoryResponse> getMySettlementHistories(Long memberId) {
+        Member member = findMemberOrThrow(memberId);
+        List<SettlementHistory> settlementHistories =
+                settlementHistoryRepository.findAllBySenderOrderByCreatedAtDesc(member);
 
-    /**
-     * 정산 전체 히스토리 조회
-     */
-    public List<SettlementHistoryResponse> getSettlementHistories(Long groupId, Long settlementId) {
-        return null;
-    }
-
-    /**
-     * 그룹의 정산 히스토리 조회
-     */
-    public List<SettlementHistoryResponse> getGroupSettlementHistories(Long groupId, Long settlementId, LocalDate fromDate, LocalDate toDate) {
-        return null;
+        return settlementHistories.stream()
+                .map(SettlementHistoryResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     // 회원 엔티티 조회 메서드

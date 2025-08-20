@@ -2,6 +2,8 @@ package com.zero.cohousesever.settlement.controller;
 
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
+import com.zero.cohousesever.settlement.dto.ParticipantResponse;
+import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
@@ -12,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,24 +43,44 @@ public class SettlementController {
         return ResponseEntity.noContent().build();
     }
 
-    // 정산 목록 조회
-    @GetMapping
-    public ResponseEntity<?> getSettlements(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok().build();
+    // 나의 정산 목록 조회
+    @GetMapping("/my")
+    public ResponseEntity<List<SettlementResponse>> getMySettlements(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<SettlementResponse> settlements = settlementService.getMySettlements(userDetails.getId());
+        return ResponseEntity.ok(settlements);
     }
 
-    // 정산 상세 조회
+    // 나의 특정 정산 상세 조회
     @GetMapping("/{settlementId}")
-    public ResponseEntity<?> getSettlement(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<SettlementResponse> getSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                            @PathVariable Long settlementId) {
+        Long memberId = userDetails.getId();
+        SettlementResponse settlement = settlementService.getSettlementDetail(memberId, settlementId);
+        return ResponseEntity.ok(settlement);
+    }
 
-        return ResponseEntity.ok().build();
+    // 그룹의 정산 목록 조회(그룹장)
+    @GetMapping("/group/{groupId}")
+    public ResponseEntity<List<SettlementResponse>> getGroupSettlements(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                        @PathVariable Long groupId) {
+        List<SettlementResponse> settlements = settlementService.getGroupSettlements(userDetails.getId(), groupId);
+        return ResponseEntity.ok(settlements);
     }
 
     // 정산 참여자 목록 조회
     @GetMapping("/{settlementId}/participants")
-    public ResponseEntity<?> getParticipants(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<List<ParticipantResponse>> getParticipants(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                     @PathVariable Long settlementId) {
+        Long memberId = userDetails.getId();
+        List<ParticipantResponse> participants = settlementService.getSettlementParticipants(memberId, settlementId);
+        return ResponseEntity.ok(participants);
+    }
 
-        return ResponseEntity.ok().build();
+    // 나의 정산 히스토리 조회
+    @GetMapping("/my/history")
+    public ResponseEntity<List<SettlementHistoryResponse>> getMySettlementHistory(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<SettlementHistoryResponse> history = settlementService.getMySettlementHistories(userDetails.getId());
+        return ResponseEntity.ok(history);
     }
 
     // 영수증 이미지 업로드

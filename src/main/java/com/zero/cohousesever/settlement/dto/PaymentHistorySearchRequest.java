@@ -16,6 +16,7 @@ public class PaymentHistorySearchRequest {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate toDate;
 
+    // LocalDateTime 변환된 값 사용
     public LocalDateTime getFromDateTime() {
         return fromDate != null ? fromDate.atStartOfDay() : null;
     }
