@@ -30,7 +30,7 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
      * PostLike ↔ Member 조인 후 바로 PostLikerDto로 매핑 (최신 생성순)
      */
     @Query("""
-            select new com.zero.cohousesever.postlike.dto.PostLikerDto(
+            select new com.zero.cohousesever.post.dto.postLike.PostLikerDto(
                      m.id,
                      m.name,
                      m.profileImageUrl
