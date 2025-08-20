@@ -5,6 +5,7 @@ import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
+import com.zero.cohousesever.post.type.PostColor;
 import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +47,7 @@ class PostServiceTest {
         req.setType(PostType.ANNOUNCEMENT);
         req.setTitle("테스트 제목");
         req.setContent("테스트 내용");
+        req.setColor(null);
 
         Long currentMemberId = 5L;
 
@@ -98,7 +100,8 @@ class PostServiceTest {
                 "상세내용",
                 created,
                 updated,
-                PostStatus.ACTIVE
+                PostStatus.ACTIVE,
+                PostColor.GRAY
         );
 
         when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(post));
@@ -116,6 +119,8 @@ class PostServiceTest {
         assertThat(res.getContent()).isEqualTo("상세내용");
         assertThat(res.getCreatedAt()).isNotNull();
         assertThat(res.getUpdatedAt()).isNotNull();
+        assertThat(res.getStatus()).isEqualTo(PostStatus.ACTIVE);
+        assertThat(res.getColor()).isEqualTo(PostColor.GRAY);
     }
 
     @Test
@@ -211,7 +216,8 @@ class PostServiceTest {
                 "old-content",
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().minusDays(1),
-                PostStatus.ACTIVE
+                PostStatus.ACTIVE,
+                PostColor.GRAY
         );
 
         when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(origin));
@@ -222,6 +228,7 @@ class PostServiceTest {
         req.setTitle("new-title");          // 바꾸기
         req.setContent(null);               // 유지
         req.setType(PostType.FREE);         // 바꾸기
+        req.setColor(null);                 // 유지
 
         // when
         PostResponse res = postService.update(100L, req, currentUserId);
@@ -234,6 +241,7 @@ class PostServiceTest {
         assertThat(saved.getTitle()).isEqualTo("new-title");
         assertThat(saved.getContent()).isEqualTo("old-content");
         assertThat(saved.getType()).isEqualTo(PostType.FREE);
+        assertThat(saved.getColor()).isEqualTo(PostColor.GRAY);
         assertThat(res.getId()).isEqualTo(100L);
     }
 
@@ -266,7 +274,8 @@ class PostServiceTest {
                 "content",
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().minusDays(1),
-                PostStatus.ACTIVE
+                PostStatus.ACTIVE,
+                PostColor.GRAY
         );
         when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(origin));
         when(postRepository.findById(eq(100L))).thenReturn(Optional.of(origin));
@@ -288,6 +297,7 @@ class PostServiceTest {
                 .title("t")
                 .content("c")
                 .status(PostStatus.ACTIVE)
+                .color(PostColor.GRAY)
                 .build();
         ReflectionTestUtils.setField(post, "id", 100L);
         ReflectionTestUtils.setField(post, "createdAt", LocalDateTime.now().minusDays(1));
@@ -328,6 +338,7 @@ class PostServiceTest {
                 .title("t")
                 .content("c")
                 .status(PostStatus.ACTIVE)
+                .color(PostColor.GRAY)
                 .build();
         ReflectionTestUtils.setField(post, "id", 100L);
 
@@ -349,7 +360,7 @@ class PostServiceTest {
                            LocalDateTime createdAt,
                            LocalDateTime updatedAt
     ) {
-        return buildPost(id, groupId, memberId, type, title, content, createdAt, updatedAt, PostStatus.ACTIVE);
+        return buildPost(id, groupId, memberId, type, title, content, createdAt, updatedAt, PostStatus.ACTIVE, PostColor.GRAY);
     }
 
     // 전체 필드 지정 버전
@@ -358,7 +369,8 @@ class PostServiceTest {
                            String title, String content,
                            LocalDateTime createdAt,
                            LocalDateTime updatedAt,
-                           PostStatus status
+                           PostStatus status,
+                           PostColor color
     ) {
         Post post = Post.builder()
                 .groupId(groupId)
@@ -367,6 +379,7 @@ class PostServiceTest {
                 .title(title)
                 .content(content)
                 .status(status != null ? status : PostStatus.ACTIVE)
+                .color(color != null ? color : PostColor.GRAY)
                 .build();
         ReflectionTestUtils.setField(post, "id", id);
         ReflectionTestUtils.setField(post, "createdAt", createdAt);

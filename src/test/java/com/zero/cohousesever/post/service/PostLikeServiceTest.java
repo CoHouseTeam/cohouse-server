@@ -27,36 +27,53 @@ class PostLikeServiceTest {
     @Test
     @DisplayName("존재X → 저장(좋아요) → isLiked=true & 최신 count 반환")
     void toggle_create_like_then_count() {
+        // given
         Long postId = 10L;
         Long memberId = 7L;
 
-        when(postLikeRepository.existsByPostIdAndMemberId(postId, memberId)).thenReturn(false);
-        when(postLikeRepository.save(any(PostLike.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(postLikeRepository.countByPostId(postId)).thenReturn(1L);
+        when(postLikeRepository.existsByPostIdAndMemberId(postId, memberId))
+                .thenReturn(false);
+        when(postLikeRepository.saveAndFlush(any(PostLike.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+        when(postLikeRepository.countByPostId(postId))
+                .thenReturn(1L);
 
+        // when
         PostLikeToggleResponse res = postLikeService.updateLikeStatus(postId, memberId);
 
+        // then
         assertThat(res.isLiked()).isTrue();
         assertThat(res.getLikeCount()).isEqualTo(1L);
-        verify(postLikeRepository, times(1)).save(any(PostLike.class));
-        verify(postLikeRepository, never()).deleteByPostIdAndMemberId(anyLong(), anyLong());
+
+        verify(postLikeRepository).existsByPostIdAndMemberId(postId, memberId);
+        verify(postLikeRepository).saveAndFlush(any(PostLike.class)); // ✅ save가 아니라 saveAndFlush
+        verify(postLikeRepository).countByPostId(postId);
+        verifyNoMoreInteractions(postLikeRepository);
     }
 
     @Test
     @DisplayName("존재O → 삭제(해제) → isLiked=false & 최신 count 반환")
     void toggle_delete_unlike_then_count() {
+        // given
         Long postId = 10L;
         Long memberId = 7L;
 
-        when(postLikeRepository.existsByPostIdAndMemberId(postId, memberId)).thenReturn(true);
-        when(postLikeRepository.countByPostId(postId)).thenReturn(0L);
+        when(postLikeRepository.existsByPostIdAndMemberId(postId, memberId))
+                .thenReturn(true);
+        when(postLikeRepository.countByPostId(postId))
+                .thenReturn(0L);
 
+        // when
         PostLikeToggleResponse res = postLikeService.updateLikeStatus(postId, memberId);
 
+        // then
         assertThat(res.isLiked()).isFalse();
         assertThat(res.getLikeCount()).isEqualTo(0L);
-        verify(postLikeRepository, times(1)).deleteByPostIdAndMemberId(postId, memberId);
-        verify(postLikeRepository, never()).save(any(PostLike.class));
+
+        verify(postLikeRepository).existsByPostIdAndMemberId(postId, memberId);
+        verify(postLikeRepository).deleteByPostIdAndMemberId(postId, memberId);
+        verify(postLikeRepository).countByPostId(postId);
+        verifyNoMoreInteractions(postLikeRepository);
     }
 
     @Test

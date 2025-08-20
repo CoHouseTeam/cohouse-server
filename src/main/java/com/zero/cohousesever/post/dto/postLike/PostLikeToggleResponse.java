@@ -4,9 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-/** 토글 이후 UI를 즉시 갱신하기 위한 응답 DTO
- *  - isLiked: 최종 하트 상태 (true=빨간 하트, false=빈 하트)
- *  - likeCount: 토글 직후 최신 좋아요 수 (하트 옆 숫자)
+/**
+ * 좋아요 설정/해제 결과 응답 DTO.
+ * - 토글 수행 후의 최종 상태(isLiked)와 최신 좋아요 수(likeCount) 반환
+ * - 동시성/멱등 처리 결과와 무관하게 최종 상태 기준으로 응답
  */
 @Getter
 @AllArgsConstructor

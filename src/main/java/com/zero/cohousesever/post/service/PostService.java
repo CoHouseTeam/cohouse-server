@@ -5,6 +5,7 @@ import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
+import com.zero.cohousesever.post.type.PostColor;
 import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import lombok.RequiredArgsConstructor;
@@ -63,12 +64,17 @@ public class PostService {
      * - 작성자는 currentMemberId 사용
      */
     public PostResponse createPost(PostRequest request, Long currentMemberId) {
+
+        PostColor color = (request.getColor() != null) ? request.getColor() : PostColor.GRAY;
+
         Post post = Post.builder()
                 .groupId(request.getGroupId())
                 .memberId(currentMemberId)
                 .type(request.getType())
                 .title(request.getTitle())
                 .content(request.getContent())
+                .status(PostStatus.ACTIVE)
+                .color(color)
                 .build();
 
         Post saved = postRepository.save(post);
@@ -110,6 +116,9 @@ public class PostService {
         if (request.getType() != null) {
             post.setType(request.getType());
         }
+        if (request.getColor() != null) {
+            post.setColor(request.getColor());
+        }
 
         Post saved = postRepository.save(post);
         return PostResponse.from(saved);
@@ -134,12 +143,5 @@ public class PostService {
         post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
     }
-
-//    /**
-//     * 게시글 상단 고정
-//     */
-//    public void pinPost(Long postId) {
-//
-//    }
 
 }

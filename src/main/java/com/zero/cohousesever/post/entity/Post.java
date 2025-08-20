@@ -1,6 +1,7 @@
 package com.zero.cohousesever.post.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.post.type.PostColor;
 import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import jakarta.persistence.*;
@@ -35,5 +36,11 @@ public class Post extends BaseEntity {
     @Builder.Default
     @Column(nullable = false)
     private PostStatus status = PostStatus.ACTIVE;
+
+    // 신규 컬럼: 색상
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = false)
+    private PostColor color = PostColor.GRAY;
 
 }

@@ -5,9 +5,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 특정 게시글의 좋아요 개수만 응답.
- * - postId: 어떤 게시글에 대한 개수인지 식별
- * - count: 좋아요 총 개수
+ * 좋아요 개수 조회 응답 DTO.
+ * - 특정 게시글의 총 좋아요 수를 제공
+ * - 하트 아이콘 옆 숫자 표시에 사용
  */
 @Getter
 @AllArgsConstructor

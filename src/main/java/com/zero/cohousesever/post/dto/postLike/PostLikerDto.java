@@ -5,10 +5,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 좋아요한 사용자 정보 DTO
- * - memberId: 사용자 PK
- * - displayName: 사용자 표시명(닉네임/이름)
- * - avatarUrl: 프로필 이미지 URL
+ * 좋아요 사용자 요약 DTO.
+ * - 목록 아이템 단위: memberId, displayName, avatarUrl
+ * - 상세 정보가 필요 없을 때 최소 정보만 전달
  */
 @Getter
 @AllArgsConstructor

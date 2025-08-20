@@ -19,16 +19,16 @@ public class PostLikeService {
     /**
      * 좋아요 상태 업데이트 (isLiked=true: 추가 / false: 취소)
      */
-    @Transactional // 트랜잭션 경계: 저장/삭제를 원자적으로 처리하기 위해 @Transactional을 사용합니다.
     public PostLikeToggleResponse updateLikeStatus(Long postId, Long memberId) {
 
         if (postLikeRepository.existsByPostIdAndMemberId(postId, memberId)) {
             postLikeRepository.deleteByPostIdAndMemberId(postId, memberId);
-            long count = postLikeRepository.countByPostId(postId);
+
+            long countAfter = postLikeRepository.countByPostId(postId);
             return PostLikeToggleResponse.builder()
                     .postId(postId)
                     .isLiked(false)
-                    .likeCount(count)
+                    .likeCount(countAfter)
                     .build();
         }
 
@@ -37,21 +37,23 @@ public class PostLikeService {
                     .postId(postId)
                     .memberId(memberId)
                     .build();
-            postLikeRepository.save(like);
+
+            postLikeRepository.saveAndFlush(like);
 
         } catch (DataIntegrityViolationException e) {
             boolean nowExists = postLikeRepository.existsByPostIdAndMemberId(postId, memberId);
-            if (!nowExists) throw e;
+            if (!nowExists) {
+                throw e;
+            }
         }
 
-        long count = postLikeRepository.countByPostId(postId);
+        long countAfter = postLikeRepository.countByPostId(postId);
         return PostLikeToggleResponse.builder()
                 .postId(postId)
                 .isLiked(true)
-                .likeCount(count)
+                .likeCount(countAfter)
                 .build();
     }
-
 
     /**
      * 특정 게시글 좋아요 개수만 조회

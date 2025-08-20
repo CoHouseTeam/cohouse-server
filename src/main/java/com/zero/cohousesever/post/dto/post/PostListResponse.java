@@ -6,11 +6,14 @@ import lombok.Getter;
 import java.util.List;
 
 /**
- * 목록 데이터 + 페이지 메타 정보 래퍼 DTO
+ * 게시글 목록 응답 DTO.
+ * - 다건 조회 시 각 게시글 요약 정보를 담아 전달
+ * - 리스트/피드 화면에서 사용
  */
 @Getter
 @Builder
 public class PostListResponse<T> {
+
     private List<T> content;
     private int page;           // 0-base
     private int size;

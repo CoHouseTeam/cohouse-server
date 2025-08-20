@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 특정 게시글을 좋아요한 사용자 목록 응답.
- * - totalCount: 총 인원 수
- * - likers: 사용자 목록 (최소 memberId)
+ * 좋아요한 사용자 목록 응답 DTO.
+ * - 특정 게시글을 좋아요한 사용자들의 요약 리스트를 전달
+ * - postId, totalCount, likers(프로필/이름) 포함
  */
 @Getter
 @AllArgsConstructor
