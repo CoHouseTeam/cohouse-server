@@ -1,9 +1,12 @@
 package com.zero.cohousesever.settlement.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
@@ -26,16 +29,23 @@ import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SettlementServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private GroupRepository groupRepository;
 
     @Mock
     private GroupMemberRepository groupMemberRepository;
@@ -61,8 +71,10 @@ class SettlementServiceTest {
     private Member payer;
     private Member participant1;
     private Member participant2;
+    private Member leader;
     private Group group;
     private GroupMember activeGroupMember;
+    private GroupMember leaderGroupMember;
 
     @BeforeEach
     void setUp() {
@@ -75,13 +87,25 @@ class SettlementServiceTest {
         participant2 = Member.builder().name("이철수").build();
         ReflectionTestUtils.setField(participant2, "id", 3L);
 
+        leader = Member.builder().name("홍길동").build();
+        ReflectionTestUtils.setField(leader, "id", 4L);
+
         group = Group.builder().name("테스트 그룹").build();
         ReflectionTestUtils.setField(group, "id", 1L);
 
+        // 그룹 멤버들
         activeGroupMember = GroupMember.builder()
                 .member(payer)
                 .group(group)
                 .status(GroupMemberStatus.ACTIVE)
+                .isLeader(false)   // 일반 멤버
+                .build();
+
+        leaderGroupMember = GroupMember.builder()
+                .member(leader)
+                .group(group)
+                .status(GroupMemberStatus.ACTIVE)
+                .isLeader(true)    // 그룹장
                 .build();
     }
 
@@ -204,5 +228,88 @@ class SettlementServiceTest {
 
         // try-catch 안에서 예외 발생 → catch 블록 수행
         assertEquals(PaymentStatus.FAILED, paymentHistory.getStatus());
+    }
+
+    @Test
+    @DisplayName("나의 정산 목록 조회 - 성공")
+    void getMySettlements_success() {
+        // given
+        Settlement settlement = Settlement.builder()
+                .group(group)
+                .payer(payer)
+                .title("회식 정산")
+                .build();
+        ReflectionTestUtils.setField(settlement, "id", 3L);
+
+        // 참가자 세팅
+        SettlementParticipant settlementParticipant = SettlementParticipant.builder()
+                .settlement(settlement)
+                .member(participant1)
+                .shareAmount(10000L)
+                .status(PaymentStatus.PENDING)
+                .build();
+
+        settlement.setSettlementParticipants(List.of(settlementParticipant));
+
+        given(memberRepository.findById(1L)).willReturn(Optional.of(payer));
+        given(settlementRepository.findAllByParticipantMember(payer))
+                .willReturn(List.of(settlement));
+
+        // when
+        List<SettlementResponse> result = settlementService.getMySettlements(1L);
+
+        // then
+        SettlementResponse res = result.get(0);
+        assertThat(res.getId()).isEqualTo(3L);
+        assertThat(res.getTitle()).isEqualTo("회식 정산");
+        assertThat(res.getPayerName()).isEqualTo("김민수");
+    }
+
+    @Test
+    @DisplayName("그룹 정산 목록 조회 - 그룹장 성공")
+    void getGroupSettlements_asLeader_success() {
+        // given
+        Settlement settlement = Settlement.builder()
+                .group(group)
+                .payer(payer)
+                .title("회식 정산")
+                .build();
+        ReflectionTestUtils.setField(settlement, "id", 5L);
+
+        // 참가자 세팅
+        SettlementParticipant settlementParticipant = SettlementParticipant.builder()
+                .settlement(settlement)
+                .member(participant2)
+                .shareAmount(10000L)
+                .status(PaymentStatus.PENDING)
+                .build();
+        settlement.setSettlementParticipants(List.of(settlementParticipant));
+
+        given(memberRepository.findById(4L)).willReturn(Optional.of(leader));
+        given(groupRepository.findById(1L)).willReturn(Optional.of(group));
+        given(groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, leader)).willReturn(true);
+        given(settlementRepository.findAllByGroupOrderByCreatedAtDesc(group)).willReturn(List.of(settlement));
+
+        //when
+        List<SettlementResponse> result = settlementService.getGroupSettlements(4L, 1L);
+
+        //then
+        assertThat(result.get(0).getTitle()).isEqualTo("회식 정산");
+    }
+
+
+    @Test
+    @DisplayName("그룹 정산 목록 조회 - 그룹장이 아님")
+    void getGroupSettlements_notLeader_fail() {
+        // given
+        given(memberRepository.findById(1L)).willReturn(Optional.of(payer));
+        given(groupRepository.findById(1L)).willReturn(Optional.of(group));
+        given(groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, payer))
+                .willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> settlementService.getGroupSettlements(1L, 1L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining(ErrorCode.NOT_GROUP_OWNER.getMessage());
     }
 }
