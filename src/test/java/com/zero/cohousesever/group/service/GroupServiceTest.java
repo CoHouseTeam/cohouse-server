@@ -278,7 +278,7 @@ class GroupServiceTest {
     }
 
     @Test
-    @DisplayName("그룹 초대코드 생성시 그룹 멤버가 존재하지 않으면 예외를 던진다")
+    @DisplayName("그룹 초대코드 생성시 그룹 멤버가 존재하지 않으면 예외 발생")
     void groupInvite_groupMemberNotFound() {
         // given
         Long memberId = 1L;
@@ -294,7 +294,7 @@ class GroupServiceTest {
     }
 
     @Test
-    @DisplayName("그룹 초대코드 생성시 그룹장이 아닌 경우 예외를 던진다")
+    @DisplayName("그룹 초대코드 생성시 그룹장이 아닌 경우 예외 발생")
     void groupInvite_notLeader() {
         // given
         Long memberId = 1L;
