@@ -24,6 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,6 +69,7 @@ class GroupServiceTest {
 
         testGroupMember = GroupMember.builder()
                 .member(testMember)
+                .group(testGroup)
                 .nickname("테스트 사용자")
                 .isLeader(true)
                 .status(GroupMemberStatus.ACTIVE)
@@ -135,5 +137,40 @@ class GroupServiceTest {
         assertThat(result.getGroupMembers().get(0).getIsLeader()).isEqualTo(true);
 
         verify(groupRepository).save(any(Group.class));
+    }
+
+    @Test
+    @DisplayName("멤버 ID로 그룹 조회 성공 테스트")
+    void getGroupByMemberId_Success() {
+        // given
+        Long memberId = 1L;
+        when(groupMemberRepository.findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+
+        // when
+        GroupSummary result = groupService.getGroupByMemberId(memberId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(testGroup.getId());
+        assertThat(result.getName()).isEqualTo(testGroup.getName());
+
+        verify(groupMemberRepository).findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("활성 그룹 멤버가 없을 때 예외 발생 테스트")
+    void getGroupByMemberId_ThrowsException_WhenActiveGroupMemberNotFound() {
+        // given
+        Long memberId = 999L;
+        when(groupMemberRepository.findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> groupService.getGroupByMemberId(memberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(GROUP_MEMBER_NOT_FOUND.getMessage());
+
+        verify(groupMemberRepository).findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
     }
 }
