@@ -20,6 +20,7 @@ public class TaskAssignmentResponse {
   private String date;
   private AssignmentStatus status;
   private String createdAt;
+  private String repeatType; // WEEKLY / NONE / MONTHLY
 
   // ====== history 전용 (옵셔널) ======
   private Long historyId;
@@ -35,6 +36,20 @@ public class TaskAssignmentResponse {
         .status(a.getStatus())
         .createdAt(a.getCreatedAt() == null ? null : a.getCreatedAt().toString())
         .category(a.getTemplate().getCategory())
+        .build();
+  }
+
+  // ====== 오버로드: repeatType 포함 버전 ======
+  public static TaskAssignmentResponse from(TaskAssignment a, String repeatType) {
+    return TaskAssignmentResponse.builder()
+        .assignmentId(a.getId())
+        .groupMemberId(a.getGroupMemberId())
+        .templateId(a.getTemplate().getId())
+        .date(a.getDate().toString())
+        .status(a.getStatus())
+        .createdAt(a.getCreatedAt() == null ? null : a.getCreatedAt().toString())
+        .category(a.getTemplate().getCategory())
+        .repeatType(repeatType) // <- 추가
         .build();
   }
 

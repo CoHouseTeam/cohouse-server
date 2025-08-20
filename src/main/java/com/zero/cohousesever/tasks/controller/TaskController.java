@@ -10,15 +10,18 @@ import com.zero.cohousesever.tasks.dto.template.TaskTemplateRequest;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateResponse;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateUpdateRequest;
 import com.zero.cohousesever.tasks.entity.TaskTemplate;
+import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import com.zero.cohousesever.tasks.service.AssignmentOverrideHistoryService;
 import com.zero.cohousesever.tasks.service.AssignmentOverrideService;
 import com.zero.cohousesever.tasks.service.RepeatDayService;
 import com.zero.cohousesever.tasks.service.TaskAssignmentHistoryService;
 import com.zero.cohousesever.tasks.service.TaskAssignmentService;
 import com.zero.cohousesever.tasks.service.TaskTemplateService;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -111,8 +114,13 @@ public class TaskController {
 
   // 조회
   @GetMapping("/assignments")
-  public ResponseEntity<List<TaskAssignmentResponse>> getAssignments() {
-    return null;
+  public ResponseEntity<List<TaskAssignmentResponse>> getAssignments(
+      @RequestParam Long groupId,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      @RequestParam(required = false) Long memberId
+  ) {
+    return ResponseEntity.ok(taskAssignmentService.getAssignments(groupId, from, to, memberId));
   }
 
   // 생성
@@ -121,12 +129,11 @@ public class TaskController {
       @RequestBody TaskAssignmentRequest request) {
     // 템플릿의 반복요일을 확인 후 한 사람 랜덤
     List<TaskAssignmentResponse> created =
-        taskAssignmentService.assignTaskManuallyOrRandomly(request, request.getCandidateMemberIds());
+        taskAssignmentService.assignTaskManuallyOrRandomly(request);
 
     if (created == null || created.isEmpty()) {
       return ResponseEntity.noContent().build(); // 생성된 게 없으면 204
     }
-    // 템플릿 하나당 1건만 응답
     return ResponseEntity.ok(created.get(0));
   }
 

@@ -1,30 +1,30 @@
 package com.zero.cohousesever.tasks.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.tasks.entity.RepeatDay;
+import com.zero.cohousesever.tasks.entity.TaskAssignment;
 import com.zero.cohousesever.tasks.entity.TaskTemplate;
+import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import com.zero.cohousesever.tasks.repository.RepeatDayRepository;
 import com.zero.cohousesever.tasks.repository.TaskAssignmentRepository;
 import com.zero.cohousesever.tasks.repository.TaskTemplateRepository;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class TaskAssignmentServiceTest {
@@ -35,100 +35,121 @@ class TaskAssignmentServiceTest {
 
   @InjectMocks TaskAssignmentService service;
 
-  private TaskTemplate template() {
-    return TaskTemplate.builder().groupId(1L).category("청소").build();
+  // ===== helpers =====
+  private TaskTemplate tpl(long tid, long gid, String cat) {
+    TaskTemplate t = TaskTemplate.builder().groupId(gid).category(cat).build();
+    ReflectionTestUtils.setField(t, "id", tid);
+    return t;
   }
-
   private RepeatDay rd(TaskTemplate t, DayOfWeek d) {
     return RepeatDay.builder().taskTemplate(t).dayOfWeek(d).build();
   }
-
+  private TaskAssignment ta(long id, long tid, long gid, long memberId,
+      String cat, LocalDate date, AssignmentStatus st) {
+    TaskAssignment a = TaskAssignment.builder()
+        .template(tpl(tid, gid, cat))
+        .groupMemberId(memberId)
+        .date(date)
+        .status(st)
+        .build();
+    ReflectionTestUtils.setField(a, "id", id);
+    return a;
+  }
   private TaskAssignmentRequest req(String date, List<Long> candidates) {
-    var r = new TaskAssignmentRequest();
+    TaskAssignmentRequest r = new TaskAssignmentRequest();
     r.setGroupId(1L);
     r.setTemplateId(10L);
-    r.setDate(date);               // null이면 서비스가 '다음 주' 기준
-    r.setCandidateMemberIds(candidates);
+    r.setDate(date);
+    r.setGroupMemberId(candidates);
     return r;
   }
 
+  // ===== 생성 테스트 =====
   @Test
-  void success_withExplicitDate_usesNextWeek_andSameAssignee() {
-    // given
-    var t = template();
+  void assign_success_twoDays_sameAssignee() {
+    var t = tpl(10L, 1L, "청소");
     when(templateRepo.findById(10L)).thenReturn(Optional.of(t));
     when(repeatRepo.findByTaskTemplate_Id(10L))
         .thenReturn(List.of(rd(t, DayOfWeek.TUESDAY), rd(t, DayOfWeek.THURSDAY)));
-    when(assignmentRepo.existsByTemplate_IdAndDate(eq(10L), any(LocalDate.class))).thenReturn(false);
+    // 서비스가 기존 배정 전량을 먼저 읽음
+    when(assignmentRepo.findByTemplate_Id(10L)).thenReturn(List.of());
     when(assignmentRepo.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
-    var request = req("2025-08-19", List.of(100L)); // 랜덤 고정용: 후보 1명
+    var request = req("2025-08-19", List.of(100L));
 
-    // when
-    List<TaskAssignmentResponse> res =
-        service.assignTaskManuallyOrRandomly(request, request.getCandidateMemberIds());
+    List<TaskAssignmentResponse> out = service.assignTaskManuallyOrRandomly(request);
 
-    // then
-    assertEquals(2, res.size());
-    assertTrue(res.stream().allMatch(r -> r.getGroupMemberId().equals(100L)));
+    assertEquals(2, out.size());
+    assertTrue(out.stream().allMatch(r -> r.getGroupMemberId().equals(100L)));
+    verify(assignmentRepo).findByTemplate_Id(10L);
+    verify(assignmentRepo).saveAll(anyList());
+  }
+
+  @Test
+  void assign_duplicate_skipped_returnsEmpty() {
+    var t = tpl(10L, 1L, "청소");
+    when(templateRepo.findById(10L)).thenReturn(Optional.of(t));
+    when(repeatRepo.findByTaskTemplate_Id(10L))
+        .thenReturn(List.of(rd(t, DayOfWeek.TUESDAY), rd(t, DayOfWeek.THURSDAY)));
 
     LocalDate base = LocalDate.parse("2025-08-19").plusWeeks(1);
     LocalDate sunday = base.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-    var expected = List.of(
-        sunday.plusDays(DayOfWeek.TUESDAY.getValue() % 7).toString(),
-        sunday.plusDays(DayOfWeek.THURSDAY.getValue() % 7).toString()
-    );
-    assertTrue(res.stream().allMatch(r -> expected.contains(r.getDate())));
-  }
+    LocalDate tue = sunday.plusDays(DayOfWeek.TUESDAY.getValue() % 7);
+    LocalDate thu = sunday.plusDays(DayOfWeek.THURSDAY.getValue() % 7);
 
-  @Test
-  void success_whenDateIsNull_usesNextWeekFromToday() {
-    var t = template();
-    when(templateRepo.findById(10L)).thenReturn(Optional.of(t));
-    when(repeatRepo.findByTaskTemplate_Id(10L))
-        .thenReturn(List.of(rd(t, DayOfWeek.TUESDAY), rd(t, DayOfWeek.THURSDAY)));
-    when(assignmentRepo.existsByTemplate_IdAndDate(eq(10L), any(LocalDate.class))).thenReturn(false);
-    when(assignmentRepo.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+    // 이번 주에 이미 동일 날짜 배정이 있다고 가정
+    when(assignmentRepo.findByTemplate_Id(10L))
+        .thenReturn(List.of(
+            ta(901, 10, 1, 111, "청소", tue, AssignmentStatus.PENDING),
+            ta(902, 10, 1, 222, "청소", thu, AssignmentStatus.PENDING)
+        ));
 
-    var request = req(null, List.of(777L));
+    var out = service.assignTaskManuallyOrRandomly(req("2025-08-19", List.of(1L)));
 
-    List<TaskAssignmentResponse> res =
-        service.assignTaskManuallyOrRandomly(request, request.getCandidateMemberIds());
-
-    assertEquals(2, res.size());
-    assertTrue(res.stream().allMatch(r -> r.getGroupMemberId().equals(777L)));
-
-    LocalDate base = LocalDate.now(ZoneId.of("Asia/Seoul")).plusWeeks(1);
-    LocalDate sunday = base.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-    var expected = List.of(
-        sunday.plusDays(DayOfWeek.TUESDAY.getValue() % 7).toString(),
-        sunday.plusDays(DayOfWeek.THURSDAY.getValue() % 7).toString()
-    );
-    assertTrue(res.stream().allMatch(r -> expected.contains(r.getDate())));
-  }
-
-  @Test
-  void duplicate_allSkipped_returnsEmpty() {
-    var t = template();
-    when(templateRepo.findById(10L)).thenReturn(Optional.of(t));
-    when(repeatRepo.findByTaskTemplate_Id(10L))
-        .thenReturn(List.of(rd(t, DayOfWeek.TUESDAY), rd(t, DayOfWeek.THURSDAY)));
-    when(assignmentRepo.existsByTemplate_IdAndDate(eq(10L), any(LocalDate.class))).thenReturn(true);
-
-    var request = req("2025-08-19", List.of(1L));
-
-    List<TaskAssignmentResponse> res =
-        service.assignTaskManuallyOrRandomly(request, request.getCandidateMemberIds());
-
-    assertTrue(res.isEmpty());
+    assertTrue(out.isEmpty());
+    verify(assignmentRepo).findByTemplate_Id(10L);
     verify(assignmentRepo, never()).saveAll(anyList());
   }
 
   @Test
-  void missingCandidates_throws() {
-    var request = req("2025-08-19", List.of());
+  void assign_missingCandidates_throws() {
     CustomException ex = assertThrows(CustomException.class,
-        () -> service.assignTaskManuallyOrRandomly(request, request.getCandidateMemberIds()));
+        () -> service.assignTaskManuallyOrRandomly(req("2025-08-19", List.of())));
     assertEquals(ErrorCode.CANDIDATE_MEMBERS_REQUIRED, ex.getErrorCode());
+  }
+
+  // ===== 조회 테스트 (주 단위 + 멤버) =====
+  @Test
+  void getAssignments_weekly_member_filtersAndMapsRepeatType() {
+    LocalDate from = LocalDate.of(2025, 8, 17);
+    LocalDate to   = LocalDate.of(2025, 8, 23);
+
+    // 서비스는 주단위 스냅: [fromMon, toSun]
+    LocalDate fromMon = from.with(DayOfWeek.MONDAY);
+    LocalDate toSun   = to.with(DayOfWeek.MONDAY).plusDays(6);
+
+    var d1 = LocalDate.of(2025, 8, 18); // Mon
+    var d2 = LocalDate.of(2025, 8, 19); // Tue
+
+    when(assignmentRepo.findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(1L, 1L, fromMon, toSun))
+        .thenReturn(List.of(
+            ta(1, 10, 1, 1, "CLEAN", d1, AssignmentStatus.PENDING),
+            ta(2, 20, 1, 1, "TRASH", d2, AssignmentStatus.COMPLETED)
+        ));
+
+    when(repeatRepo.existsByTaskTemplate_Id(10L)).thenReturn(true);
+    when(repeatRepo.existsByTaskTemplate_Id(20L)).thenReturn(false);
+
+    List<TaskAssignmentResponse> out = service.getAssignments(1L, from, to, 1L);
+
+    assertEquals(2, out.size());
+    assertEquals(1L, out.get(0).getAssignmentId());
+    assertEquals("WEEKLY", out.get(0).getRepeatType());
+    assertEquals(2L, out.get(1).getAssignmentId());
+    assertEquals("NONE", out.get(1).getRepeatType());
+
+    verify(assignmentRepo).findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(1L, 1L, fromMon, toSun);
+    verify(repeatRepo).existsByTaskTemplate_Id(10L);
+    verify(repeatRepo).existsByTaskTemplate_Id(20L);
   }
 }

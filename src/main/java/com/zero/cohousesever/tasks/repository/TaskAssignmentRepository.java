@@ -4,13 +4,18 @@ import com.zero.cohousesever.tasks.entity.TaskAssignment;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, Long> {
+public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, Long>,
+    JpaSpecificationExecutor<TaskAssignment> {
 
   List<TaskAssignment> findByTemplate_Id(Long templateId);
 
-  List<TaskAssignment> findByDateBetween(LocalDate start, LocalDate end);
 
-  boolean existsByTemplate_IdAndDate(Long templateId, LocalDate date);
+  List<TaskAssignment> findByTemplate_GroupIdAndDateBetween(Long groupId, LocalDate start,
+      LocalDate end);
+
+  List<TaskAssignment> findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(
+      Long groupId, Long groupMemberId, LocalDate start, LocalDate end);
 
 }

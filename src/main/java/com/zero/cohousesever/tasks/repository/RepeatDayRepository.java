@@ -15,4 +15,6 @@ public interface RepeatDayRepository extends JpaRepository<RepeatDay, Long> {
   List<RepeatDay> findByTaskTemplate_Id(Long templateId);
   Optional<RepeatDay> findByTaskTemplate_IdAndDayOfWeek(Long templateId, DayOfWeek dayOfWeek);
   long deleteByIdAndTaskTemplate_Id(Long id, Long templateId);
+  boolean existsByTaskTemplate_Id(Long taskTemplateId);
+
 }
