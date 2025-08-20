@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_NOT_FOUND;
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -55,10 +55,10 @@ public class GroupService {
         return GroupSummary.fromEntity(group);
     }
 
-    public GroupSummary getGroupByMemberID(Long memberId) {
+    public GroupSummary getGroupByMemberId(Long memberId) {
 
         GroupMember groupMember = groupMemberRepository.findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)
-                .orElseThrow(); // TODO: 적절한 예외 던지기
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
 
         Group group = groupMember.getGroup();
 
