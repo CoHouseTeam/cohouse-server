@@ -93,7 +93,7 @@ public class GroupController {
     ) {
         Long memberId = userDetails.getId();
 
-        GroupSummary responseDto = groupService.getGroupByMemberID(memberId);
+        GroupSummary responseDto = groupService.getGroupByMemberId(memberId);
 
         return ResponseEntity.ok(responseDto);
     }
