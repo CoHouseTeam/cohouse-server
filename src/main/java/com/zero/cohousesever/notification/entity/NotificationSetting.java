@@ -2,6 +2,7 @@ package com.zero.cohousesever.notification.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.notification.type.NotificationType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
