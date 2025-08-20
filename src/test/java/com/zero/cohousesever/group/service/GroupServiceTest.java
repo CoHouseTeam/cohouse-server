@@ -1,6 +1,8 @@
 package com.zero.cohousesever.group.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.entity.Group;
@@ -24,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,6 +46,9 @@ class GroupServiceTest {
 
     @InjectMocks
     private GroupService groupService;
+
+    @Mock
+    private InviteCodeService inviteCodeService;
 
     private Member testMember;
     private Group testGroup;
@@ -249,5 +255,58 @@ class GroupServiceTest {
                 .hasMessage("해당 그룹을 찾을 수 없습니다."); // GROUP_NOT_FOUND 메시지
 
         verify(groupRepository, never()).save(any(Group.class));
+    }
+
+    @Test
+    @DisplayName("그룹 초대코드 생성 성공 테스트")
+    void groupInvite_success() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+
+        when(groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId))
+                .thenReturn(Optional.of(testGroupMember));
+        when(inviteCodeService.generateInviteCode(groupId)).thenReturn("INVITE123");
+
+        // when
+        GroupInviteDto result = groupService.groupInvite(memberId, groupId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getGroupId()).isEqualTo(groupId);
+        assertThat(result.getInviteCode()).isEqualTo("INVITE123");
+    }
+
+    @Test
+    @DisplayName("그룹 초대코드 생성시 그룹 멤버가 존재하지 않으면 예외를 던진다")
+    void groupInvite_groupMemberNotFound() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 999L;
+
+        when(groupMemberRepository.findByMemberIdAndGroupId(anyLong(), anyLong()))
+                .thenReturn(Optional.empty());
+
+        // expect
+        assertThatThrownBy(() -> groupService.groupInvite(memberId, groupId))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining(GROUP_MEMBER_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("그룹 초대코드 생성시 그룹장이 아닌 경우 예외를 던진다")
+    void groupInvite_notLeader() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+        ReflectionTestUtils.setField(testGroupMember, "isLeader", false);
+
+        when(groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId))
+                .thenReturn(Optional.of(testGroupMember));
+
+        // expect
+        assertThatThrownBy(() -> groupService.groupInvite(memberId, groupId))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining(NOT_GROUP_LEADER.getMessage());
     }
 }
