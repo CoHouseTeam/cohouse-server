@@ -1,7 +1,5 @@
 package com.zero.cohousesever.settlement.service;
 
-import com.zero.cohousesever.common.exception.CustomException;
-import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -9,7 +7,7 @@ import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
-import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
+import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.entity.*;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
@@ -25,7 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.file.AccessDeniedException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -116,7 +113,7 @@ class SettlementServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        SettlementResponseDto responseDto = settlementService.createSettlement(payerId, request);
+        SettlementResponse responseDto = settlementService.createSettlement(payerId, request);
 
         // Then
         assertAll("정산 생성 결과 검증",

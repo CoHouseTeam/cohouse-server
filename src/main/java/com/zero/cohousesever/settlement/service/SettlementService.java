@@ -11,7 +11,7 @@ import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
-import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
+import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.entity.*;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
@@ -38,7 +38,7 @@ public class SettlementService {
     /**
      * 정산 등록
      */
-    public SettlementResponseDto createSettlement(Long payerId, CreateSettlementRequest request) {
+    public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request) {
         Member payer = memberRepository.findById(payerId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
@@ -80,7 +80,7 @@ public class SettlementService {
                 .build();
         settlementHistoryRepository.save(history);
 
-        return SettlementResponseDto.fromEntity(savedSettlement);
+        return SettlementResponse.fromEntity(savedSettlement);
     }
 
     // 균등 분배 참여자 생성 메서드

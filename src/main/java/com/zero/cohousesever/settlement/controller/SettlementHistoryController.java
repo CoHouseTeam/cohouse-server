@@ -45,30 +45,30 @@ public class SettlementHistoryController {
         );
     }
 
-    // 특정 정산의 내 송금 내역 조회
-    @GetMapping("/{settlementId}/payments")
-    public ResponseEntity<List<PaymentHistoryResponse>> getSettlementPaymentHistories(
-            @PathVariable Long groupId,
-            @PathVariable Long settlementId) {
+//    // 특정 정산의 내 송금 내역 조회
+//    @GetMapping("/{settlementId}/payments")
+//    public ResponseEntity<List<PaymentHistoryResponse>> getSettlementPaymentHistories(
+//            @PathVariable Long groupId,
+//            @PathVariable Long settlementId) {
+//
+//        return ResponseEntity.ok(
+//                paymentService.getMyPaymentHistoriesInSettlement(groupId, settlementId)
+//        );
+//    }
 
-        return ResponseEntity.ok(
-                paymentService.getMyPaymentHistoriesInSettlement(groupId, settlementId)
-        );
-    }
-
-    // 해당 그룹의 내 송금 내역 조회 (필터 optional)
-    @GetMapping("/history")
-    public ResponseEntity<List<PaymentHistoryResponse>> getMyPaymentsInGroup(
-            @PathVariable Long groupId,
-            @RequestParam(required = false) Long settlementId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-
-        return ResponseEntity.ok(
-                paymentService.getMyPaymentsInGroup(groupId, settlementId, status, fromDate, toDate)
-        );
-    }
+//    // 해당 그룹의 내 송금 내역 조회 (필터 optional)
+//    @GetMapping("/history")
+//    public ResponseEntity<List<PaymentHistoryResponse>> getMyPaymentsInGroup(
+//            @PathVariable Long groupId,
+//            @RequestParam(required = false) Long settlementId,
+//            @RequestParam(required = false) String status,
+//            @RequestParam(required = false)
+//            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+//            @RequestParam(required = false)
+//            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+//
+//        return ResponseEntity.ok(
+//                paymentService.getMyPaymentsInGroup(groupId, settlementId, status, fromDate, toDate)
+//        );
+//    }
 }

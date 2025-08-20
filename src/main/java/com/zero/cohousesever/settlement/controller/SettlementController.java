@@ -2,7 +2,7 @@ package com.zero.cohousesever.settlement.controller;
 
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
-import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
+import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +22,12 @@ public class SettlementController {
 
     // 정산 등록
     @PostMapping
-    public ResponseEntity<SettlementResponseDto> createSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                                  @RequestBody CreateSettlementRequest request) {
+    public ResponseEntity<SettlementResponse> createSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                               @RequestBody CreateSettlementRequest request) {
         Long payerId = userDetails.getId();
         System.out.println(payerId);
-        SettlementResponseDto settlementResponseDto = settlementService.createSettlement(payerId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(settlementResponseDto);
+        SettlementResponse settlementResponse = settlementService.createSettlement(payerId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(settlementResponse);
     }
 
     // 정산 취소
@@ -59,21 +59,6 @@ public class SettlementController {
 
         return ResponseEntity.ok().build();
     }
-
-    // FIXME 프론트에서 한번에 MAP으로 데이터 넘겨주기에 필요없음
-//    // 정산 참여자 추가
-//    @PostMapping("/{settlementId}/participants")
-//    public ResponseEntity<?> addParticipant() {
-//
-//        return ResponseEntity.ok().build();
-//    }
-//
-//    // 정산 참여자 제거
-//    @DeleteMapping("/{settlementId}/participants/{participantId}")
-//    public ResponseEntity<?> removeParticipant() {
-//
-//        return ResponseEntity.ok().build();
-//    }
 
     // 영수증 이미지 업로드
     @PostMapping("/{settlementId}/image")
