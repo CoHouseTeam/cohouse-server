@@ -172,7 +172,7 @@ public class TaskAssignmentService {
           String repeatType = repeatDayRepository.existsByTaskTemplate_Id(a.getTemplate().getId()) ? "WEEKLY" : "NONE";
           return TaskAssignmentResponse.from(a, repeatType);
         })
-        .collect(Collectors.toList()); // JDK 11
+        .collect(Collectors.toList());
   }
 
   /** 주간 범위 계산 규칙
