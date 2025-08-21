@@ -116,15 +116,16 @@ public class GroupService {
 
         // 요청자가 그룹장인지 확인
         GroupMember prevLeader = groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)
-                .orElseThrow(); // TODO: 적절한 예외 던지기
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
         if (!prevLeader.getIsLeader()) {
-            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+            throw new CustomException(NOT_GROUP_LEADER);
         }
 
         // 이양 받을 멤버가 같은 그룹인지 확인
-        GroupMember newLeader = groupMemberRepository.findById(requestDto.getNewLeaderId()).orElseThrow();
+        GroupMember newLeader = groupMemberRepository.findById(requestDto.getNewLeaderId())
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
         if (!Objects.equals(newLeader.getGroup().getId(), groupId)) {
-            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+            throw new CustomException(NOT_GROUP_MEMBER);
         }
 
         prevLeader.transferLeader(newLeader);
