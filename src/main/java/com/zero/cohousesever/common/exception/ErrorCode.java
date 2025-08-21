@@ -15,7 +15,7 @@ public enum ErrorCode {
 
     // 그룹 관련 오류
     GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원의 그룹을 찾을 수 없습니다."),
-    NOT_GROUP_OWNER(HttpStatus.FORBIDDEN, "그룹장 권한이 필요합니다."),
+    NOT_GROUP_LEADER(HttpStatus.FORBIDDEN, "그룹장 권한이 필요합니다."),
 
     // 할일 관련 오류
 

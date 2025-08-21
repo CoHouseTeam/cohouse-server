@@ -310,6 +310,6 @@ class SettlementServiceTest {
         // when & then
         assertThatThrownBy(() -> settlementService.getGroupSettlements(1L, 1L))
                 .isInstanceOf(CustomException.class)
-                .hasMessageContaining(ErrorCode.NOT_GROUP_OWNER.getMessage());
+                .hasMessageContaining(ErrorCode.NOT_GROUP_LEADER.getMessage());
     }
 }

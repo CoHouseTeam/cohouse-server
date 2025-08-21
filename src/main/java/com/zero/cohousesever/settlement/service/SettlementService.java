@@ -249,7 +249,7 @@ public class SettlementService {
 
         // 그룹 멤버 중에서 해당 회원이 그룹장인지 확인
         if (!groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, member)) {
-            throw new CustomException(ErrorCode.NOT_GROUP_OWNER);
+            throw new CustomException(ErrorCode.NOT_GROUP_LEADER);
         }
 
         List<Settlement> settlements = settlementRepository.findAllByGroupOrderByCreatedAtDesc(group);
