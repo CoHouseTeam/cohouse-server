@@ -81,13 +81,15 @@ public class GroupService {
 
     public GroupMemberSummary getGroupMember(Long memberId, Long groupId, Long groupMemberId) {
 
+        // 본인 그룹만 조회 가능
         if (!groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)) {
-            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+            throw new CustomException(NOT_GROUP_MEMBER);
         }
 
-        GroupMember groupMember = groupMemberRepository.findById(groupMemberId).orElseThrow();
+        GroupMember groupMember = groupMemberRepository.findById(groupMemberId)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
         if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
-            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+            throw new CustomException(NOT_GROUP_MEMBER);
         }
 
         return GroupMemberSummary.fromEntity(groupMember);
