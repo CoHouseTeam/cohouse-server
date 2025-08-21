@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import static com.zero.cohousesever.common.exception.ErrorCode.GROUP_NOT_FOUND;
 import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_NOT_FOUND;
 
 @Service
@@ -51,6 +52,14 @@ public class GroupService {
 
         // Group만 저장하면 cascade로 GroupMember도 함께 저장됨
         groupRepository.save(group);
+
+        return GroupSummary.fromEntity(group);
+    }
+
+    public GroupSummary getGroup(Long groupId) {
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
 
         return GroupSummary.fromEntity(group);
     }
