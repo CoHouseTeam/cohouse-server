@@ -1,25 +1,41 @@
 package com.zero.cohousesever.settlement.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@Setter
+@Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "settlements")
 public class Settlement extends BaseEntity {
+    @Column(nullable = false)
     private String title;
     private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    private Group group;
 
     @Enumerated(EnumType.STRING)
     private SettlementCategory category;
 
-    private BigDecimal settlementAmount; // 정산 금액
+    @Column(nullable = false)
+    private boolean isEqualDistribution;  // true: 균등 분배, false: 개별 금액 분배
+
+    @Column(nullable = false)
+    private Long settlementAmount; // 정산 금액
+
+    @Column(nullable = false)
+    private Long platformSupportAmount;  // 플랫폼이 지원하는 오차 금액
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -35,5 +51,5 @@ public class Settlement extends BaseEntity {
 
     // 정산 참여자 목록
     @OneToMany(mappedBy = "settlement", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Participant> participants;
+    private List<SettlementParticipant> settlementParticipants;
 }
