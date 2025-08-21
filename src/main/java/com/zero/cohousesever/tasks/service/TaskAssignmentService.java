@@ -208,18 +208,14 @@ public class TaskAssignmentService {
 
   // 할 일 상태변경(이행여부)
   public TaskAssignmentResponse updateAssignmentStatus(Long assignmentId, AssignmentStatus status) {
-    if (status == null) throw new CustomException(ErrorCode.INVALID_REQUEST);
+    if (status == null) throw new CustomException(ErrorCode.ASSIGNMENT_STATUS_REQUIRED);
 
     TaskAssignment a = taskAssignmentRepository.findById(assignmentId)
-        .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+        .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
 
     a.setStatus(status);
     TaskAssignment saved = taskAssignmentRepository.save(a);
-
-    String repeatType = repeatDayRepository.existsByTaskTemplate_Id(saved.getTemplate().getId())
-        ? "WEEKLY" : "NONE";
-
-    return TaskAssignmentResponse.from(saved, repeatType);
+    return TaskAssignmentResponse.from(saved);
   }
 
 }
