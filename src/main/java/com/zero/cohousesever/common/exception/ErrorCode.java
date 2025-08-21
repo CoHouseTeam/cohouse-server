@@ -45,6 +45,11 @@ public enum ErrorCode {
 
     // 알림 관련 오류
 
+    // 파일 업로드 관련 오류
+    FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),
+    FILE_NOT_IMAGE(HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
+    FILE_SIZE_EXCEED(HttpStatus.BAD_REQUEST, "파일 크기는 5MB를 초과할 수 없습니다."),
+
     // 서버 오류
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 
