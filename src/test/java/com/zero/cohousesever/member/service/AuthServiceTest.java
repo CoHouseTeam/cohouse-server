@@ -1,5 +1,6 @@
 package com.zero.cohousesever.member.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.member.dto.auth.JwtTokenResponseDto;
 import com.zero.cohousesever.member.dto.auth.LoginRequestDto;
 import com.zero.cohousesever.member.dto.auth.RefreshRequestDto;
@@ -70,7 +71,6 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(signupRequestDto, "email", "test@example.com");
         ReflectionTestUtils.setField(signupRequestDto, "name", "테스트유저");
         ReflectionTestUtils.setField(signupRequestDto, "password", "password123");
-        ReflectionTestUtils.setField(signupRequestDto, "passwordRepeat", "password123");
 
         // 로그인 요청 DTO
         loginRequestDto = new LoginRequestDto();
@@ -107,25 +107,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("회원가입 실패 - 비밀번호와 비밀번호 확인이 일치하지 않음")
-    void registerMember_Failure_PasswordMismatch() {
-        // given
-        SignupRequestDto invalidPasswordDto = new SignupRequestDto();
-        ReflectionTestUtils.setField(invalidPasswordDto, "email", "test@example.com");
-        ReflectionTestUtils.setField(invalidPasswordDto, "name", "테스트유저");
-        ReflectionTestUtils.setField(invalidPasswordDto, "password", "password123");
-        ReflectionTestUtils.setField(invalidPasswordDto, "passwordRepeat", "differentPassword");
-
-        // when & then
-        assertThatThrownBy(() -> authService.registerMember(invalidPasswordDto))
-                .isInstanceOf(RuntimeException.class); // TODO: 적절한 예외 처리 로직 작성 후 메시지 검증 추가
-
-        verify(memberRepository, never()).existsByEmail(anyString());
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(memberService, never()).createMember(anyString(), anyString(), anyString());
-    }
-
-    @Test
     @DisplayName("회원가입 실패 - 이미 존재하는 이메일")
     void registerMember_Failure_DuplicateEmail() {
         // given
@@ -133,7 +114,8 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.registerMember(signupRequestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: 적절한 예외 처리 로직 작성 후 메시지 검증 추가
+                .isInstanceOf(CustomException.class)
+                .hasMessage("이미 등록된 이메일입니다.");
 
         verify(memberRepository).existsByEmail("test@example.com");
         verify(passwordEncoder, never()).encode(anyString());
@@ -171,7 +153,8 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.loginAuthenticate(loginRequestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: 적절한 예외 처리 로직 작성 후 메시지 검증 추가
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 회원을 찾을 수 없습니다.");
 
         verify(memberRepository).findByEmail("test@example.com");
         verify(passwordEncoder, never()).matches(anyString(), anyString());
@@ -188,7 +171,8 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.loginAuthenticate(loginRequestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: 적절한 예외 처리 로직 작성 후 메시지 검증 추가
+                .isInstanceOf(CustomException.class)
+                .hasMessage("비밀번호가 일치하지 않습니다.");
 
         verify(memberRepository).findByEmail("test@example.com");
         verify(passwordEncoder).matches("password123", "encodedPassword");
@@ -256,7 +240,8 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.reissueAccessToken(testUserDetails, refreshRequestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: '유효하지 않은 리프레시 토큰입니다' 예외 작성 후 메시지 검증 추가
+                .isInstanceOf(CustomException.class)
+                .hasMessage("유효하지 않은 리프레시 토큰입니다.");
 
         verify(jwtTokenProvider).validateToken("validRefreshToken");
         verify(jwtTokenProvider, never()).generateAccessToken(anyString(), anyString());
@@ -274,7 +259,8 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.reissueAccessToken(testUserDetails, refreshRequestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: '리프레시 토큰이 만료되었습니다.' 예외 작성 후 메시지 검증 추가
+                .isInstanceOf(CustomException.class)
+                .hasMessage("리프레시 토큰이 만료되었습니다.");
 
         verify(refreshTokenService).getRefreshToken(1L);
         verify(jwtTokenProvider, times(2)).validateToken(anyString());
@@ -294,7 +280,8 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.reissueAccessToken(testUserDetails, refreshRequestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: '유효하지 않은 리프레시 토큰입니다' 예외 작성 후 메시지 검증 추가
+                .isInstanceOf(CustomException.class)
+                .hasMessage("유효하지 않은 리프레시 토큰입니다.");
 
         verify(refreshTokenService).getRefreshToken(1L);
         verify(jwtTokenProvider, times(2)).validateToken(anyString());
@@ -315,7 +302,8 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.reissueAccessToken(testUserDetails, refreshRequestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: '리프레시 토큰이 만료되었습니다.' 예외 작성 후 메시지 검증 추가
+                .isInstanceOf(CustomException.class)
+                .hasMessage("리프레시 토큰이 만료되었습니다.");
 
         verify(refreshTokenService).getRefreshToken(1L);
         verify(jwtTokenProvider, times(2)).validateToken(anyString());
