@@ -7,9 +7,11 @@ import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.tasks.entity.RepeatDay;
 import com.zero.cohousesever.tasks.entity.TaskAssignment;
 import com.zero.cohousesever.tasks.entity.TaskTemplate;
+import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import com.zero.cohousesever.tasks.repository.RepeatDayRepository;
 import com.zero.cohousesever.tasks.repository.TaskAssignmentRepository;
 import com.zero.cohousesever.tasks.repository.TaskTemplateRepository;
+import jakarta.transaction.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -203,4 +205,17 @@ public class TaskAssignmentService {
     LocalDate end   = to.with(DayOfWeek.MONDAY).plusDays(6);
     return new LocalDate[]{start, end};
   }
+
+  // 할 일 상태변경(이행여부)
+  public TaskAssignmentResponse updateAssignmentStatus(Long assignmentId, AssignmentStatus status) {
+    if (status == null) throw new CustomException(ErrorCode.ASSIGNMENT_STATUS_REQUIRED);
+
+    TaskAssignment a = taskAssignmentRepository.findById(assignmentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
+
+    a.setStatus(status);
+    TaskAssignment saved = taskAssignmentRepository.save(a);
+    return TaskAssignmentResponse.from(saved);
+  }
+
 }

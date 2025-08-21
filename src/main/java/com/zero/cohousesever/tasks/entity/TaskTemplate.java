@@ -31,4 +31,7 @@ public class TaskTemplate extends BaseEntity {
   @Column(nullable = false)
   private String category;
 
+  @Column(nullable = false)
+  private boolean randomEnabled;
+
 }

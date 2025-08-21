@@ -53,6 +53,8 @@ public class AssignmentOverride extends BaseEntity {
 
   private Long modifierId; // 최종 변경자
 
+  @Column(name = "swap_assignment_id")
+  private Long swapAssignmentId;
   /**
    * 요청 상태
    */
