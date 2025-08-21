@@ -73,7 +73,7 @@ public class GroupController {
         return ResponseEntity.ok().build();
     }
 
-    // 그룹 초대 링크 발급
+    // 그룹 초대 코드 발급
     @PostMapping("/{groupId}/invitations")
     public ResponseEntity<GroupInviteDto> createGroupInviteCode(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -86,7 +86,7 @@ public class GroupController {
         return ResponseEntity.ok(responseDto);
     }
 
-    // 초대 링크로 그룹 가입
+    // 초대 코드로 그룹 가입
     @PostMapping("/join")
     public ResponseEntity<GroupMemberSummary> joinGroup(
             @RequestBody GroupJoinDto requestDto
