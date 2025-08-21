@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class FileUploadResponse {
-    private String fileUrl;
+    private String imageUrl;
 }

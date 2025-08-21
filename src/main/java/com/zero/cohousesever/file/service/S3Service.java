@@ -15,15 +15,18 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import java.io.IOException;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class S3Service {
 
     private final S3Client s3Client;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
+
+    @Value("${cloud.aws.s3.base-url}")
+    private String  s3BaseUrl;
 
     /**
      * 파일 업로드
@@ -63,10 +66,12 @@ public class S3Service {
     }
 
     /**
-     * URL에서 파일명 추출
+     * URL에서 경로 추출
+     * - 기존 이미지 파일 삭제하기 위함
      */
-    public String extractFileName(String fileUrl) {
-        return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+    public String extractFilePath(String imageUrl) {
+        String baseUrl = s3BaseUrl;
+        return imageUrl.substring(baseUrl.length());
     }
 
     /**
@@ -74,7 +79,7 @@ public class S3Service {
      */
     public void validateImageFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new CustomException(ErrorCode.FILE_EMPTY);
+            throw new CustomException(ErrorCode.FILE_NOT_FOUND);
         }
 
         String contentType = file.getContentType();
@@ -87,3 +92,4 @@ public class S3Service {
         }
     }
 }
+

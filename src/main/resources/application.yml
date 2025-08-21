@@ -17,8 +17,8 @@ spring:
       port: 6379
   multipart:
     enabled: true
-    max-file-size: 5MB
-    max-request-size: 5MB
+    max-file-size: 1MB
+    max-request-size: 1MB
 
 jwt:
   secret: Y29ob3VzZXByb2plY3Rzand0c2VjcmV0c3RyaW5nc3dpdGhiYXNlNjRlbmNvZGluZ3M=

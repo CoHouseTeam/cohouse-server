@@ -238,34 +238,81 @@ public class SettlementService {
      * 영수증 이미지 업로드
      */
     public String uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
-        Member member = findMemberOrThrow(memberId);
         Settlement settlement = findSettlementOrThrow(settlementId);
+        Member member = findMemberOrThrow(memberId);
 
         if (!settlement.getPayer().equals(member)) {
             throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+        }
+
+        // 기존 이미지가 있으면 업로드 막음
+        if (settlement.getImageUrl() != null && !settlement.getImageUrl().isEmpty()) {
+            throw new CustomException(ErrorCode.FILE_ALREADY_EXISTS);
         }
 
         // 이미지 검증
         s3Service.validateImageFile(file);
 
         // 경로 생성
-        String dirName = String.format("groups/%d/settlement/%d/receipt", groupId, settlementId);
+        String dirName = String.format("groups/%d/settlements/%d/receipt", groupId, settlementId);
 
-        // 파일 업로드
-        return s3Service.uploadFile(file, dirName);
+        String imageUrl = s3Service.uploadFile(file, dirName);
+
+        settlement.setImageUrl(imageUrl);
+        settlementRepository.save(settlement);
+
+        return imageUrl;
     }
 
     /**
      * 영수증 이미지 업데이트
      * - 기존 영수증 이미지 삭제 후 최신 이미지 등록
      */
-    public String updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId, String existingFileName) throws IOException {
+    public String updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+        try {
+            Settlement settlement = findSettlementOrThrow(settlementId);
 
-        // 기존 파일 삭제
-        s3Service.deleteFile(existingFileName);
+            Member member = findMemberOrThrow(memberId);
+            if (!settlement.getPayer().equals(member)) {
+                throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+            }
 
-        // 새 이미지 업로드
-        return uploadReceiptImage(memberId, file, groupId, settlementId);
+            String imageUrl = settlement.getImageUrl();
+            if (settlement.getImageUrl() == null || imageUrl.isEmpty()) {
+                throw new CustomException(ErrorCode.FILE_NOT_FOUND);
+            }
+
+            // 기존 파일 삭제
+            deleteReceiptImage(memberId, settlementId);
+
+            // 새 이미지 업로드
+            return uploadReceiptImage(memberId, file, groupId, settlementId);
+
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+    }
+
+    /**
+     * 영수증 이미지 삭제
+     */
+    public void deleteReceiptImage(Long memberId, Long settlementId) throws IOException {
+        Settlement settlement = findSettlementOrThrow(settlementId);
+        Member member = findMemberOrThrow(memberId);
+        if (!settlement.getPayer().equals(member)) {
+            throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+        }
+
+        String imageUrl = settlement.getImageUrl();
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            throw new CustomException(ErrorCode.FILE_NOT_FOUND);
+        }
+
+        String extractedFilePath =  s3Service.extractFilePath(imageUrl);
+
+        s3Service.deleteFile(extractedFilePath);
+        settlement.setImageUrl(null);
+        settlementRepository.save(settlement);
     }
 
     // 회원 엔티티 조회 메서드

@@ -23,6 +23,7 @@ import java.nio.file.AccessDeniedException;
 public class SettlementController {
     private final SettlementService settlementService;
     private final PaymentService paymentService;
+    private final S3Service s3Service;
 
     // 정산 등록
     @PostMapping
@@ -70,13 +71,13 @@ public class SettlementController {
     @PostMapping("/{settlementId}/receipt")
     public ResponseEntity<FileUploadResponse> uploadReceiptImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long settlementId,
             @RequestParam Long groupId,
+            @PathVariable Long settlementId,
             @RequestParam("file") MultipartFile file) throws IOException {
 
         // 서비스 메서드 내부에서 이미지 검증 수행
-        String fileUrl = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
-        return ResponseEntity.ok(new FileUploadResponse(fileUrl));
+        String imageUrl = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        return ResponseEntity.ok(new FileUploadResponse(imageUrl));
     }
 
     /**
@@ -85,14 +86,26 @@ public class SettlementController {
     @PutMapping("/{settlementId}/receipt")
     public ResponseEntity<FileUploadResponse> updateReceiptImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long groupId,
+            @RequestParam Long groupId,
             @PathVariable Long settlementId,
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("existingFileName") String existingFileName) throws IOException {
+            @RequestParam("file") MultipartFile file) throws IOException {
 
         // 서비스 메서드 내부에서 이미지 검증 수행
-        String fileUrl = settlementService.updateReceiptImage(userDetails.getId(), file, groupId, settlementId, existingFileName);
-        return ResponseEntity.ok(new FileUploadResponse(fileUrl));
+        String imageUrl = settlementService.updateReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        return ResponseEntity.ok(new FileUploadResponse(imageUrl));
+    }
+
+    /**
+     * 영수증 이미지 삭제
+     */
+    @DeleteMapping("/{settlementId}/receipt")
+    public ResponseEntity<?> deleteReceiptImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long settlementId) throws IOException {
+
+        settlementService.deleteReceiptImage(userDetails.getId(), settlementId);
+
+        return ResponseEntity.noContent().build();
     }
 
     // 송금 완료 처리
