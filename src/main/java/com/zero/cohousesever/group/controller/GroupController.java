@@ -74,7 +74,7 @@ public class GroupController {
 
     // 그룹 초대 링크 발급
     @PostMapping("/{groupId}/invitations")
-    public ResponseEntity<GroupInviteDto> createGroupInviteUrl(
+    public ResponseEntity<GroupInviteDto> createGroupInviteCode(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId
     ) {
