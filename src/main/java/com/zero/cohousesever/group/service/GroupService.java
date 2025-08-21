@@ -58,6 +58,14 @@ public class GroupService {
         return GroupSummary.fromEntity(group);
     }
 
+    public GroupSummary getGroup(Long groupId) {
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+
+        return GroupSummary.fromEntity(group);
+    }
+
     public GroupSummary updateGroup(Long memberId, Long groupId, GroupSummary requestDto) {
 
         GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)
