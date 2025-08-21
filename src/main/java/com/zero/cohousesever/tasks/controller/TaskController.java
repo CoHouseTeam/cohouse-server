@@ -10,7 +10,6 @@ import com.zero.cohousesever.tasks.dto.template.TaskTemplateRequest;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateResponse;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateUpdateRequest;
 import com.zero.cohousesever.tasks.entity.TaskTemplate;
-import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import com.zero.cohousesever.tasks.service.AssignmentOverrideHistoryService;
 import com.zero.cohousesever.tasks.service.AssignmentOverrideService;
 import com.zero.cohousesever.tasks.service.RepeatDayService;
@@ -128,8 +127,7 @@ public class TaskController {
   public ResponseEntity<TaskAssignmentResponse> assignTask(
       @RequestBody TaskAssignmentRequest request) {
     // 템플릿의 반복요일을 확인 후 한 사람 랜덤
-    List<TaskAssignmentResponse> created =
-        taskAssignmentService.assignTaskManuallyOrRandomly(request);
+    List<TaskAssignmentResponse> created = taskAssignmentService.assignTaskManuallyOrRandomly(request);
 
     if (created == null || created.isEmpty()) {
       return ResponseEntity.noContent().build(); // 생성된 게 없으면 204

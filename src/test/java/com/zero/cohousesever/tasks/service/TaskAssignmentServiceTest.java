@@ -60,6 +60,7 @@ class TaskAssignmentServiceTest {
     r.setGroupId(1L);
     r.setTemplateId(10L);
     r.setDate(date);
+    // DTO가 List<Long> groupMemberId 사용 중
     r.setGroupMemberId(candidates);
     return r;
   }
@@ -71,11 +72,11 @@ class TaskAssignmentServiceTest {
     when(templateRepo.findById(10L)).thenReturn(Optional.of(t));
     when(repeatRepo.findByTaskTemplate_Id(10L))
         .thenReturn(List.of(rd(t, DayOfWeek.TUESDAY), rd(t, DayOfWeek.THURSDAY)));
-    // 서비스가 기존 배정 전량을 먼저 읽음
+    // 서비스가 이번 주 중복 날짜 스킵용으로 전체를 읽음
     when(assignmentRepo.findByTemplate_Id(10L)).thenReturn(List.of());
     when(assignmentRepo.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
-    var request = req("2025-08-19", List.of(100L));
+    var request = req("2025-08-19", List.of(100L)); // 후보 1명 → 고정
 
     List<TaskAssignmentResponse> out = service.assignTaskManuallyOrRandomly(request);
 
@@ -92,10 +93,11 @@ class TaskAssignmentServiceTest {
     when(repeatRepo.findByTaskTemplate_Id(10L))
         .thenReturn(List.of(rd(t, DayOfWeek.TUESDAY), rd(t, DayOfWeek.THURSDAY)));
 
-    LocalDate base = LocalDate.parse("2025-08-19").plusWeeks(1);
+    //이번 주(일→토) 기준. date=2025-08-19(Tue) → 주 시작 Sunday=2025-08-17
+    LocalDate base   = LocalDate.parse("2025-08-19");
     LocalDate sunday = base.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-    LocalDate tue = sunday.plusDays(DayOfWeek.TUESDAY.getValue() % 7);
-    LocalDate thu = sunday.plusDays(DayOfWeek.THURSDAY.getValue() % 7);
+    LocalDate tue    = sunday.plusDays(DayOfWeek.TUESDAY.getValue() % 7);   // 2025-08-19
+    LocalDate thu    = sunday.plusDays(DayOfWeek.THURSDAY.getValue() % 7);  // 2025-08-21
 
     // 이번 주에 이미 동일 날짜 배정이 있다고 가정
     when(assignmentRepo.findByTemplate_Id(10L))
@@ -121,17 +123,17 @@ class TaskAssignmentServiceTest {
   // ===== 조회 테스트 (주 단위 + 멤버) =====
   @Test
   void getAssignments_weekly_member_filtersAndMapsRepeatType() {
-    LocalDate from = LocalDate.of(2025, 8, 17);
-    LocalDate to   = LocalDate.of(2025, 8, 23);
+    LocalDate from = LocalDate.of(2025, 8, 17); // Sun
+    LocalDate to   = LocalDate.of(2025, 8, 23); // Sat
 
-    // 서비스는 주단위 스냅: [fromMon, toSun]
-    LocalDate fromMon = from.with(DayOfWeek.MONDAY);
-    LocalDate toSun   = to.with(DayOfWeek.MONDAY).plusDays(6);
+    //  서비스는 일→토
+    LocalDate fromSun = from.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+    LocalDate toSat   = to.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
 
     var d1 = LocalDate.of(2025, 8, 18); // Mon
     var d2 = LocalDate.of(2025, 8, 19); // Tue
 
-    when(assignmentRepo.findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(1L, 1L, fromMon, toSun))
+    when(assignmentRepo.findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(1L, 1L, fromSun, toSat))
         .thenReturn(List.of(
             ta(1, 10, 1, 1, "CLEAN", d1, AssignmentStatus.PENDING),
             ta(2, 20, 1, 1, "TRASH", d2, AssignmentStatus.COMPLETED)
@@ -148,7 +150,7 @@ class TaskAssignmentServiceTest {
     assertEquals(2L, out.get(1).getAssignmentId());
     assertEquals("NONE", out.get(1).getRepeatType());
 
-    verify(assignmentRepo).findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(1L, 1L, fromMon, toSun);
+    verify(assignmentRepo).findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(1L, 1L, fromSun, toSat);
     verify(repeatRepo).existsByTaskTemplate_Id(10L);
     verify(repeatRepo).existsByTaskTemplate_Id(20L);
   }

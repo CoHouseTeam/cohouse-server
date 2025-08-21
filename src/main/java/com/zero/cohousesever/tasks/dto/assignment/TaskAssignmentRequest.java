@@ -14,4 +14,10 @@ public class TaskAssignmentRequest {
   private String date;
   private Long templateId;
   private List<Long> groupMemberId;
+
+  //이번 주부터 적용 여부. null이면 true로 처리
+  private Boolean applyThisWeek;
+
+  // 주마다 랜덤 배정 여부. true면 랜덤, false면 직전 담당자 그대로 유지
+  private Boolean randomEnabled;
 }

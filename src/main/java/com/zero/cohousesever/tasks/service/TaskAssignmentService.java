@@ -34,6 +34,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TaskAssignmentService {
 
+  private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
   private final TaskAssignmentRepository taskAssignmentRepository;
   private final TaskTemplateRepository taskTemplateRepository;
   private final RepeatDayRepository repeatDayRepository;
@@ -48,9 +50,9 @@ public class TaskAssignmentService {
 
     // 0) 기본 검증
     if (req.getTemplateId() == null || req.getGroupId() == null) {
-      throw new CustomException(ErrorCode.INVALID_REQUEST);
+      throw new CustomException(ErrorCode.INVALID_REQUEST); // 필요시: ErrorCode.GROUP_ID_REQUIRED 등으로 세분화
     }
-    List<Long> candidateIds = req.getGroupMemberId(); // DTO 변경 반영
+    List<Long> candidateIds = req.getGroupMemberId();
     if (candidateIds == null || candidateIds.isEmpty()) {
       throw new CustomException(ErrorCode.CANDIDATE_MEMBERS_REQUIRED);
     }
@@ -59,7 +61,7 @@ public class TaskAssignmentService {
     TaskTemplate template = taskTemplateRepository.findById(req.getTemplateId())
         .orElseThrow(() -> new CustomException(ErrorCode.TEMPLATE_NOT_FOUND));
     if (!req.getGroupId().equals(template.getGroupId())) {
-      throw new CustomException(ErrorCode.INVALID_REQUEST);
+      throw new CustomException(ErrorCode.INVALID_REQUEST); // 필요시: ErrorCode.TEMPLATE_GROUP_MISMATCH
     }
 
     // 2) 반복 요일 확보 (없으면 생성 불가)
@@ -72,7 +74,7 @@ public class TaskAssignmentService {
     final LocalDate base;
     try {
       base = (req.getDate() == null || req.getDate().isBlank())
-          ? LocalDate.now(ZoneId.of("Asia/Seoul")).plusWeeks(1)
+          ? LocalDate.now(KST).plusWeeks(1)
           : LocalDate.parse(req.getDate()).plusWeeks(1);
     } catch (DateTimeParseException e) {
       throw new CustomException(ErrorCode.DATE_FORMAT_INVALID);
@@ -81,11 +83,9 @@ public class TaskAssignmentService {
     LocalDate weekStart = sunday;
     LocalDate weekEnd   = sunday.plusDays(6);
 
-    // 3-1) 해당 템플릿의 기존 배정들 중 이번 주만 골라 중복 날짜 Skip 용 집합 구성
+    // 3-1) 이번 주 중복 날짜 Skip 집합 (DB에서 기간 필터링)
     List<TaskAssignment> existingAll =
-        taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(
-            req.getTemplateId(), weekStart, weekEnd);
-
+        taskAssignmentRepository.findByTemplate_IdAndDateBetween(req.getTemplateId(), weekStart, weekEnd);
     Set<LocalDate> alreadyInWeek = existingAll.stream()
         .map(TaskAssignment::getDate)
         .collect(Collectors.toSet());
@@ -153,7 +153,7 @@ public class TaskAssignmentService {
       LocalDate to,    // 기간 종료(옵션)
       Long memberId    // 멤버 ID(옵션)
   ) {
-    if (groupId == null) throw new CustomException(ErrorCode.INVALID_REQUEST);
+    if (groupId == null) throw new CustomException(ErrorCode.GROUP_ID_REQUIRED);
 
     // 1) 주간 범위 계산 (월~일로 스냅; 둘 다 null이면 이번 주)
     LocalDate[] range = computeWeekRange(from, to);
@@ -164,6 +164,14 @@ public class TaskAssignmentService {
         ? taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(groupId, start, end)
         : taskAssignmentRepository.findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(groupId, memberId, start, end);
 
+    // 2-1) 반복요일 존재 여부를 한 방에 조회 (N+1 제거)
+    Set<Long> templateIds = list.stream()
+        .map(a -> a.getTemplate().getId())
+        .collect(Collectors.toSet());
+    Set<Long> weeklyTemplateIds = templateIds.isEmpty()
+        ? java.util.Collections.emptySet()
+        : repeatDayRepository.findTemplateIdsHavingRepeat(templateIds);
+
     // 3) 정렬(일요일 우선) + repeatType 매핑
     return list.stream()
         .sorted(Comparator
@@ -171,7 +179,7 @@ public class TaskAssignmentService {
             .thenComparing(TaskAssignment::getDate)
             .thenComparing(TaskAssignment::getId))
         .map(a -> {
-          String repeatType = repeatDayRepository.existsByTaskTemplate_Id(a.getTemplate().getId()) ? "WEEKLY" : "NONE";
+          String repeatType = weeklyTemplateIds.contains(a.getTemplate().getId()) ? "WEEKLY" : "NONE";
           return TaskAssignmentResponse.from(a, repeatType);
         })
         .collect(Collectors.toList());
@@ -184,7 +192,7 @@ public class TaskAssignmentService {
    */
   private static LocalDate[] computeWeekRange(LocalDate from, LocalDate to) {
     if (from == null && to == null) {
-      LocalDate mon = LocalDate.now(ZoneId.of("Asia/Seoul")).with(DayOfWeek.MONDAY);
+      LocalDate mon = LocalDate.now(KST).with(DayOfWeek.MONDAY);
       return new LocalDate[]{mon, mon.plusDays(6)};
     }
     if (from == null) from = to;

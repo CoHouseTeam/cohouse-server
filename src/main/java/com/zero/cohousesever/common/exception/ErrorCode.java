@@ -36,7 +36,7 @@ public enum ErrorCode {
     CANDIDATE_MEMBERS_REQUIRED(HttpStatus.BAD_REQUEST, "배정 후보자 목록이 필요합니다."),
     DATE_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 날짜 형식입니다. (yyyy-MM-dd)"),
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
-    FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    GROUP_ID_REQUIRED(HttpStatus.BAD_REQUEST,  "그룹 아이디 확인이 필요합니다."),
     // 게시물 관련 오류
 
     // 정산 관련 오류
