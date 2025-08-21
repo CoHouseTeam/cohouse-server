@@ -15,7 +15,6 @@ public class TaskAssignmentHistoryService {
 
   private final TaskAssignmentHistoryRepository historyRepository;
 
-  @Transactional(readOnly = true)
   public List<TaskAssignmentResponse> getAssignmentHistories(
       Long assignmentId, Long memberId, LocalDate fromDate, LocalDate toDate
   ) {

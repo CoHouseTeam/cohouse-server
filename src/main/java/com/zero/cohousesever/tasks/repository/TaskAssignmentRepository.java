@@ -6,11 +6,9 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, Long>,
-    JpaSpecificationExecutor<TaskAssignment> {
+public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, Long> {
 
   List<TaskAssignment> findByTemplate_Id(Long templateId);
-
 
   List<TaskAssignment> findByTemplate_GroupIdAndDateBetween(Long groupId, LocalDate start,
       LocalDate end);

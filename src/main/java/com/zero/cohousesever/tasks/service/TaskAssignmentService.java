@@ -82,10 +82,12 @@ public class TaskAssignmentService {
     LocalDate weekEnd   = sunday.plusDays(6);
 
     // 3-1) 해당 템플릿의 기존 배정들 중 이번 주만 골라 중복 날짜 Skip 용 집합 구성
-    List<TaskAssignment> existingAll = taskAssignmentRepository.findByTemplate_Id(req.getTemplateId());
+    List<TaskAssignment> existingAll =
+        taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(
+            req.getTemplateId(), weekStart, weekEnd);
+
     Set<LocalDate> alreadyInWeek = existingAll.stream()
         .map(TaskAssignment::getDate)
-        .filter(d -> !d.isBefore(weekStart) && !d.isAfter(weekEnd)) // weekStart <= d <= weekEnd
         .collect(Collectors.toSet());
 
     // 4) 이번 주 작업량(담당 템플릿 수)
