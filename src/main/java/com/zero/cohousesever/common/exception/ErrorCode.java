@@ -24,7 +24,7 @@ public enum ErrorCode {
     GROUP_ALREADY_INACTIVE(HttpStatus.NOT_FOUND, "비활성화된 그룹입니다."),
     GROUP_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 그룹 멤버를 찾을 수 없습니다."),
     GROUP_MEMBER_ALREADY_INACTIVE(HttpStatus.UNAUTHORIZED, "비활성화된 그룹 멤버입니다."),
-    NOT_GROUP_LEADER(HttpStatus.UNAUTHORIZED, "그룹장만 접근할 수 있습니다."),
+    NOT_GROUP_LEADER(HttpStatus.FORBIDDEN, "그룹장만 접근할 수 있습니다."),
 
     // 할일 관련 오류
 
