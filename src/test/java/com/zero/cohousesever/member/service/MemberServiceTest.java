@@ -139,4 +139,21 @@ class MemberServiceTest {
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
     }
+
+    @Test
+    @DisplayName("회원 프로필 조회시 이미 탈퇴한 회원일 경우 예외 발생")
+    void updateMemberProfile_ThrowsException_WhenInactiveMember() {
+        // given
+        Long memberId = 1L;
+        ReflectionTestUtils.setField(testMember, "status", MemberStatus.INACTIVE);
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> memberService.getMemberProfile(memberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+    }
 }
