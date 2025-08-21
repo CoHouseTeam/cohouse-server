@@ -5,6 +5,7 @@ import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentStatusUpdateRequest;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideRequest;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideResponse;
+import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideStatusUpdateRequest;
 import com.zero.cohousesever.tasks.dto.repeat.RepeatDayRequest;
 import com.zero.cohousesever.tasks.dto.repeat.RepeatDayResponse;
 import com.zero.cohousesever.tasks.dto.template.TaskTemplateRequest;
@@ -25,6 +26,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -41,7 +43,7 @@ public class TaskController {
   private final TaskTemplateService taskTemplateService;
   private final RepeatDayService repeatDayService;
   private final TaskAssignmentService taskAssignmentService;
-  private final AssignmentOverrideService overrideService;
+  private final AssignmentOverrideService assignmentOverrideService;
   private final TaskAssignmentHistoryService taskAssignmentHistoryService;
   private final AssignmentOverrideHistoryService assignmentOverrideHistoryService;
 
@@ -148,14 +150,27 @@ public class TaskController {
   }
 
   // 4. 담당자 변경 요청 관련
+
+  // 요청 생성
   @PostMapping("/assignments/{assignmentId}/override-request")
-  public ResponseEntity<AssignmentOverrideRequest> requestOverride() {
-    return null;
+  public ResponseEntity<List<AssignmentOverrideResponse>> requestOverride(
+      @PathVariable Long assignmentId,
+      @RequestBody AssignmentOverrideRequest request
+  ) {
+    List<AssignmentOverrideResponse> created =
+        assignmentOverrideService.createOverrideRequests(assignmentId, request);
+    return ResponseEntity.ok(created);
   }
 
-  @PutMapping("/override-requests/{requestId}")
-  public ResponseEntity<AssignmentOverrideResponse> respondOverride() {
-    return null;
+  // 요청 수락/거절
+  @PatchMapping("/override-requests/{requestId}")
+  public ResponseEntity<AssignmentOverrideResponse> respondOverride(
+      @PathVariable Long requestId,
+      @RequestBody AssignmentOverrideStatusUpdateRequest request
+  ) {
+    AssignmentOverrideResponse updated =
+        assignmentOverrideService.respondToOverrideRequest(requestId, request);
+    return ResponseEntity.ok(updated);
   }
 
   // 할일 이행 히스토리 조회

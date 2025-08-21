@@ -10,4 +10,5 @@ public class TaskTemplateRequest {
   private Long groupId;
   private String category;
   private List<String> repeatDays; // 반복요일
+  private Boolean randomEnabled;
 }

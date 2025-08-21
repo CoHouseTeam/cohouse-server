@@ -13,6 +13,7 @@ public class TaskTemplateResponse {
   private String category;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+  private Boolean randomEnabled;
 
   // api 구조 반환형태
   public static TaskTemplateResponse from(TaskTemplate t) {

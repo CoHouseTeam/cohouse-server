@@ -18,14 +18,20 @@ public enum ErrorCode {
     // 할일 관련 오류
     TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 템플릿을 찾을 수 없습니다."),
     REPEAT_DAY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 반복 요일을 찾을 수 없습니다."),
-    REPEAT_DAY_ALREADY_EXISTS(HttpStatus.CONFLICT, "해당 요일은 이미 존재합니다."),
-    TASK_ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 할일 배정을 찾을 수 없습니다."),
-    TASK_ASSIGNMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "해당 날짜에 동일 템플릿 배정이 이미 생성되었습니다."),
-    ASSIGNMENT_STATUS_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 할일 상태입니다."),
     CANDIDATE_MEMBERS_REQUIRED(HttpStatus.BAD_REQUEST, "배정 후보자 목록이 필요합니다."),
     DATE_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 날짜 형식입니다. (yyyy-MM-dd)"),
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
-    FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    TASK_ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 할일 배정을 찾을 수 없습니다."),
+
+    OVERRIDE_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "담당자 변경 요청을 찾을 수 없습니다."),
+    OVERRIDE_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 요청입니다."),
+    OVERRIDE_PAST_DATE_FORBIDDEN(HttpStatus.BAD_REQUEST, "과거 날짜의 할일은 처리할 수 없습니다."),
+    OVERRIDE_REQUESTER_MUST_BE_ASSIGNEE(HttpStatus.FORBIDDEN, "현재 담당자만 요청을 생성할 수 있습니다."),
+    OVERRIDE_ACCEPTOR_MUST_BE_TARGET(HttpStatus.FORBIDDEN, "요청 대상자만 응답할 수 있습니다."),
+    OVERRIDE_BROADCAST_REJECT_FORBIDDEN(HttpStatus.FORBIDDEN, "브로드캐스트 요청은 거절할 수 없습니다."),
+    OVERRIDE_NOT_SAME_GROUP(HttpStatus.FORBIDDEN, "같은 그룹의 그룹멤버만 가능합니다."),
+    OVERRIDE_SWAP_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "스왑 대상 할일 배정을 찾을 수 없습니다."),
+    OVERRIDE_SWAP_DIFFERENT_GROUP(HttpStatus.FORBIDDEN, "서로 변경은 같은 그룹 내에서만 가능합니다."),
     // 게시물 관련 오류
 
     // 정산 관련 오류
