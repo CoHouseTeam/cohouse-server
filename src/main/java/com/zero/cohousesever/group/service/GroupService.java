@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_NOT_FOUND;
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -53,5 +53,33 @@ public class GroupService {
         groupRepository.save(group);
 
         return GroupSummary.fromEntity(group);
+    }
+
+    public GroupSummary getGroup(Long groupId) {
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+
+        return GroupSummary.fromEntity(group);
+    }
+
+    public GroupSummary updateGroup(Long memberId, Long groupId, GroupSummary requestDto) {
+
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        // 그룹장이 아닌 경우 그룹 정보 수정 불가
+        if (!groupMember.getIsLeader()) {
+            throw new CustomException(NOT_GROUP_LEADER);
+        }
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+
+        group.updateName(requestDto.getName());
+
+        Group saved = groupRepository.save(group);
+
+        return GroupSummary.fromEntity(saved);
     }
 }

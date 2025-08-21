@@ -14,15 +14,21 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
 
   List<TaskAssignment> findByTemplate_Id(Long templateId);
 
-  List<TaskAssignment> findByTemplate_GroupIdAndDateBetween(Long groupId, LocalDate start, LocalDate end);
+  // develop에서 온 메서드 (주간 중복 체크 등 기간 필터)
+  List<TaskAssignment> findByTemplate_IdAndDateBetween(
+      Long templateId, LocalDate start, LocalDate end);
+
+  List<TaskAssignment> findByTemplate_GroupIdAndDateBetween(
+      Long groupId, LocalDate start, LocalDate end);
 
   List<TaskAssignment> findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(
       Long groupId, Long groupMemberId, LocalDate start, LocalDate end);
 
+  // feature/86에서 추가한 메서드들 유지
   boolean existsByTemplate_GroupIdAndGroupMemberId(Long groupId, Long groupMemberId);
 
   // 기준일 이전의 가장 최근 배정 1건 (담당 그대로 유지용)
-  TaskAssignment findTopByTemplate_IdAndDateLessThanOrderByDateDesc(Long templateId, LocalDate beforeDate);
+  TaskAssignment findTopByTemplate_IdAndDateLessThanOrderByDateDesc(Long templateId, LocalDate date);
 
   // 담당자 변경 시 동시성 제어
   @Lock(LockModeType.PESSIMISTIC_WRITE)
