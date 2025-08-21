@@ -194,4 +194,52 @@ class MemberServiceTest {
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
     }
+
+    @Test
+    @DisplayName("회원 알림 시간 수정 성공")
+    void updateMemberAlertTime_Success() {
+        // given
+        Long memberId = 1L;
+        LocalTime alertTime = LocalTime.of(18, 0, 0);
+
+        MemberProfileSummary requestDto = MemberProfileSummary.fromEntity(testMember);
+        ReflectionTestUtils.setField(requestDto, "alertTime", alertTime);
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.of(testMember));
+        when(memberRepository.save(any(Member.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        MemberProfileSummary result = memberService.updateMemberAlertTime(memberId, requestDto);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(testMember.getId());
+        assertThat(result.getAlertTime()).isEqualTo(alertTime);
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+        verify(memberRepository).save(testMember);
+    }
+
+    @Test
+    @DisplayName("회원 알림 시간 수정시 이미 탈퇴한 회원일 경우 예외 발생")
+    void updateMemberAlertTime_ThrowsException_WhenInactiveMember() {
+        // given
+        Long memberId = 1L;
+        LocalTime alertTime = LocalTime.of(18, 0, 0);
+
+        ReflectionTestUtils.setField(testMember, "status", MemberStatus.INACTIVE);
+
+        MemberProfileSummary requestDto = MemberProfileSummary.fromEntity(testMember);
+        ReflectionTestUtils.setField(requestDto, "alertTime", alertTime);
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> memberService.updateMemberAlertTime(memberId, requestDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+    }
 }
