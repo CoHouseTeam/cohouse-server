@@ -25,7 +25,6 @@ public class PaymentController {
      * 내 결제 내역 조회 (필터 optional)
      * - groupId: 특정 그룹 내 결제
      * - settlementId: 특정 정산 내 결제
-     * - status: 결제 상태 필터
      * - fromDate/toDate: 기간 필터
      */
     @GetMapping("/histories")
