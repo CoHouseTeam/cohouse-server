@@ -45,4 +45,8 @@ public class Member extends BaseEntity {
         this.birthDate = birthDate;
         this.gender = gender;
     }
+
+    public void updateAlertTime(LocalTime alertTime) {
+        this.alertTime = alertTime;
+    }
 }

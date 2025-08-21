@@ -48,4 +48,15 @@ public class MemberService {
 
         return MemberProfileSummary.fromEntity(saved);
     }
+
+    public MemberProfileSummary updateMemberAlertTime(Long memberId, MemberProfileSummary requestDto) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        member.updateAlertTime(requestDto.getAlertTime());
+
+        Member saved = memberRepository.save(member);
+
+        return MemberProfileSummary.fromEntity(saved);
+    }
 }
