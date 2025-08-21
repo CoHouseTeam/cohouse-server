@@ -1,5 +1,7 @@
 package com.zero.cohousesever.member.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.member.dto.auth.JwtTokenResponseDto;
 import com.zero.cohousesever.member.dto.auth.LoginRequestDto;
 import com.zero.cohousesever.member.dto.auth.RefreshRequestDto;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.Objects;
+
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -32,32 +36,27 @@ public class AuthService {
         String name = signupRequestDto.getName();
         String email = signupRequestDto.getEmail();
         String password = signupRequestDto.getPassword();
-        String passwordRepeat = signupRequestDto.getPasswordRepeat();
 
         // TODO: Validation 도입하여 처리하기
         if (!StringUtils.hasText(name)
                 || !StringUtils.hasText(email)
-                || !StringUtils.hasText(password)
-                || !StringUtils.hasText(passwordRepeat)) {
-            throw new RuntimeException(); // TODO: 적절한 예외 처리 로직 작성
-        }
-
-        if (!Objects.equals(password, passwordRepeat)) {
-            throw new RuntimeException(); // TODO: 적절한 예외 처리 로직 작성
+                || !StringUtils.hasText(password)) {
+            throw new CustomException(INVALID_SIGNUP_REQUEST);
         }
 
         if (isEmailDuplicated(email)) {
-            throw new RuntimeException(); // TODO: 적절한 예외 처리 로직 작성
+            throw new CustomException(EMAIL_ALREADY_EXISTS);
         }
 
         return memberService.createMember(name, email, passwordEncoder.encode(password));
     }
 
     public JwtTokenResponseDto loginAuthenticate(LoginRequestDto requestDto) {
-        Member member = memberRepository.findByEmail(requestDto.getEmail()).orElseThrow(); // TODO: 적절한 예외 처리
+        Member member = memberRepository.findByEmail(requestDto.getEmail())
+                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
 
         if (!passwordEncoder.matches(requestDto.getPassword(), member.getPassword())) {
-            throw new RuntimeException(); // TODO: 적절한 예외 처리
+            throw new CustomException(PASSWORD_NOT_MATCH);
         }
 
         String accessToken = jwtTokenProvider.generateAccessToken(member.getEmail(), member.getName());
@@ -80,15 +79,15 @@ public class AuthService {
         String serverRefreshToken = refreshTokenService.getRefreshToken(userDetails.getId());
 
         if (!jwtTokenProvider.validateToken(memberRefreshToken).equals(TokenValidationStatus.VALID)) {
-            throw new RuntimeException(); // TODO: '유효하지 않은 리프레시 토큰입니다' 예외 작성
+            throw new CustomException(REFRESH_TOKEN_INVALID);
         }
 
         if (!jwtTokenProvider.validateToken(serverRefreshToken).equals(TokenValidationStatus.VALID)) {
-            throw new RuntimeException(); // TODO: '리프레시 토큰이 만료되었습니다.' 예외 작성
+            throw new CustomException(REFRESH_TOKEN_EXPIRED);
         }
 
         if (!Objects.equals(memberRefreshToken, serverRefreshToken)) {
-            throw new RuntimeException(); // TODO: '유효하지 않은 리프레시 토큰입니다' 예외 작성
+            throw new CustomException(REFRESH_TOKEN_INVALID);
         }
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(userDetails.getEmail(), userDetails.getName());
