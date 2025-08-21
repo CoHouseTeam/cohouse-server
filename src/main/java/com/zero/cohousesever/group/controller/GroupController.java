@@ -53,11 +53,15 @@ public class GroupController {
     // 그룹 정보 수정
     @PutMapping("/{groupId}")
     public ResponseEntity<GroupSummary> updateGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId,
             @RequestBody GroupSummary requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupSummary responseDto = groupService.updateGroup(memberId, groupId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 해체
