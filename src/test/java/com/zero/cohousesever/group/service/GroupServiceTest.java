@@ -28,12 +28,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static com.zero.cohousesever.common.exception.ErrorCode.GROUP_MEMBER_NOT_FOUND;
-import static com.zero.cohousesever.common.exception.ErrorCode.NOT_GROUP_MEMBER;
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -385,10 +383,10 @@ class GroupServiceTest {
         LeaderTransferRequestDto requestDto = new LeaderTransferRequestDto();
         ReflectionTestUtils.setField(requestDto, "newLeaderId", 2L);
 
-        given(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), groupId, GroupMemberStatus.ACTIVE))
-                .willReturn(Optional.of(testGroupMember));
-        given(groupMemberRepository.findById(newGroupMember.getId()))
-                .willReturn(Optional.of(newGroupMember));
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+        when(groupMemberRepository.findById(newGroupMember.getId()))
+                .thenReturn(Optional.of(newGroupMember));
 
         // when
         LeaderTransferResponseDto response = groupService.transferLeader(testMember.getId(), groupId, requestDto);
@@ -413,12 +411,13 @@ class GroupServiceTest {
         ReflectionTestUtils.setField(requestDto, "newLeaderId", 999L);
 
 
-        given(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), groupId, GroupMemberStatus.ACTIVE))
-                .willReturn(Optional.of(testGroupMember));
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
 
         // when & then
         assertThatThrownBy(() -> groupService.transferLeader(testMember.getId(), groupId, requestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: 적절한 예외 설정하기
+                .isInstanceOf(CustomException.class)
+                .hasMessage(NOT_GROUP_LEADER.getMessage());
     }
 
     @Test
@@ -454,15 +453,16 @@ class GroupServiceTest {
         ReflectionTestUtils.setField(newGroupMember, "id", 2L);
 
         LeaderTransferRequestDto requestDto = new LeaderTransferRequestDto();
-        ReflectionTestUtils.setField(requestDto, "newLeaderId", 999L);
+        ReflectionTestUtils.setField(requestDto, "newLeaderId", 2L);
 
-        given(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(prevLeaderMemberId, groupId, GroupMemberStatus.ACTIVE))
-                .willReturn(Optional.of(testGroupMember));
-        given(groupMemberRepository.findById(newGroupMember.getId()))
-                .willReturn(Optional.of(newGroupMember));
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(prevLeaderMemberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+        when(groupMemberRepository.findById(newGroupMember.getId()))
+                .thenReturn(Optional.of(newGroupMember));
 
         // when & then
         assertThatThrownBy(() -> groupService.transferLeader(testMember.getId(), groupId, requestDto))
-                .isInstanceOf(RuntimeException.class); // TODO: 적절한 예외 설정하기
+                .isInstanceOf(CustomException.class)
+                .hasMessage(NOT_GROUP_MEMBER.getMessage());
     }
 }
