@@ -111,7 +111,7 @@ class GroupServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessage("해당 회원을 찾을 수 없습니다.");
 
-        verify(memberRepository, times(1)).findById(memberId);
+        verify(memberRepository).findById(memberId);
         verify(groupRepository, never()).save(any(Group.class));
         verify(groupMemberRepository, never()).save(any(GroupMember.class));
     }
@@ -136,6 +136,41 @@ class GroupServiceTest {
 
         verify(groupRepository).save(any(Group.class));
     }
+
+    @Test
+    @DisplayName("그룹 조회 성공 테스트")
+    void getGroup_Success() {
+        // given
+        Long groupId = 1L;
+        when(groupRepository.findById(groupId)).thenReturn(Optional.of(testGroup));
+
+        // when
+        GroupSummary result = groupService.getGroup(groupId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("테스트 그룹");
+        assertThat(result.getStatus()).isEqualTo(GroupStatus.ACTIVE);
+
+        verify(groupRepository).findById(groupId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 그룹 조회 시 예외 발생 테스트")
+    void getGroup_ThrowsException_WhenGroupNotFound() {
+        // given
+        Long groupId = 999L;
+        when(groupRepository.findById(groupId)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> groupService.getGroup(groupId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 그룹을 찾을 수 없습니다.");
+
+        verify(groupRepository).findById(groupId);
+    }
+
 
     @Test
     @DisplayName("그룹 수정 성공 테스트")

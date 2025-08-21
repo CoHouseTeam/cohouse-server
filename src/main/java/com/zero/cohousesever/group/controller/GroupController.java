@@ -45,8 +45,9 @@ public class GroupController {
     public ResponseEntity<GroupSummary> getGroup(
             @PathVariable("groupId") Long groupId
     ) {
+        GroupSummary responseDto = groupService.getGroup(groupId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 정보 수정
