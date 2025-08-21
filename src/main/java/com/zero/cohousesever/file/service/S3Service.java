@@ -1,5 +1,7 @@
 package com.zero.cohousesever.file.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,5 +67,23 @@ public class S3Service {
      */
     public String extractFileName(String fileUrl) {
         return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+    }
+
+    /**
+     * 이미지 파일 검증
+     */
+    public void validateImageFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new CustomException(ErrorCode.FILE_EMPTY);
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new CustomException(ErrorCode.FILE_NOT_IMAGE);
+        }
+
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new CustomException(ErrorCode.FILE_SIZE_EXCEED);
+        }
     }
 }

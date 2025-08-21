@@ -3,6 +3,7 @@ package com.zero.cohousesever.settlement.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -20,7 +21,9 @@ import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -34,6 +37,8 @@ public class SettlementService {
     private final SettlementRepository settlementRepository;
     private final SettlementHistoryRepository settlementHistoryRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
+
+    private final S3Service s3Service;
 
     /**
      * 정산 등록
@@ -216,12 +221,6 @@ public class SettlementService {
     }
 
     /**
-     * 영수증 이미지 업로드 및 처리
-     */
-    public void uploadReceiptImage() {
-    }
-
-    /**
      * 정산 전체 히스토리 조회
      */
     public List<SettlementHistoryResponse> getSettlementHistories(Long groupId, Long settlementId) {
@@ -233,6 +232,40 @@ public class SettlementService {
      */
     public List<SettlementHistoryResponse> getGroupSettlementHistories(Long groupId, Long settlementId, LocalDate fromDate, LocalDate toDate) {
         return null;
+    }
+
+    /**
+     * 영수증 이미지 업로드
+     */
+    public String uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+        Member member = findMemberOrThrow(memberId);
+        Settlement settlement = findSettlementOrThrow(settlementId);
+
+        if (!settlement.getPayer().equals(member)) {
+            throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+        }
+
+        // 이미지 검증
+        s3Service.validateImageFile(file);
+
+        // 경로 생성
+        String dirName = String.format("groups/%d/settlement/%d/receipt", groupId, settlementId);
+
+        // 파일 업로드
+        return s3Service.uploadFile(file, dirName);
+    }
+
+    /**
+     * 영수증 이미지 업데이트
+     * - 기존 영수증 이미지 삭제 후 최신 이미지 등록
+     */
+    public String updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId, String existingFileName) throws IOException {
+
+        // 기존 파일 삭제
+        s3Service.deleteFile(existingFileName);
+
+        // 새 이미지 업로드
+        return uploadReceiptImage(memberId, file, groupId, settlementId);
     }
 
     // 회원 엔티티 조회 메서드

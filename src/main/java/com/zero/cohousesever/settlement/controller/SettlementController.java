@@ -1,5 +1,7 @@
 package com.zero.cohousesever.settlement.controller;
 
+import com.zero.cohousesever.file.dto.FileUploadResponse;
+import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
@@ -10,7 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 
 @RestController
@@ -60,26 +64,35 @@ public class SettlementController {
         return ResponseEntity.ok().build();
     }
 
-    // FIXME 프론트에서 한번에 MAP으로 데이터 넘겨주기에 필요없음
-//    // 정산 참여자 추가
-//    @PostMapping("/{settlementId}/participants")
-//    public ResponseEntity<?> addParticipant() {
-//
-//        return ResponseEntity.ok().build();
-//    }
-//
-//    // 정산 참여자 제거
-//    @DeleteMapping("/{settlementId}/participants/{participantId}")
-//    public ResponseEntity<?> removeParticipant() {
-//
-//        return ResponseEntity.ok().build();
-//    }
+    /**
+     * 영수증 이미지 업로드
+     */
+    @PostMapping("/{settlementId}/receipt")
+    public ResponseEntity<FileUploadResponse> uploadReceiptImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long settlementId,
+            @RequestParam Long groupId,
+            @RequestParam("file") MultipartFile file) throws IOException {
 
-    // 영수증 이미지 업로드
-    @PostMapping("/{settlementId}/image")
-    public ResponseEntity<?> uploadReceiptImage(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        // 서비스 메서드 내부에서 이미지 검증 수행
+        String fileUrl = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        return ResponseEntity.ok(new FileUploadResponse(fileUrl));
+    }
 
-        return ResponseEntity.ok().build();
+    /**
+     * 영수증 이미지 업데이트
+     */
+    @PutMapping("/{settlementId}/receipt")
+    public ResponseEntity<FileUploadResponse> updateReceiptImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId,
+            @PathVariable Long settlementId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("existingFileName") String existingFileName) throws IOException {
+
+        // 서비스 메서드 내부에서 이미지 검증 수행
+        String fileUrl = settlementService.updateReceiptImage(userDetails.getId(), file, groupId, settlementId, existingFileName);
+        return ResponseEntity.ok(new FileUploadResponse(fileUrl));
     }
 
     // 송금 완료 처리
