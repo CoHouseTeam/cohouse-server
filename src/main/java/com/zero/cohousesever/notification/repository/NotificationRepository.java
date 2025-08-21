@@ -57,4 +57,34 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
          WHERE n.status <> :deleted AND n.createdAt < :cutoff
     """)
     int softDeleteOlderThan(LocalDateTime cutoff, NotificationStatus deleted, LocalDateTime now);
+
+    /**
+     * 단건 읽음 처리.
+     *  - 대상 회원의 소유, ACTIVE 상태, 현재 미읽음(isRead = false)
+     *  - isRead=true, readAt=:now 로 갱신
+     */
+    @Modifying
+    @Query("""
+        UPDATE Notification n
+           SET n.isRead = true, n.readAt = :now
+         WHERE n.id = :notificationId
+           AND n.member.id = :memberId
+           AND n.status = :active
+           AND n.isRead = false
+    """)
+    int markRead(Long notificationId, Long memberId, NotificationStatus active, LocalDateTime now);
+
+    /**
+     * 단건 존재/상태/읽음 여부 확인용 경량 조회.
+     * - select 절을 최소화하여 불필요한 필드 로딩을 방지합니다.
+     * - 결과가 없으면 null을 반환합니다.
+     */
+    @Query("""
+        SELECT n.isRead
+          FROM Notification n
+         WHERE n.id = :notificationId
+           AND n.member.id = :memberId
+           AND n.status = :active
+    """)
+    Boolean findReadFlagForActiveMember(Long notificationId, Long memberId, NotificationStatus active);
 }

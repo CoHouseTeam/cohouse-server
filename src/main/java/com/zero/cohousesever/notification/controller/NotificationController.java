@@ -10,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -79,10 +80,22 @@ public class NotificationController {
 
     /**
      * 알림 읽음 처리
+     * - 대상 알림이 ACTIVE이고 미읽음이면 읽음 처리합니다.
+     * - 이미 읽은 알림인 경우에도 성공으로 응답합니다.
+     * - 대상이 없거나 권한이 없으면 예외를 반환합니다.
      */
     @PutMapping("/{id}/read")
-    public void markAsRead(@PathVariable Long id) {
-        notificationService.markAsRead(id);
+    public Map<String, String> read(
+            @AuthenticationPrincipal(expression = "id") Long principalId,
+            @RequestHeader(required = false, name = "X-Member-Id") Long headerMemberId,
+            @PathVariable Long notificationId
+    ) {
+        Long memberId = (principalId != null) ? principalId : headerMemberId;
+        if (memberId == null) {
+            throw new IllegalArgumentException("인증 정보가 필요합니다.");
+        }
+        notificationService.markAsRead(memberId, notificationId);
+        return Map.of("message", "알림 확인!");
     }
 
     /**

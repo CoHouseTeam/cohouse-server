@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -161,5 +162,54 @@ class NotificationServiceTest {
         verify(notificationRepository, times(1)).softDeleteOlderThan(
                 any(LocalDateTime.class), eq(NotificationStatus.DELETED), any(LocalDateTime.class)
         );
+    }
+
+    @Test
+    @DisplayName("읽음 처리 성공 - 미읽음 → 읽음")
+    void markRead_success() {
+        // 업데이트 1건 성공
+        when(notificationRepository.markRead(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE), any()))
+                .thenReturn(1);
+
+        assertDoesNotThrow(() -> notificationService.markAsRead(10L, 100L));
+
+        verify(notificationRepository, times(1))
+                .markRead(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE), any());
+        verify(notificationRepository, never())
+                .findReadFlagForActiveMember(anyLong(), anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("읽음 처리 멱등 - 이미 읽음")
+    void markRead_idempotent_alreadyRead() {
+        // 업데이트 0건 + 존재하고 이미 읽음(true)
+        when(notificationRepository.markRead(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE), any()))
+                .thenReturn(0);
+        when(notificationRepository.findReadFlagForActiveMember(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE)))
+                .thenReturn(Boolean.TRUE);
+
+        assertDoesNotThrow(() -> notificationService.markAsRead(10L, 100L));
+
+        verify(notificationRepository, times(1))
+                .findReadFlagForActiveMember(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE));
+    }
+
+    @Test
+    @DisplayName("읽음 처리 실패 - 대상 없음/권한 없음/삭제됨")
+    void markRead_notFoundOrForbidden() {
+        // 업데이트 0건 + 존재하지 않음(null)
+        when(notificationRepository.markRead(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE), any()))
+                .thenReturn(0);
+        when(notificationRepository.findReadFlagForActiveMember(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE)))
+                .thenReturn(null);
+
+        try {
+            notificationService.markAsRead(10L, 100L);
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        verify(notificationRepository, times(1))
+                .findReadFlagForActiveMember(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE));
     }
 }

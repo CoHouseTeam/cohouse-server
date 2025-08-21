@@ -57,8 +57,31 @@ public class NotificationService {
         return null;
     }
 
-    // 알림 읽음 처리
-    public void markAsRead(Long notificationId) {
+    /**
+     * 알림 읽음 처리
+     *  - 해당 회원의 ACTIVE 알림을 isRead=true, readAt=now로 갱신합니다.
+     *  - 이미 읽음인 경우에도 예외를 던지지 않고 성공으로 간주합니다.
+     * 예외 - 해당 알림이 존재하지 않거나(다른 회원/삭제됨 포함) 접근 권한이 없으면 IllegalArgumentException을 던집니다.
+     *  - @Modifying 업데이트의 원자성 보장을 위해 필요합니다.
+     */
+    public void markAsRead(Long memberId, Long notificationId) {
+        int updated = notificationRepository.markRead(
+                notificationId, memberId, NotificationStatus.ACTIVE, LocalDateTime.now()
+        );
+
+        if (updated > 0) {
+            return; // 정상적으로 읽음 처리됨
+        }
+
+        // 업데이트 0건: 존재/권한/상태를 확인하여 예외/멱등 처리 분기
+        Boolean readFlag = notificationRepository.findReadFlagForActiveMember(
+                notificationId, memberId, NotificationStatus.ACTIVE
+        );
+
+        if (readFlag == null) {
+            throw new IllegalArgumentException("알림이 존재하지 않거나 권한이 없습니다.");
+        }
+        // readFlag == true 인 경우: 이미 읽음 → 멱등 처리로 성공 간주
     }
 
     // 특정 사용자의 알림 설정 조회
