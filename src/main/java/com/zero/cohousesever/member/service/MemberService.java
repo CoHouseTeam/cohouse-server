@@ -33,4 +33,19 @@ public class MemberService {
 
         return MemberProfileSummary.fromEntity(member);
     }
+
+    public MemberProfileSummary updateMemberProfile(Long memberId, MemberProfileSummary requestDto) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        member.updateProfile(
+                requestDto.getName(),
+                requestDto.getBirthDate(),
+                MemberProfileSummary.genderBooleanFromString(requestDto.getGender())
+        );
+
+        Member saved = memberRepository.save(member);
+
+        return MemberProfileSummary.fromEntity(saved);
+    }
 }
