@@ -10,8 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     // 회원 관련 오류
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
-    INVALID_EMAIL_FORMAT(HttpStatus.BAD_REQUEST, "유효하지 않은 이메일 형식입니다."),
-    MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 회원입니다."),
+    MEMBER_INACTIVE(HttpStatus.UNAUTHORIZED, "이미 탈퇴한 회원입니다."),
 
     // 그룹 관련 오류
     GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원의 그룹을 찾을 수 없습니다."),
