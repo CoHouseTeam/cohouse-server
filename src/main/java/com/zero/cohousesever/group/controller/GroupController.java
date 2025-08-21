@@ -114,7 +114,7 @@ public class GroupController {
     @GetMapping("/{groupId}/members/{groupMemberId}")
     public ResponseEntity<GroupMemberSummary> getGroupMember(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long groupId,
+            @PathVariable("groupId") Long groupId,
             @PathVariable("groupMemberId") Long groupMemberId
     ) {
         Long memberId = userDetails.getId();
@@ -127,7 +127,7 @@ public class GroupController {
     // 본인의 그룹 멤버 정보 수정
     @PutMapping("/{groupId}/members/me")
     public ResponseEntity<GroupMemberSummary> updateGroupMember(
-            @PathVariable Long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody GroupMemberSummary requestDto
     ) {
 
