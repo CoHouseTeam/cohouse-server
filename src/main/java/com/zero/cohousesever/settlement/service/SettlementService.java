@@ -20,13 +20,10 @@ import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -235,8 +232,7 @@ public class SettlementService {
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
 
         // 해당 멤버가 이 정산에 참여하고 있는지 확인
-        boolean isParticipant = settlementParticipantRepository.existsBySettlementIdAndMember(settlementId, member);
-        if (!isParticipant) {
+        if (!settlementParticipantRepository.existsBySettlementIdAndMember(settlementId, member)) {
             throw new CustomException(ErrorCode.NOT_A_SETTLEMENT_PARTICIPANT);
         }
 
@@ -252,9 +248,7 @@ public class SettlementService {
                 .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
 
         // 그룹 멤버 중에서 해당 회원이 그룹장인지 확인
-        boolean isGroupOwner = groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, member);
-
-        if (!isGroupOwner) {
+        if (!groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, member)) {
             throw new CustomException(ErrorCode.NOT_GROUP_OWNER);
         }
 
@@ -274,8 +268,7 @@ public class SettlementService {
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
 
         // 해당 멤버가 이 정산에 참여하고 있는지 확인
-        boolean isParticipant = settlementParticipantRepository.existsBySettlementIdAndMember(settlementId, member);
-        if (!isParticipant) {
+        if (!settlementParticipantRepository.existsBySettlementIdAndMember(settlementId, member)) {
             throw new CustomException(ErrorCode.NOT_A_SETTLEMENT_PARTICIPANT);
         }
 
