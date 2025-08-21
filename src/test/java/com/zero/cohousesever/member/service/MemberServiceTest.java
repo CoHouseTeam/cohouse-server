@@ -128,7 +128,8 @@ class MemberServiceTest {
     @DisplayName("회원 프로필 조회시 이미 탈퇴한 회원일 경우 예외 발생")
     void getMemberProfile_ThrowsException_WhenInactiveMember() {
         // given
-        Long memberId = 999L;
+        Long memberId = 1L;
+        ReflectionTestUtils.setField(testMember, "status", MemberStatus.INACTIVE);
 
         when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.empty());
 
