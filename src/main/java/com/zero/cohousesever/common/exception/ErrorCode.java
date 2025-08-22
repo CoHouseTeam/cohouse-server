@@ -39,7 +39,9 @@ public enum ErrorCode {
     GROUP_ID_REQUIRED(HttpStatus.BAD_REQUEST,  "그룹 아이디 확인이 필요합니다."),
     ASSIGNMENT_STATUS_REQUIRED(HttpStatus.BAD_REQUEST, "할 일 상태 값이 필요합니다."),
     // 게시물 관련 오류
-
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
+    POST_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 게시글입니다."),
+    UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "본인 게시글만 수정/삭제할 수 있습니다."),
     // 정산 관련 오류
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 정산 정보를 찾을 수 없습니다."),
     SETTLEMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 정산 내역입니다."),
