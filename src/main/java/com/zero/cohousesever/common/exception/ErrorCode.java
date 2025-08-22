@@ -67,6 +67,7 @@ public enum ErrorCode {
     NOT_THE_SETTLEMENT_PAYER(HttpStatus.FORBIDDEN, "정산 결제자가 아닙니다."),
 
     // 알림 관련 오류
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림이 존재하지 않거나 접근할 수 없습니다."),
 
     // 서버 오류
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");

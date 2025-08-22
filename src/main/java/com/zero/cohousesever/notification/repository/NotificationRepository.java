@@ -87,4 +87,16 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
            AND n.status = :active
     """)
     Boolean findReadFlagForActiveMember(Long notificationId, Long memberId, NotificationStatus active);
+
+    /** 미읽음(미확인) 알림 개수: 최근 30일 + ACTIVE + isRead=false */
+    @Query("""
+        SELECT COUNT(n)
+          FROM Notification n
+         WHERE n.member.id = :memberId
+           AND n.status = :active
+           AND n.isRead = false
+           AND n.createdAt >= :cutoff
+    """)
+    long countUnread(Long memberId, NotificationStatus active, LocalDateTime cutoff);
+
 }

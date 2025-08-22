@@ -1,8 +1,8 @@
 package com.zero.cohousesever.notification.service;
 
-import com.zero.cohousesever.notification.dto.NotificationRequestDto;
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.notification.dto.NotificationResponse;
-import com.zero.cohousesever.notification.dto.NotificationSettingDto;
 import com.zero.cohousesever.notification.entity.Notification;
 import com.zero.cohousesever.notification.repository.NotificationRepository;
 import com.zero.cohousesever.notification.type.NotificationStatus;
@@ -52,26 +52,18 @@ public class NotificationService {
         );
     }
 
-    // 알림 생성
-    public NotificationResponse createNotification(NotificationRequestDto requestDto) {
-        return null;
-    }
-
     /**
      * 알림 읽음 처리
-     *  - 해당 회원의 ACTIVE 알림을 isRead=true, readAt=now로 갱신합니다.
-     *  - 이미 읽음인 경우에도 예외를 던지지 않고 성공으로 간주합니다.
-     * 예외 - 해당 알림이 존재하지 않거나(다른 회원/삭제됨 포함) 접근 권한이 없으면 IllegalArgumentException을 던집니다.
-     *  - @Modifying 업데이트의 원자성 보장을 위해 필요합니다.
+     * - 미읽음이면 읽음 처리, 이미 읽음이어도 성공(멱등)
+     * - 존재하지 않거나 권한이 없으면 예외 발생
      */
     public void markAsRead(Long memberId, Long notificationId) {
         int updated = notificationRepository.markRead(
                 notificationId, memberId, NotificationStatus.ACTIVE, LocalDateTime.now()
         );
 
-        if (updated > 0) {
-            return; // 정상적으로 읽음 처리됨
-        }
+        // 정상적으로 읽음 처리됨
+        if (updated > 0) {return;}
 
         // 업데이트 0건: 존재/권한/상태를 확인하여 예외/멱등 처리 분기
         Boolean readFlag = notificationRepository.findReadFlagForActiveMember(
@@ -79,17 +71,18 @@ public class NotificationService {
         );
 
         if (readFlag == null) {
-            throw new IllegalArgumentException("알림이 존재하지 않거나 권한이 없습니다.");
+            throw new CustomException(ErrorCode.INVITE_CODE_INVALID);
         }
         // readFlag == true 인 경우: 이미 읽음 → 멱등 처리로 성공 간주
     }
 
-    // 특정 사용자의 알림 설정 조회
-    public List<NotificationSettingDto> getNotificationSettings(Long memberId) {
-        return null;
+    /**
+     * 미읽음(미확인) 알림 개수: 30일 컷 + ACTIVE + isRead=false
+     */
+    public long getUnreadCount(Long memberId) {
+        return notificationRepository.countUnread(
+                memberId, NotificationStatus.ACTIVE, LocalDateTime.now().minusDays(30)
+        );
     }
 
-    // 특정 사용자의 알림 설정 변경
-    public void updateSetting(Long memberId, NotificationSettingDto settingDto) {
-    }
 }

@@ -39,10 +39,9 @@ public class Notification extends BaseEntity {
     @Column(nullable = false)
     private String content;
 
-    // 부가 데이터(JSON) - 예: {"deeplink": "/settlements/77", "groupId": 10}
-    @Convert(converter = JsonMapConverter.class)
-    @Column(name = "data_json", columnDefinition = "TEXT")
-    private Map<String, Object> data;
+    private Long settlementId;
+    private Long taskId;
+    private Long groupId;
 
     @Column(nullable = false)
     private boolean isRead;
