@@ -45,8 +45,9 @@ public class GroupController {
     public ResponseEntity<GroupSummary> getGroup(
             @PathVariable("groupId") Long groupId
     ) {
+        GroupSummary responseDto = groupService.getGroup(groupId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 정보 수정
@@ -72,9 +73,9 @@ public class GroupController {
         return ResponseEntity.ok().build();
     }
 
-    // 그룹 초대 링크 발급
+    // 그룹 초대 코드 발급
     @PostMapping("/{groupId}/invitations")
-    public ResponseEntity<GroupInviteDto> createGroupInviteUrl(
+    public ResponseEntity<GroupInviteDto> createGroupInviteCode(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId
     ) {
@@ -85,7 +86,7 @@ public class GroupController {
         return ResponseEntity.ok(responseDto);
     }
 
-    // 초대 링크로 그룹 가입
+    // 초대 코드로 그룹 가입
     @PostMapping("/join")
     public ResponseEntity<GroupMemberSummary> joinGroup(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -100,9 +101,14 @@ public class GroupController {
 
     // 내 그룹 정보 조회
     @GetMapping("/me")
-    public ResponseEntity<GroupSummary> getMyGroup() {
+    public ResponseEntity<GroupSummary> getMyGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupSummary responseDto = groupService.getGroupByMemberId(memberId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 멤버 목록 조회
