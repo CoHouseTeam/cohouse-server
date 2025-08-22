@@ -2,10 +2,12 @@ package com.zero.cohousesever.member.controller;
 
 import com.zero.cohousesever.member.dto.MessageDto;
 import com.zero.cohousesever.member.dto.auth.*;
+import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.member.service.AuthService;
 import com.zero.cohousesever.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -58,7 +60,12 @@ public class AuthController {
 
     // 로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<MessageDto> logout() {
+    public ResponseEntity<Void> logout(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        authService.logout(memberId);
 
         return ResponseEntity.ok().build();
     }
@@ -84,10 +91,12 @@ public class AuthController {
     // 리프레시 토큰을 통한 액세스 토큰 재발급
     @PostMapping("/login/refresh")
     public ResponseEntity<JwtTokenResponseDto> refreshAccessToken(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody RefreshRequestDto requestDto
     ) {
+        JwtTokenResponseDto responseDto = authService.reissueAccessToken(userDetails, requestDto);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 회원 탈퇴

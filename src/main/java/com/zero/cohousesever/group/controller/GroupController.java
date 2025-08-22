@@ -1,6 +1,6 @@
 package com.zero.cohousesever.group.controller;
 
-import com.zero.cohousesever.group.dto.group.GroupInviteUrlDto;
+import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
@@ -13,6 +13,7 @@ import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestSummary;
 import com.zero.cohousesever.group.service.GroupService;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +37,7 @@ public class GroupController {
 
         GroupSummary responseDto = groupService.createGroup(memberId, requestDto);
 
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     // 그룹 정보 상세 조회
@@ -44,18 +45,23 @@ public class GroupController {
     public ResponseEntity<GroupSummary> getGroup(
             @PathVariable("groupId") Long groupId
     ) {
+        GroupSummary responseDto = groupService.getGroup(groupId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 정보 수정
     @PutMapping("/{groupId}")
     public ResponseEntity<GroupSummary> updateGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId,
             @RequestBody GroupSummary requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupSummary responseDto = groupService.updateGroup(memberId, groupId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 해체
@@ -67,16 +73,20 @@ public class GroupController {
         return ResponseEntity.ok().build();
     }
 
-    // 그룹 초대 링크 발급
+    // 그룹 초대 코드 발급
     @PostMapping("/{groupId}/invitations")
-    public ResponseEntity<GroupInviteUrlDto> createGroupInviteUrl(
+    public ResponseEntity<GroupInviteDto> createGroupInviteCode(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupInviteDto responseDto = groupService.groupInvite(memberId, groupId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
-    // 초대 링크로 그룹 가입
+    // 초대 코드로 그룹 가입
     @PostMapping("/join")
     public ResponseEntity<GroupMemberSummary> joinGroup(
             @RequestBody GroupJoinDto requestDto
@@ -92,7 +102,7 @@ public class GroupController {
     ) {
         Long memberId = userDetails.getId();
 
-        GroupSummary responseDto = groupService.getGroupByMemberID(memberId);
+        GroupSummary responseDto = groupService.getGroupByMemberId(memberId);
 
         return ResponseEntity.ok(responseDto);
     }

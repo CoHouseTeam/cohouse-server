@@ -1,0 +1,147 @@
+package com.zero.cohousesever.post.service;
+
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.post.dto.post.*;
+import com.zero.cohousesever.post.entity.Post;
+import com.zero.cohousesever.post.repository.PostRepository;
+import com.zero.cohousesever.post.type.PostColor;
+import com.zero.cohousesever.post.type.PostStatus;
+import com.zero.cohousesever.post.type.PostType;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class PostService {
+
+    private final PostRepository postRepository;
+
+    // 페이지네이션 기본 상수
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 10;
+    private static final int MAX_SIZE = 100;
+
+    /**
+     * 게시글 목록 조회 - 검색 없이 타입 필터 + 페이지네이션
+     * - 상태(status)는 기본 ACTIVE
+     */
+    public PostListResponse<PostSummaryResponse> getPostList(
+            Long groupId,
+            Integer page,
+            Integer size,
+            PostType type,
+            PostStatus status
+    ) {
+        int p = (page == null || page < 0) ? DEFAULT_PAGE : page;
+        int s = (size == null || size <= 0) ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
+
+        Sort sort = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
+        Pageable pageable = PageRequest.of(p, s, sort);
+
+        PostStatus st = (status == null) ? PostStatus.ACTIVE : status;
+
+        // type은 Controller에서 항상 세팅되므로, 상태 + 타입 동시 필터
+        Page<Post> result = postRepository.findByGroupIdAndTypeAndStatus(groupId, type, st, pageable);
+        Page<PostSummaryResponse> pageResult = result.map(PostSummaryResponse::from);
+
+        return PostListResponse.from(
+                pageResult.getContent(),
+                pageResult.getNumber() + 1,
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages(),
+                pageResult.isLast()
+        );
+    }
+
+    /**
+     * 게시글 작성
+     * - 작성자는 currentMemberId 사용
+     */
+    public PostResponse createPost(PostRequest request, Long currentMemberId) {
+
+        PostColor color = (request.getColor() != null) ? request.getColor() : PostColor.GRAY;
+
+        Post post = Post.builder()
+                .groupId(request.getGroupId())
+                .memberId(currentMemberId)
+                .type(request.getType())
+                .title(request.getTitle())
+                .content(request.getContent())
+                .status(PostStatus.ACTIVE)
+                .color(color)
+                .build();
+
+        Post saved = postRepository.save(post);
+        return PostResponse.from(saved);
+    }
+
+    /**
+     * 게시글 상세 조회
+     * - ACTIVE 상태만 조회
+     */
+    public PostResponse getPostDetail(Long id) {
+        Post post = postRepository.findByIdAndStatus(id, PostStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+        return PostResponse.from(post);
+    }
+
+    /**
+     * 게시글 수정
+     * - ACTIVE 상태만
+     * - 작성자 본인만
+     */
+    public PostResponse update(Long id, PostUpdateRequest request, Long currentUserId) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        if (post.getStatus() != PostStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.POST_ALREADY_DELETED);
+        }
+        if (!post.getMemberId().equals(currentUserId)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+        }
+
+        if (request.getTitle() != null) {
+            post.setTitle(request.getTitle());
+        }
+        if (request.getContent() != null) {
+            post.setContent(request.getContent());
+        }
+        if (request.getType() != null) {
+            post.setType(request.getType());
+        }
+        if (request.getColor() != null) {
+            post.setColor(request.getColor());
+        }
+
+        Post saved = postRepository.save(post);
+        return PostResponse.from(saved);
+    }
+
+    /**
+     * 게시글 삭제(소프트 삭제)
+     * - ACTIVE 상태만
+     * - 작성자 본인만
+     */
+    public void deletePost(Long id, Long currentUserId) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        if (post.getStatus() != PostStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.POST_ALREADY_DELETED);
+        }
+        if (!post.getMemberId().equals(currentUserId)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+        }
+
+        post.setStatus(PostStatus.DELETED);
+        postRepository.save(post);
+    }
+
+}

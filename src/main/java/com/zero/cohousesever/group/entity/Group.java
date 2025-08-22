@@ -16,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "'group'") // 예약어 이슈 방지
+@Table(name = "`groups`")
 public class Group extends BaseEntity {
 
     private String name;
@@ -37,6 +37,10 @@ public class Group extends BaseEntity {
     public void removeMember(GroupMember member) {
         members.remove(member);
         member.leaveGroup();
+    }
+
+    public void updateName(String newName) {
+        this.name = newName;
     }
 }
 
