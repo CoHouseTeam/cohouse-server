@@ -142,11 +142,15 @@ public class GroupController {
     // 그룹장 권한 위임
     @PutMapping("/{groupId}/leader-transfer")
     public ResponseEntity<LeaderTransferResponseDto> changeGroupLeader(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId,
             @RequestBody LeaderTransferRequestDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        LeaderTransferResponseDto responseDto = groupService.transferLeader(memberId, groupId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 탈퇴 요청
