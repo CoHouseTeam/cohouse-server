@@ -1,6 +1,7 @@
 package com.zero.cohousesever.group.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
@@ -29,6 +30,8 @@ public class GroupService {
     private final MemberRepository memberRepository;
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
+
+    private final InviteCodeService inviteCodeService;
 
     @Transactional
     public GroupSummary createGroup(Long memberId, GroupNameDto groupNameDto) {
@@ -66,6 +69,51 @@ public class GroupService {
         Group group = groupMember.getGroup();
 
         return GroupSummary.fromEntity(group);
+    }
+
+    public GroupSummary getGroup(Long groupId) {
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+
+        return GroupSummary.fromEntity(group);
+    }
+
+    public GroupSummary updateGroup(Long memberId, Long groupId, GroupSummary requestDto) {
+
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        // 그룹장이 아닌 경우 그룹 정보 수정 불가
+        if (!groupMember.getIsLeader()) {
+            throw new CustomException(NOT_GROUP_LEADER);
+        }
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+
+        group.updateName(requestDto.getName());
+
+        Group saved = groupRepository.save(group);
+
+        return GroupSummary.fromEntity(saved);
+    }
+
+    public GroupInviteDto groupInvite(Long memberId, Long groupId) {
+
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        if (!groupMember.getIsLeader()) {
+            throw new CustomException(NOT_GROUP_LEADER);
+        }
+
+        String inviteCode = inviteCodeService.generateInviteCode(groupId);
+
+        return GroupInviteDto.builder()
+                .groupId(groupId)
+                .inviteCode(inviteCode)
+                .build();
     }
 
     public List<GroupMemberSummary> getGroupMembers(Long memberId, Long groupId) {
