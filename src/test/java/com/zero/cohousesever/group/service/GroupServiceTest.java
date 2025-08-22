@@ -113,7 +113,7 @@ class GroupServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessage("해당 회원을 찾을 수 없습니다.");
 
-        verify(memberRepository, times(1)).findById(memberId);
+        verify(memberRepository).findById(memberId);
         verify(groupRepository, never()).save(any(Group.class));
         verify(groupMemberRepository, never()).save(any(GroupMember.class));
     }
@@ -172,5 +172,154 @@ class GroupServiceTest {
                 .hasMessage(GROUP_MEMBER_NOT_FOUND.getMessage());
 
         verify(groupMemberRepository).findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("그룹 조회 성공 테스트")
+    void getGroup_Success() {
+        // given
+        Long groupId = 1L;
+        when(groupRepository.findById(groupId)).thenReturn(Optional.of(testGroup));
+
+        // when
+        GroupSummary result = groupService.getGroup(groupId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("테스트 그룹");
+        assertThat(result.getStatus()).isEqualTo(GroupStatus.ACTIVE);
+
+        verify(groupRepository).findById(groupId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 그룹 조회 시 예외 발생 테스트")
+    void getGroup_ThrowsException_WhenGroupNotFound() {
+        // given
+        Long groupId = 999L;
+        when(groupRepository.findById(groupId)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> groupService.getGroup(groupId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 그룹을 찾을 수 없습니다.");
+
+        verify(groupRepository).findById(groupId);
+    }
+
+
+    @Test
+    @DisplayName("그룹 수정 성공 테스트")
+    void updateGroup_Success() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+
+        // 그룹장 설정
+        testGroupMember = GroupMember.builder()
+                .member(testMember)
+                .nickname("테스트 사용자")
+                .isLeader(true)
+                .status(GroupMemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .build();
+        ReflectionTestUtils.setField(testGroupMember, "id", 1L);
+
+        GroupSummary requestDto = GroupSummary.builder()
+                .id(groupId)
+                .name("수정된 그룹 이름")
+                .status(GroupStatus.ACTIVE)
+                .build();
+
+        when(groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)).thenReturn(Optional.of(testGroupMember));
+        when(groupRepository.findById(groupId)).thenReturn(Optional.of(testGroup));
+        when(groupRepository.save(any(Group.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        GroupSummary result = groupService.updateGroup(memberId, groupId, requestDto);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getName()).isEqualTo("수정된 그룹 이름");
+        verify(groupMemberRepository).findByMemberIdAndGroupId(memberId, groupId);
+        verify(groupRepository).findById(groupId);
+        verify(groupRepository).save(any(Group.class));
+    }
+
+    @Test
+    @DisplayName("그룹장이 아닌 그룹원이 그룹 수정 시 예외 발생")
+    void updateGroup_ThrowsException_WhenNotLeader() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+
+        // 그룹원이지만 리더 아님
+        ReflectionTestUtils.setField(testGroupMember, "isLeader", false);
+
+        when(groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)).thenReturn(Optional.of(testGroupMember));
+
+        GroupSummary requestDto = GroupSummary.builder()
+                .id(groupId)
+                .name("수정된 그룹 이름")
+                .status(GroupStatus.ACTIVE)
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> groupService.updateGroup(memberId, groupId, requestDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("그룹장만 접근할 수 있습니다.");
+
+        verify(groupMemberRepository).findByMemberIdAndGroupId(memberId, groupId);
+        verify(groupRepository, never()).save(any(Group.class));
+    }
+
+    @Test
+    @DisplayName("그룹 수정 시 그룹 멤버가 존재하지 않는 경우 예외 발생")
+    void updateGroup_ThrowsException_WhenGroupMemberNotFound() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 999L;
+
+        when(groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)).thenReturn(Optional.empty());
+
+        GroupSummary requestDto = GroupSummary.builder()
+                .id(groupId)
+                .name("수정된 그룹 이름")
+                .status(GroupStatus.ACTIVE)
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> groupService.updateGroup(memberId, groupId, requestDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 그룹 멤버를 찾을 수 없습니다."); // GROUP_MEMBER_NOT_FOUND 메시지로 교체
+
+        verify(groupMemberRepository).findByMemberIdAndGroupId(memberId, groupId);
+        verify(groupRepository, never()).save(any(Group.class));
+    }
+
+    @Test
+    @DisplayName("그룹 수정 시 그룹이 존재하지 않는 경우 예외 발생")
+    void updateGroup_ThrowsException_WhenGroupNotFound() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+
+        // 그룹장은 맞음
+        when(groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)).thenReturn(Optional.of(testGroupMember));
+        when(groupRepository.findById(groupId)).thenReturn(Optional.empty());
+
+        GroupSummary requestDto = GroupSummary.builder()
+                .id(groupId)
+                .name("수정된 그룹 이름")
+                .status(GroupStatus.ACTIVE)
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> groupService.updateGroup(memberId, groupId, requestDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 그룹을 찾을 수 없습니다."); // GROUP_NOT_FOUND 메시지
+
+        verify(groupRepository, never()).save(any(Group.class));
     }
 }

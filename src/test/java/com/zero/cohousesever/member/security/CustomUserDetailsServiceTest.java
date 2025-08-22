@@ -1,5 +1,6 @@
 package com.zero.cohousesever.member.security;
 
+import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
@@ -68,7 +69,30 @@ class CustomUserDetailsServiceTest {
 
         // when & then
         assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername(email))
-                .isInstanceOf(RuntimeException.class); // TODO: loadUserByUsername에서 던진 예외를 캐치하기
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 회원을 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("만료된 사용자로 UserDetails 로드 시 예외 발생")
+    void shouldThrowExceptionWhenUserInactive() {
+        // given
+        String email = "test@example.com";
+        String name = "테스트 사용자";
+        String password = "password123";
+        Member member = Member.builder()
+                .name(name)
+                .email(email)
+                .password(password)
+                .status(MemberStatus.INACTIVE)
+                .build();
+
+        when(memberRepository.findByEmail(email)).thenReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername(email))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("이미 탈퇴한 회원입니다.");
     }
 
     @Test
@@ -80,7 +104,8 @@ class CustomUserDetailsServiceTest {
 
         // when & then
         assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername(emptyEmail))
-                .isInstanceOf(RuntimeException.class); // TODO: loadUserByUsername에서 던진 예외를 캐치하기
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 회원을 찾을 수 없습니다.");
     }
 
     @Test
@@ -92,6 +117,7 @@ class CustomUserDetailsServiceTest {
 
         // when & then
         assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername(nullEmail))
-                .isInstanceOf(RuntimeException.class); // TODO: loadUserByUsername에서 던진 예외를 캐치하기
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 회원을 찾을 수 없습니다.");
     }
 }
