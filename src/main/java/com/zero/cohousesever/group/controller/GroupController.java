@@ -93,9 +93,14 @@ public class GroupController {
 
     // 내 그룹 정보 조회
     @GetMapping("/me")
-    public ResponseEntity<GroupSummary> getMyGroup() {
+    public ResponseEntity<GroupSummary> getMyGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupSummary responseDto = groupService.getGroupByMemberId(memberId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 멤버 목록 조회
