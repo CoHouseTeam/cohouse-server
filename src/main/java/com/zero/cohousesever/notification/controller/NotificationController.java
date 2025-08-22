@@ -1,11 +1,13 @@
 package com.zero.cohousesever.notification.controller;
 
+import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.notification.dto.NotificationRequestDto;
 import com.zero.cohousesever.notification.dto.NotificationResponse;
 import com.zero.cohousesever.notification.dto.NotificationSettingDto;
 import com.zero.cohousesever.notification.service.NotificationService;
 import com.zero.cohousesever.notification.type.NotificationType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,18 +33,13 @@ public class NotificationController {
      * - 없을 경우 X-Member-Id 헤더 값 사용 (테스트 목적)
      */
     @GetMapping
-    public List<NotificationResponse> getNotifications(
-            @AuthenticationPrincipal(expression = "id") Long principalId,
-            @RequestHeader(required = false, name = "X-Member-Id") Long headerMemberId,
+    public ResponseEntity<List<NotificationResponse>> getNotifications(
+            @AuthenticationPrincipal CustomUserDetails principal,
             @RequestParam(required = false) NotificationType type,
             @RequestParam(required = false) Boolean read
     ) {
-        Long memberId = (principalId != null) ? principalId : headerMemberId;
-        if (memberId == null) {
-            // 프로젝트 공통 예외/핸들러 정책에 맞춰 IllegalArgumentException 사용
-            throw new IllegalArgumentException("인증 정보가 필요합니다.");
-        }
-        return notificationService.getNotifications(memberId, type, read);
+
+        return ResponseEntity.ok(notificationService.getNotifications(principal.getId(), type, read));
     }
 
     /**
@@ -57,15 +54,11 @@ public class NotificationController {
      * - 응답 본문 없음 (204 No Content 성격)
      */
     @DeleteMapping("/all")
-    public void deleteAll(
-            @AuthenticationPrincipal(expression = "id") Long principalId,
-            @RequestHeader(required = false, name = "X-Member-Id") Long headerMemberId
+    public ResponseEntity<Void> deleteAll(
+            @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        Long memberId = (principalId != null) ? principalId : headerMemberId;
-        if (memberId == null) {
-            throw new IllegalArgumentException("인증 정보가 필요합니다.");
-        }
-        notificationService.softDeleteAll(memberId);
+        notificationService.softDeleteAll(principal.getId());
+       return ResponseEntity.noContent().build();
     }
 
     /**
@@ -85,17 +78,12 @@ public class NotificationController {
      * - 대상이 없거나 권한이 없으면 예외를 반환합니다.
      */
     @PutMapping("/{id}/read")
-    public Map<String, String> read(
-            @AuthenticationPrincipal(expression = "id") Long principalId,
-            @RequestHeader(required = false, name = "X-Member-Id") Long headerMemberId,
+    public ResponseEntity<Map<String, String>> read(
+            @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable Long notificationId
     ) {
-        Long memberId = (principalId != null) ? principalId : headerMemberId;
-        if (memberId == null) {
-            throw new IllegalArgumentException("인증 정보가 필요합니다.");
-        }
-        notificationService.markAsRead(memberId, notificationId);
-        return Map.of("message", "알림 확인!");
+        notificationService.markAsRead(principal.getId(), notificationId);
+        return ResponseEntity.ok(Map.of("message", "알림 확인!"));
     }
 
     /**
