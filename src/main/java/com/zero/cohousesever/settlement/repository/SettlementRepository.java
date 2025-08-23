@@ -3,10 +3,11 @@ package com.zero.cohousesever.settlement.repository;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.settlement.entity.Settlement;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-
-import java.util.List;
+import org.springframework.data.repository.query.Param;
 
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     // 회원이 참여한 모든 정산 조회
@@ -14,7 +15,7 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
             "JOIN s.settlementParticipants sp " +
             "WHERE sp.member = :member " +
             "ORDER BY s.createdAt DESC")
-    List<Settlement> findAllByParticipantMember(Member member);
+    Page<Settlement> findAllByParticipantMember(@Param("member") Member member, Pageable pageable);
 
-    List<Settlement> findAllByGroupOrderByCreatedAtDesc(Group group);
+    Page<Settlement> findAllByGroupOrderByCreatedAtDesc(Group group, Pageable pageable);
 }

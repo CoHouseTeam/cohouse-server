@@ -20,6 +20,8 @@ import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -213,14 +215,12 @@ public class SettlementService {
     /**
      * 나의 정산 목록 조회
      */
-    public List<SettlementResponse> getMySettlements(Long memberId) {
+    public Page<SettlementResponse> getMySettlements(Long memberId, Pageable pageable) {
         // 해당 멤버가 참여한 모든 정산 조회
         Member member = findMemberOrThrow(memberId);
-        List<Settlement> settlements = settlementRepository.findAllByParticipantMember(member);
+        Page<Settlement> settlements = settlementRepository.findAllByParticipantMember(member, pageable);
 
-        return settlements.stream()
-                .map(SettlementResponse::fromEntity)
-                .collect(Collectors.toList());
+        return settlements.map(SettlementResponse::fromEntity);
     }
 
     /**
@@ -242,7 +242,7 @@ public class SettlementService {
     /**
      * 그룹의 정산 목록 조회 (그룹장용)
      */
-    public List<SettlementResponse> getGroupSettlements(Long memberId, Long groupId) {
+    public Page<SettlementResponse> getGroupSettlements(Long memberId, Long groupId, Pageable pageable) {
         Member member = findMemberOrThrow(memberId);
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
@@ -252,11 +252,9 @@ public class SettlementService {
             throw new CustomException(ErrorCode.NOT_GROUP_LEADER);
         }
 
-        List<Settlement> settlements = settlementRepository.findAllByGroupOrderByCreatedAtDesc(group);
+        Page<Settlement> settlements = settlementRepository.findAllByGroupOrderByCreatedAtDesc(group, pageable);
 
-        return settlements.stream()
-                .map(SettlementResponse::fromEntity)
-                .collect(Collectors.toList());
+       return settlements.map(SettlementResponse::fromEntity);
     }
 
     /**

@@ -8,6 +8,8 @@ import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -45,8 +47,9 @@ public class SettlementController {
 
     // 나의 정산 목록 조회
     @GetMapping("/my")
-    public ResponseEntity<List<SettlementResponse>> getMySettlements(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<SettlementResponse> settlements = settlementService.getMySettlements(userDetails.getId());
+    public ResponseEntity<Page<SettlementResponse>> getMySettlements(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                     Pageable pageable) {
+        Page<SettlementResponse> settlements = settlementService.getMySettlements(userDetails.getId(), pageable);
         return ResponseEntity.ok(settlements);
     }
 
@@ -61,9 +64,10 @@ public class SettlementController {
 
     // 그룹의 정산 목록 조회(그룹장)
     @GetMapping("/group/{groupId}")
-    public ResponseEntity<List<SettlementResponse>> getGroupSettlements(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                                        @PathVariable Long groupId) {
-        List<SettlementResponse> settlements = settlementService.getGroupSettlements(userDetails.getId(), groupId);
+    public ResponseEntity<Page<SettlementResponse>> getGroupSettlements(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                        @PathVariable Long groupId,
+                                                                        Pageable pageable) {
+        Page<SettlementResponse> settlements = settlementService.getGroupSettlements(userDetails.getId(), groupId, pageable);
         return ResponseEntity.ok(settlements);
     }
 

@@ -23,6 +23,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.file.AccessDeniedException;
@@ -32,8 +35,7 @@ import java.util.Optional;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -241,7 +243,6 @@ class SettlementServiceTest {
                 .build();
         ReflectionTestUtils.setField(settlement, "id", 3L);
 
-        // 참가자 세팅
         SettlementParticipant settlementParticipant = SettlementParticipant.builder()
                 .settlement(settlement)
                 .member(participant1)
@@ -251,15 +252,17 @@ class SettlementServiceTest {
 
         settlement.setSettlementParticipants(List.of(settlementParticipant));
 
+        Page<Settlement> page = new PageImpl<>(List.of(settlement), Pageable.unpaged(), 1);
+
         given(memberRepository.findById(1L)).willReturn(Optional.of(payer));
-        given(settlementRepository.findAllByParticipantMember(payer))
-                .willReturn(List.of(settlement));
+        given(settlementRepository.findAllByParticipantMember(any(Member.class), any(Pageable.class)))
+                .willReturn(page);
 
         // when
-        List<SettlementResponse> result = settlementService.getMySettlements(1L);
+        Page<SettlementResponse> result = settlementService.getMySettlements(1L, Pageable.unpaged());
 
         // then
-        SettlementResponse res = result.get(0);
+        SettlementResponse res = result.getContent().get(0);
         assertThat(res.getId()).isEqualTo(3L);
         assertThat(res.getTitle()).isEqualTo("회식 정산");
         assertThat(res.getPayerName()).isEqualTo("김민수");
@@ -276,7 +279,6 @@ class SettlementServiceTest {
                 .build();
         ReflectionTestUtils.setField(settlement, "id", 5L);
 
-        // 참가자 세팅
         SettlementParticipant settlementParticipant = SettlementParticipant.builder()
                 .settlement(settlement)
                 .member(participant2)
@@ -285,16 +287,20 @@ class SettlementServiceTest {
                 .build();
         settlement.setSettlementParticipants(List.of(settlementParticipant));
 
+        Page<Settlement> page = new PageImpl<>(List.of(settlement), Pageable.unpaged(), 1);
+
         given(memberRepository.findById(4L)).willReturn(Optional.of(leader));
         given(groupRepository.findById(1L)).willReturn(Optional.of(group));
         given(groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, leader)).willReturn(true);
-        given(settlementRepository.findAllByGroupOrderByCreatedAtDesc(group)).willReturn(List.of(settlement));
+        given(settlementRepository.findAllByGroupOrderByCreatedAtDesc(eq(group), any(Pageable.class)))
+                .willReturn(page);
 
-        //when
-        List<SettlementResponse> result = settlementService.getGroupSettlements(4L, 1L);
+        // when
+        Page<SettlementResponse> result = settlementService.getGroupSettlements(4L, 1L, Pageable.unpaged());
 
-        //then
-        assertThat(result.get(0).getTitle()).isEqualTo("회식 정산");
+        // then
+        SettlementResponse res = result.getContent().get(0);
+        assertThat(res.getTitle()).isEqualTo("회식 정산");
     }
 
 
@@ -308,7 +314,7 @@ class SettlementServiceTest {
                 .willReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> settlementService.getGroupSettlements(1L, 1L))
+        assertThatThrownBy(() -> settlementService.getGroupSettlements(1L, 1L, Pageable.unpaged()))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining(ErrorCode.NOT_GROUP_LEADER.getMessage());
     }

@@ -22,7 +22,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     /**
-     * 내 결제 내역 조회 (필터 optional)
+     * 내 결제 히스토리 조회 (필터 optional)
      * - groupId: 특정 그룹 내 결제
      * - settlementId: 특정 정산 내 결제
      * - fromDate/toDate: 기간 필터
