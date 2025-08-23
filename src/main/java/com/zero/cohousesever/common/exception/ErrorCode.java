@@ -39,6 +39,17 @@ public enum ErrorCode {
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     GROUP_ID_REQUIRED(HttpStatus.BAD_REQUEST,  "그룹 아이디 확인이 필요합니다."),
     ASSIGNMENT_STATUS_REQUIRED(HttpStatus.BAD_REQUEST, "할 일 상태 값이 필요합니다."),
+
+    OVERRIDE_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "담당자 변경 요청을 찾을 수 없습니다."),
+    OVERRIDE_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 요청입니다."),
+    OVERRIDE_PAST_DATE_FORBIDDEN(HttpStatus.BAD_REQUEST, "과거 날짜의 할일은 처리할 수 없습니다."),
+    OVERRIDE_REQUESTER_MUST_BE_ASSIGNEE(HttpStatus.FORBIDDEN, "현재 담당자만 요청을 생성할 수 있습니다."),
+    OVERRIDE_ACCEPTOR_MUST_BE_TARGET(HttpStatus.FORBIDDEN, "요청 대상자만 응답할 수 있습니다."),
+    OVERRIDE_BROADCAST_REJECT_FORBIDDEN(HttpStatus.FORBIDDEN, "브로드캐스트 요청은 거절할 수 없습니다."),
+    OVERRIDE_NOT_SAME_GROUP(HttpStatus.FORBIDDEN, "같은 그룹의 그룹멤버만 가능합니다."),
+    OVERRIDE_SWAP_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "스왑 대상 할일 배정을 찾을 수 없습니다."),
+    OVERRIDE_SWAP_DIFFERENT_GROUP(HttpStatus.FORBIDDEN, "서로 변경은 같은 그룹 내에서만 가능합니다."),
+
     // 게시물 관련 오류
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
     POST_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 게시글입니다."),
@@ -57,7 +68,7 @@ public enum ErrorCode {
     INVALID_PARTICIPANT_COUNT(HttpStatus.BAD_REQUEST, "참여자 수는 1명 이상이어야 합니다."),
 
     // 송금 관련 오류
-    PAYMENT_TRANSFER_FAILED (HttpStatus.INTERNAL_SERVER_ERROR, "송금 처리에 실패했습니다."),
+    PAYMENT_TRANSFER_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "송금 처리에 실패했습니다."),
 
     // 정산 및 송금 히스토리 관련 오류
     PAYMENT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 송금 내역을 찾을 수 없습니다."),

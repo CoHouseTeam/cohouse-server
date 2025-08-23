@@ -6,19 +6,18 @@ import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
 import com.zero.cohousesever.settlement.entity.*;
+import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
-import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.AccessDeniedException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -96,17 +95,40 @@ public class PaymentService {
         return paymentHistory;
     }
 
-    public List<PaymentHistoryResponse> getPaymentHistories(Long groupId, Long settlementId) {
-        return null;
-    }
+    /**
+     * 나의 송금 히스토리 조회
+     * - 경우 1: groupId와 settlementId 모두 있을 때
+     * → 특정 그룹 내 특정 정산에 해당하는 송금 내역 조회
+     * - 경우 2: settlementId만 있을 때
+     * → 특정 정산에 해당하는 송금 내역 조회 (그룹 전체 포함)
+     * - 경우 3: groupId만 있을 때
+     * → 특정 그룹 내 모든 송금 내역 조회
+     * - 경우 4: 기간 내 groupId, settlementId 모두 없을 때
+     * → 기간 내 전체 송금 내역 조회
+     * - 경우 5: groupId, settlementId 모두 없을 때 (fromDate/toDate가 null)
+     * → 전체 송금 내역 조회
+     */
+    public Page<PaymentHistoryResponse> getPaymentHistories(Long memberId, Long groupId, Long settlementId, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
+        Member member = findMemberOrThrow(memberId);
+        Page<PaymentHistory> page;
 
-    public List<PaymentHistoryResponse> getMyPaymentHistoriesInSettlement(Long groupId, Long settlementId) {
-        return null;
-    }
-
-    //FIXME status ENUM으로 변경
-    public List<PaymentHistoryResponse> getMyPaymentsInGroup(Long groupId, Long SettlementId, String status, LocalDate fromDate, LocalDate toDate) {
-        return null;
+        if (settlementId != null && groupId != null) {
+            page = paymentHistoryRepository.findBySenderAndGroupIdAndSettlementIdAndTransferDateBetween(
+                    member, groupId, settlementId, fromDate, toDate, pageable);
+        } else if (settlementId != null) {
+            page = paymentHistoryRepository.findBySenderAndSettlementIdAndTransferDateBetween(
+                    member, settlementId, fromDate, toDate, pageable);
+        } else if (groupId != null) {
+            page = paymentHistoryRepository.findBySenderAndGroupIdAndTransferDateBetween(
+                    member, groupId, fromDate, toDate, pageable);
+        } else if (fromDate != null && toDate != null) {
+            page = paymentHistoryRepository.findBySenderAndTransferDateBetween(
+                    member, fromDate, toDate, pageable);
+        } else {
+            page = paymentHistoryRepository.findBySender(
+                    member, pageable);
+        }
+        return page.map(PaymentHistoryResponse::fromEntity);
     }
 
     // 회원 엔티티 조회 메서드
