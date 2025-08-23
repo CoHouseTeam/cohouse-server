@@ -292,7 +292,7 @@ class SettlementServiceTest {
         given(memberRepository.findById(4L)).willReturn(Optional.of(leader));
         given(groupRepository.findById(1L)).willReturn(Optional.of(group));
         given(groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, leader)).willReturn(true);
-        given(settlementRepository.findAllByGroupOrderByCreatedAtDesc(eq(group), any(Pageable.class)))
+        given(settlementRepository.findAllByGroup(eq(group), any(Pageable.class)))
                 .willReturn(page);
 
         // when

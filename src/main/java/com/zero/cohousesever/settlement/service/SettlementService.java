@@ -252,9 +252,9 @@ public class SettlementService {
             throw new CustomException(ErrorCode.NOT_GROUP_LEADER);
         }
 
-        Page<Settlement> settlements = settlementRepository.findAllByGroupOrderByCreatedAtDesc(group, pageable);
+        Page<Settlement> settlements = settlementRepository.findAllByGroup(group, pageable);
 
-       return settlements.map(SettlementResponse::fromEntity);
+        return settlements.map(SettlementResponse::fromEntity);
     }
 
     /**
@@ -280,14 +280,12 @@ public class SettlementService {
     /**
      * 나의 정산 히스토리 조회
      */
-    public List<SettlementHistoryResponse> getMySettlementHistories(Long memberId) {
+    public Page<SettlementHistoryResponse> getMySettlementHistories(Long memberId, Pageable pageable) {
         Member member = findMemberOrThrow(memberId);
-        List<SettlementHistory> settlementHistories =
-                settlementHistoryRepository.findAllBySenderOrderByCreatedAtDesc(member);
+        Page<SettlementHistory> settlementHistories =
+                settlementHistoryRepository.findAllBySender(member, pageable);
 
-        return settlementHistories.stream()
-                .map(SettlementHistoryResponse::fromEntity)
-                .collect(Collectors.toList());
+        return settlementHistories.map(SettlementHistoryResponse::fromEntity);
     }
 
     // 회원 엔티티 조회 메서드

@@ -82,8 +82,9 @@ public class SettlementController {
 
     // 나의 정산 히스토리 조회
     @GetMapping("/my/history")
-    public ResponseEntity<List<SettlementHistoryResponse>> getMySettlementHistory(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<SettlementHistoryResponse> history = settlementService.getMySettlementHistories(userDetails.getId());
+    public ResponseEntity<Page<SettlementHistoryResponse>> getMySettlementHistory(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                                  Pageable pageable) {
+        Page<SettlementHistoryResponse> history = settlementService.getMySettlementHistories(userDetails.getId(), pageable);
         return ResponseEntity.ok(history);
     }
 
