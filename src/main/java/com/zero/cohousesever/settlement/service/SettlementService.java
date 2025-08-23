@@ -27,11 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-<<<<<<< HEAD
 import java.io.IOException;
-import java.time.LocalDate;
-=======
->>>>>>> develop
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -163,7 +159,6 @@ public class SettlementService {
 
     /**
      * 정산 취소 처리
-     *
      * - 정산 취소 시 송금을 한 정산 참여자만 환불 상태로 변경
      */
     @Transactional
@@ -361,7 +356,7 @@ public class SettlementService {
             throw new CustomException(ErrorCode.FILE_NOT_FOUND);
         }
 
-        String extractedFilePath =  s3Service.extractFilePath(imageUrl);
+        String extractedFilePath = s3Service.extractFilePath(imageUrl);
 
         s3Service.deleteFile(extractedFilePath);
         settlement.setImageUrl(null);
