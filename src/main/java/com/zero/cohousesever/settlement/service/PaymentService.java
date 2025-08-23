@@ -11,14 +11,13 @@ import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.AccessDeniedException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -98,35 +97,38 @@ public class PaymentService {
 
     /**
      * 나의 송금 히스토리 조회
+     * - 경우 1: groupId와 settlementId 모두 있을 때
+     * → 특정 그룹 내 특정 정산에 해당하는 송금 내역 조회
+     * - 경우 2: settlementId만 있을 때
+     * → 특정 정산에 해당하는 송금 내역 조회 (그룹 전체 포함)
+     * - 경우 3: groupId만 있을 때
+     * → 특정 그룹 내 모든 송금 내역 조회
+     * - 경우 4: 기간 내 groupId, settlementId 모두 없을 때
+     * → 기간 내 전체 송금 내역 조회
+     * - 경우 5: groupId, settlementId 모두 없을 때 (fromDate/toDate가 null)
+     * → 전체 송금 내역 조회
      */
-    public List<PaymentHistoryResponse> getPaymentHistories(Long memberId, Long groupId, Long settlementId, LocalDateTime fromDate, LocalDateTime toDate) {
+    public Page<PaymentHistoryResponse> getPaymentHistories(Long memberId, Long groupId, Long settlementId, LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
         Member member = findMemberOrThrow(memberId);
+        Page<PaymentHistory> page;
 
         if (settlementId != null && groupId != null) {
-            // 그룹 내 특정 정산에 해당하는 나의 송금 내역 조회
-            return paymentHistoryRepository.findBySenderAndGroupIdAndSettlementIdAndTransferDateBetween(member, groupId, settlementId, fromDate, toDate)
-                    .stream()
-                    .map(PaymentHistoryResponse::fromEntity)
-                    .toList();
+            page = paymentHistoryRepository.findBySenderAndGroupIdAndSettlementIdAndTransferDateBetween(
+                    member, groupId, settlementId, fromDate, toDate, pageable);
         } else if (settlementId != null) {
-            // 특정 정산에 관한 나의 송금 내역 조회
-            return paymentHistoryRepository.findBySenderAndSettlementIdAndTransferDateBetween(member, settlementId,  fromDate, toDate)
-                    .stream()
-                    .map(PaymentHistoryResponse::fromEntity)
-                    .toList();
+            page = paymentHistoryRepository.findBySenderAndSettlementIdAndTransferDateBetween(
+                    member, settlementId, fromDate, toDate, pageable);
         } else if (groupId != null) {
-            // 그룹 내 나의 전체 송금 내역 조회
-            return paymentHistoryRepository.findBySenderAndGroupIdAndTransferDateBetween(member, groupId,  fromDate, toDate)
-                    .stream()
-                    .map(PaymentHistoryResponse::fromEntity)
-                    .toList();
+            page = paymentHistoryRepository.findBySenderAndGroupIdAndTransferDateBetween(
+                    member, groupId, fromDate, toDate, pageable);
+        } else if (fromDate != null && toDate != null) {
+            page = paymentHistoryRepository.findBySenderAndTransferDateBetween(
+                    member, fromDate, toDate, pageable);
         } else {
-            // 나의 전체 송금 내역 조회
-            return paymentHistoryRepository.findBySenderAndTransferDateBetween(member,  fromDate, toDate)
-                    .stream()
-                    .map(PaymentHistoryResponse::fromEntity)
-                    .toList();
+            page = paymentHistoryRepository.findBySender(
+                    member, pageable);
         }
+        return page.map(PaymentHistoryResponse::fromEntity);
     }
 
     // 회원 엔티티 조회 메서드
