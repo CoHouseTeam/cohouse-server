@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentHistoryResponse {
-    private Long paymentHistoryId;
+    private Long id;
     private Long settlementId;
     private Long senderId;
     private Long receiverId;

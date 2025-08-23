@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ParticipantResponse {
-    private Long id;
     private Long memberId;
     private String memberName;
     private Long shareAmount;
@@ -19,7 +18,6 @@ public class ParticipantResponse {
 
     public static ParticipantResponse fromEntity(SettlementParticipant participant) {
         return new ParticipantResponse(
-                participant.getId(),
                 participant.getMember().getId(),
                 participant.getMember().getName(),
                 participant.getShareAmount(),
