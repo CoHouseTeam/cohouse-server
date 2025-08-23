@@ -1,6 +1,7 @@
 package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
@@ -15,6 +16,7 @@ import static com.zero.cohousesever.common.exception.ErrorCode.*;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final S3Service s3Service;
 
     public Member createMember(String name, String email, String encodedPassword) {
         Member newMember = Member.builder()
@@ -32,5 +34,21 @@ public class MemberService {
                 .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
 
         return MemberProfileSummary.fromEntity(member);
+    }
+
+    public void deleteMemberProfileImage(Long memberId) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        if (member.getProfileImageUrl() == null) {
+            return;
+        }
+
+        try {
+            String fileName = s3Service.extractFilePath(member.getProfileImageUrl());
+            s3Service.deleteFile(fileName);
+        } catch (Exception e) {
+            throw new CustomException(INTERNAL_SERVER_ERROR);
+        }
     }
 }
