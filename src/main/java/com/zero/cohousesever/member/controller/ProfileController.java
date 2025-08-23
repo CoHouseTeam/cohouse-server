@@ -50,10 +50,14 @@ public class ProfileController {
     // 회원 프로필 이미지 수정
     @PutMapping("/profile/profile-image")
     public ResponseEntity<MemberProfileImageResponseDto> updateProfileImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestPart("image") MultipartFile imageFile
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        MemberProfileImageResponseDto responseDto = memberService.updateProfileImage(memberId, imageFile);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 회원 프로필 이미지 삭제
