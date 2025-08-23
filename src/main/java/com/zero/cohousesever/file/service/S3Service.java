@@ -28,6 +28,8 @@ public class S3Service {
     @Value("${cloud.aws.s3.base-url}")
     private String  s3BaseUrl;
 
+    private static final long MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+
     /**
      * 파일 업로드
      */
@@ -87,7 +89,7 @@ public class S3Service {
             throw new CustomException(ErrorCode.FILE_NOT_IMAGE);
         }
 
-        if (file.getSize() > 5 * 1024 * 1024) {
+        if (file.getSize() > MAX_FILE_SIZE) {
             throw new CustomException(ErrorCode.FILE_SIZE_EXCEED);
         }
     }
