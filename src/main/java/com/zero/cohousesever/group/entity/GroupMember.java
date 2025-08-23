@@ -44,7 +44,7 @@ public class GroupMember extends BaseEntity {
     }
 
     protected void leaveGroup() {
-        this.status = GroupMemberStatus.INACTIVE; // 예시 상태
+        this.status = GroupMemberStatus.INACTIVE;
         this.leavedAt = LocalDateTime.now();
     }
 }
