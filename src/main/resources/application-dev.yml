@@ -1,0 +1,14 @@
+spring:
+  activate:
+    on-profile: dev
+
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
+    s3:
+      bucket: cohouse-bucket
+      base-url: https://cohouse-bucket.s3.ap-northeast-2.amazonaws.com/
+    stack:
+      auto: false
