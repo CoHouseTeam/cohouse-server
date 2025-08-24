@@ -1,15 +1,18 @@
 package com.zero.cohousesever.notification.controller;
 
 import com.zero.cohousesever.member.security.CustomUserDetails;
+import com.zero.cohousesever.notification.dto.NotificationCreateRequest;
 import com.zero.cohousesever.notification.dto.NotificationResponse;
 import com.zero.cohousesever.notification.dto.UnreadCountResponse;
 import com.zero.cohousesever.notification.service.NotificationService;
 import com.zero.cohousesever.notification.type.NotificationType;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -18,6 +21,20 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+
+    /**
+     * 알림 생성
+     */
+    @PostMapping
+    public ResponseEntity<NotificationResponse> create(
+            @AuthenticationPrincipal(expression = "id") Long memberId,
+            @Valid @RequestBody NotificationCreateRequest request
+    ) {
+        NotificationResponse body = notificationService.create(memberId, request);
+        // Location: /api/notifications/{id}
+        return ResponseEntity.created(URI.create("/api/notifications/" + body.getId()))
+                .body(body);
+    }
 
     /**
      * 로그인 사용자의 알림 목록을 조회

@@ -1,100 +1,139 @@
-package com.zero.cohousesever.tasks.service;
+package com.zero.cohousesever.notification.service;
 
-import com.zero.cohousesever.tasks.dto.repeat.RepeatDayRequest;
-import com.zero.cohousesever.tasks.dto.repeat.RepeatDayResponse;
-import com.zero.cohousesever.tasks.entity.RepeatDay;
-import com.zero.cohousesever.tasks.entity.TaskTemplate;
-import com.zero.cohousesever.tasks.repository.RepeatDayRepository;
-import com.zero.cohousesever.tasks.repository.TaskTemplateRepository;
+import com.zero.cohousesever.notification.dto.NotificationCreateRequest;
+import com.zero.cohousesever.notification.dto.NotificationResponse;
+import com.zero.cohousesever.notification.entity.Notification;
+import com.zero.cohousesever.notification.repository.NotificationRepository;
+import com.zero.cohousesever.notification.type.NotificationStatus;
+import com.zero.cohousesever.notification.type.NotificationType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-class RepeatDayServiceTest {
+class NotificationServiceTest {
 
-  @Mock RepeatDayRepository repeatDayRepository;
-  @Mock TaskTemplateRepository taskTemplateRepository;
-  @InjectMocks RepeatDayService repeatDayService;
+  @Mock
+  private NotificationRepository notificationRepository;
 
-  private TaskTemplate templateWithId(long id) {
-    TaskTemplate t = TaskTemplate.builder().groupId(1L).category("CLEANING").build();
-    ReflectionTestUtils.setField(t, "id", id);
-    return t;
+  @InjectMocks
+  private NotificationService notificationService;
+
+  private Notification announcement; // 공지 알림 엔티티
+
+  @BeforeEach
+  void setUp() {
+    MockitoAnnotations.openMocks(this);
+
+    // 공지 알림 엔티티(필수 필드만) - getter 사용 전제
+    announcement = Notification.builder()
+            .type(NotificationType.ANNOUNCEMENT)
+            .title("공지 알림")
+            .content("새로운 공지가 등록되었습니다.")
+            .isRead(false)
+            .status(NotificationStatus.ACTIVE)
+            .build();
+    ReflectionTestUtils.setField(announcement, "id", 1L);
+    ReflectionTestUtils.setField(announcement, "createdAt", LocalDateTime.now());
   }
 
   @Test
-  @DisplayName("반복요일 생성 - 중복이면 기존 반환, 아니면 저장")
-  void addRepeatDay_dedupAndSave() {
-    long templateId = 10L;
-    TaskTemplate tmpl = templateWithId(templateId);
-    when(taskTemplateRepository.findById(templateId)).thenReturn(Optional.of(tmpl));
+  @DisplayName("공지 알림 생성 - 저장 성공")
+  void create_announcement_success() {
+    // given
+    Long memberId = 10L;
+    NotificationCreateRequest req = new NotificationCreateRequest(
+            NotificationType.ANNOUNCEMENT,
+            "새 공지",
+            "공지 내용을 확인해 주세요."
+    );
 
-    RepeatDayRequest req = new RepeatDayRequest();
-    req.setDayOfWeek("MONDAY");
+    when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> {
+      Notification n = invocation.getArgument(0);
+      ReflectionTestUtils.setField(n, "id", 777L);
+      ReflectionTestUtils.setField(n, "createdAt", LocalDateTime.now());
+      return n;
+    });
 
-    // 1) 중복 없는 경우 → save 호출
-    when(repeatDayRepository.findByTaskTemplate_IdAndDayOfWeek(templateId, DayOfWeek.MONDAY))
-        .thenReturn(Optional.empty());
-    RepeatDay saved = RepeatDay.builder().taskTemplate(tmpl).dayOfWeek(DayOfWeek.MONDAY).build();
-    ReflectionTestUtils.setField(saved, "id", 100L);
-    when(repeatDayRepository.save(any(RepeatDay.class))).thenReturn(saved);
+    // when
+    NotificationResponse res = notificationService.create(memberId, req);
 
-    RepeatDayResponse r1 = repeatDayService.addRepeatDay(templateId, req);
-    assertThat(r1.getRepeatDayId()).isEqualTo(100L);
-    verify(repeatDayRepository).save(any(RepeatDay.class));
+    // then (getter 기반)
+    assertThat(res.getId()).isEqualTo(777L);
+    assertThat(res.getType()).isEqualTo(NotificationType.ANNOUNCEMENT);
+    assertThat(res.getTitle()).isEqualTo("새 공지");
+    assertThat(res.getContent()).isEqualTo("공지 내용을 확인해 주세요.");
+    assertThat(res.isRead()).isFalse();
 
-    // 2) 중복인 경우 → 기존 반환, save 호출 안 함
-    when(repeatDayRepository.findByTaskTemplate_IdAndDayOfWeek(templateId, DayOfWeek.MONDAY))
-        .thenReturn(Optional.of(saved));
-    RepeatDayResponse r2 = repeatDayService.addRepeatDay(templateId, req);
-    assertThat(r2.getRepeatDayId()).isEqualTo(100L);
-    verify(repeatDayRepository, times(1)).save(any(RepeatDay.class)); // 총 1번
+    verify(notificationRepository, times(1)).save(any(Notification.class));
   }
 
   @Test
-  @DisplayName("반복요일 조회 - 일요일이 먼저")
-  void getRepeatDays_sortedSundayFirst() {
-    long templateId = 10L;
-    TaskTemplate tmpl = templateWithId(templateId);
+  @DisplayName("알림 목록 조회 - 타입 필터(ANNOUNCEMENT) 적용")
+  void getNotifications_filterByAnnouncement() {
+    // given
+    when(notificationRepository.findByMember(
+            eq(10L),
+            any(LocalDateTime.class),
+            eq(NotificationStatus.ACTIVE),
+            eq(NotificationType.ANNOUNCEMENT),
+            isNull()
+    )).thenReturn(List.of(announcement));
 
-    RepeatDay mon = RepeatDay.builder().taskTemplate(tmpl).dayOfWeek(DayOfWeek.MONDAY).build();
-    RepeatDay sun = RepeatDay.builder().taskTemplate(tmpl).dayOfWeek(DayOfWeek.SUNDAY).build();
-    ReflectionTestUtils.setField(mon, "id", 1L);
-    ReflectionTestUtils.setField(sun, "id", 2L);
+    // when
+    var list = notificationService.getNotifications(10L, NotificationType.ANNOUNCEMENT, null);
 
-    when(repeatDayRepository.findByTaskTemplate_Id(templateId))
-        .thenReturn(List.of(mon, sun));
+    // then
+    assertThat(list).hasSize(1);
+    assertThat(list.get(0).getType()).isEqualTo(NotificationType.ANNOUNCEMENT);
+    assertThat(list.get(0).getTitle()).isEqualTo("공지 알림");
 
-    var list = repeatDayService.getRepeatDaysByTemplateId(templateId);
-    assertThat(list).hasSize(2);
-    assertThat(list.get(0).getDayOfWeek()).isEqualTo("SUNDAY");
-    assertThat(list.get(1).getDayOfWeek()).isEqualTo("MONDAY");
+    verify(notificationRepository, times(1)).findByMember(
+            eq(10L), any(LocalDateTime.class), eq(NotificationStatus.ACTIVE),
+            eq(NotificationType.ANNOUNCEMENT), isNull()
+    );
   }
 
   @Test
-  @DisplayName("반복요일 삭제 - 소속 템플릿 검증 포함")
-  void deleteRepeatDay_withOwnershipCheck() {
-    long templateId = 10L;
+  @DisplayName("읽음 처리 성공 - 미읽음 → 읽음")
+  void markAsRead_success() {
+    // given: 업데이트 1건 성공
+    when(notificationRepository.markRead(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE), any()))
+            .thenReturn(1);
 
-    // 삭제 성공
-    when(repeatDayRepository.deleteByIdAndTaskTemplate_Id(5L, templateId)).thenReturn(1L);
-    repeatDayService.deleteRepeatDay(templateId, 5L);
+    // when & then
+    assertDoesNotThrow(() -> notificationService.markAsRead(10L, 100L));
 
-    // 삭제 실패(소속 불일치/존재X)
-    when(repeatDayRepository.deleteByIdAndTaskTemplate_Id(6L, templateId)).thenReturn(0L);
-    assertThatThrownBy(() -> repeatDayService.deleteRepeatDay(templateId, 6L))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("does not belong to template");
+    verify(notificationRepository, times(1))
+            .markRead(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE), any());
+    verify(notificationRepository, never())
+            .findReadFlagForActiveMember(anyLong(), anyLong(), any());
+  }
+
+  @Test
+  @DisplayName("읽음 처리 멱등 - 이미 읽음")
+  void markAsRead_idempotent_whenAlreadyRead() {
+    // given: 업데이트 0건 + 이미 읽음(true)
+    when(notificationRepository.markRead(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE), any()))
+            .thenReturn(0);
+    when(notificationRepository.findReadFlagForActiveMember(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE)))
+            .thenReturn(Boolean.TRUE);
+
+    // when & then
+    assertDoesNotThrow(() -> notificationService.markAsRead(10L, 100L));
+
+    verify(notificationRepository, times(1))
+            .findReadFlagForActiveMember(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE));
   }
 }
