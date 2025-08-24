@@ -3,6 +3,7 @@ package com.zero.cohousesever.settlement.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.file.dto.FileUploadResponse;
 import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
@@ -11,6 +12,7 @@ import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
+import com.zero.cohousesever.ocr.TesseractOcrService;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.ParticipantResponse;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
@@ -21,10 +23,10 @@ import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
+import net.sourceforge.tess4j.TesseractException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -43,6 +45,7 @@ public class SettlementService {
     private final SettlementHistoryRepository settlementHistoryRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
 
+    private final TesseractOcrService tesseractOcrService;
     private final S3Service s3Service;
 
     /**
@@ -161,7 +164,7 @@ public class SettlementService {
      * 정산 취소 처리
      * - 정산 취소 시 송금을 한 정산 참여자만 환불 상태로 변경
      */
-    @Transactional
+//    @Transactional FIXME 트랜잭션 여부 다시 생각
     public void cancelSettlement(Long memberId, Long settlementId) {
         findMemberOrThrow(memberId);
         Settlement settlement = findSettlementOrThrow(settlementId);
@@ -285,7 +288,7 @@ public class SettlementService {
     /**
      * 영수증 이미지 업로드
      */
-    public String uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+    public FileUploadResponse uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException, TesseractException {
         Settlement settlement = findSettlementOrThrow(settlementId);
         Member member = findMemberOrThrow(memberId);
 
@@ -309,14 +312,32 @@ public class SettlementService {
         settlement.setImageUrl(imageUrl);
         settlementRepository.save(settlement);
 
-        return imageUrl;
+        // OCR로 금액 추출 시도 (실패해도 계속 진행)
+        Long extractedAmount = null;
+        boolean ocrSuccess = false;
+
+        extractedAmount = tesseractOcrService.extractAmountFromReceipt(file);
+
+        // OCR로 금액을 성공적으로 추출했을 때만 금액 업데이트
+        if (extractedAmount != null) {
+            settlement.setSettlementAmount(extractedAmount);
+            ocrSuccess = true;
+        }
+
+        FileUploadResponse response = FileUploadResponse.builder()
+                .imageUrl(imageUrl)
+                .settlementAmount(extractedAmount != null ? extractedAmount : settlement.getSettlementAmount())
+                .ocrSuccess(ocrSuccess)
+                .build();
+
+        return response;
     }
 
     /**
      * 영수증 이미지 업데이트
      * - 기존 영수증 이미지 삭제 후 최신 이미지 등록
      */
-    public String updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+    public FileUploadResponse updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
         try {
             Settlement settlement = findSettlementOrThrow(settlementId);
 
@@ -338,6 +359,8 @@ public class SettlementService {
 
         } catch (IOException e) {
             throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
+        } catch (TesseractException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -357,6 +380,7 @@ public class SettlementService {
         }
 
         String extractedFilePath = s3Service.extractFilePath(imageUrl);
+        System.out.println(extractedFilePath);
 
         s3Service.deleteFile(extractedFilePath);
         settlement.setImageUrl(null);

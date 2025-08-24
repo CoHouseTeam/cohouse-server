@@ -10,6 +10,7 @@ import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
+import net.sourceforge.tess4j.TesseractException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -115,11 +116,11 @@ public class SettlementController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam Long groupId,
             @PathVariable Long settlementId,
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestParam("file") MultipartFile file) throws IOException, TesseractException {
 
         // 서비스 메서드 내부에서 이미지 검증 수행
-        String imageUrl = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
-        return ResponseEntity.ok(new FileUploadResponse(imageUrl));
+        FileUploadResponse response = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -133,8 +134,8 @@ public class SettlementController {
             @RequestParam("file") MultipartFile file) throws IOException {
 
         // 서비스 메서드 내부에서 이미지 검증 수행
-        String imageUrl = settlementService.updateReceiptImage(userDetails.getId(), file, groupId, settlementId);
-        return ResponseEntity.ok(new FileUploadResponse(imageUrl));
+        FileUploadResponse response = settlementService.updateReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        return ResponseEntity.ok(response);
     }
 
     /**
