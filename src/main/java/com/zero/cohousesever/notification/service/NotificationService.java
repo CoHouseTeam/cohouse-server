@@ -63,7 +63,9 @@ public class NotificationService {
         );
 
         // 정상적으로 읽음 처리됨
-        if (updated > 0) {return;}
+        if (updated > 0) {
+            return;
+        }
 
         // 업데이트 0건: 존재/권한/상태를 확인하여 예외/멱등 처리 분기
         Boolean readFlag = notificationRepository.findReadFlagForActiveMember(

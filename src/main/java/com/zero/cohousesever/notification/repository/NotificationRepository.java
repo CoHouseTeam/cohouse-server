@@ -41,10 +41,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
      */
     @Modifying
     @Query("""
-        UPDATE Notification n
-           SET n.status = :deleted, n.deletedAt = :now
-         WHERE n.member.id = :memberId AND n.status <> :deleted
-    """)
+                UPDATE Notification n
+                   SET n.status = :deleted, n.deletedAt = :now
+                 WHERE n.member.id = :memberId AND n.status <> :deleted
+            """)
     int softDeleteAllByMember(Long memberId, NotificationStatus deleted, LocalDateTime now);
 
     /**
@@ -52,26 +52,26 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
      */
     @Modifying
     @Query("""
-        UPDATE Notification n
-           SET n.status = :deleted, n.deletedAt = :now
-         WHERE n.status <> :deleted AND n.createdAt < :cutoff
-    """)
+                UPDATE Notification n
+                   SET n.status = :deleted, n.deletedAt = :now
+                 WHERE n.status <> :deleted AND n.createdAt < :cutoff
+            """)
     int softDeleteOlderThan(LocalDateTime cutoff, NotificationStatus deleted, LocalDateTime now);
 
     /**
      * 단건 읽음 처리.
-     *  - 대상 회원의 소유, ACTIVE 상태, 현재 미읽음(isRead = false)
-     *  - isRead=true, readAt=:now 로 갱신
+     * - 대상 회원의 소유, ACTIVE 상태, 현재 미읽음(isRead = false)
+     * - isRead=true, readAt=:now 로 갱신
      */
     @Modifying
     @Query("""
-        UPDATE Notification n
-           SET n.isRead = true, n.readAt = :now
-         WHERE n.id = :notificationId
-           AND n.member.id = :memberId
-           AND n.status = :active
-           AND n.isRead = false
-    """)
+                UPDATE Notification n
+                   SET n.isRead = true, n.readAt = :now
+                 WHERE n.id = :notificationId
+                   AND n.member.id = :memberId
+                   AND n.status = :active
+                   AND n.isRead = false
+            """)
     int markRead(Long notificationId, Long memberId, NotificationStatus active, LocalDateTime now);
 
     /**
@@ -80,23 +80,25 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
      * - 결과가 없으면 null을 반환합니다.
      */
     @Query("""
-        SELECT n.isRead
-          FROM Notification n
-         WHERE n.id = :notificationId
-           AND n.member.id = :memberId
-           AND n.status = :active
-    """)
+                SELECT n.isRead
+                  FROM Notification n
+                 WHERE n.id = :notificationId
+                   AND n.member.id = :memberId
+                   AND n.status = :active
+            """)
     Boolean findReadFlagForActiveMember(Long notificationId, Long memberId, NotificationStatus active);
 
-    /** 미읽음(미확인) 알림 개수: 최근 30일 + ACTIVE + isRead=false */
+    /**
+     * 미읽음(미확인) 알림 개수: 최근 30일 + ACTIVE + isRead=false
+     */
     @Query("""
-        SELECT COUNT(n)
-          FROM Notification n
-         WHERE n.member.id = :memberId
-           AND n.status = :active
-           AND n.isRead = false
-           AND n.createdAt >= :cutoff
-    """)
+                SELECT COUNT(n)
+                  FROM Notification n
+                 WHERE n.member.id = :memberId
+                   AND n.status = :active
+                   AND n.isRead = false
+                   AND n.createdAt >= :cutoff
+            """)
     long countUnread(Long memberId, NotificationStatus active, LocalDateTime cutoff);
 
 }
