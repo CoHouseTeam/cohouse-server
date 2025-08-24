@@ -18,6 +18,9 @@ public enum ErrorCode {
     ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
     REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 만료되었습니다."),
+    OAUTH2_PROVIDER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 OAuth2 프로바이더입니다."),
+    OAUTH2_EMAIL_NOT_FOUND(HttpStatus.BAD_REQUEST, "OAuth2 프로바이더로부터 이메일 정보를 가져올 수 없습니다."),
+    OAUTH2_USER_INFO_PROCESSING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAuth2 사용자 정보 처리에 실패했습니다."),
 
     // 그룹 관련 오류
     GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 그룹을 찾을 수 없습니다."),
