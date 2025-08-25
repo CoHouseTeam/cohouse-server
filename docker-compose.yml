@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    image: your-project-image:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_HOST=redis
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=yourpassword
+      - MYSQL_DATABASE=yourdb
+    depends_on:
+      - redis
+      - mysql
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_DATABASE: yourdb
+      MYSQL_USER: youruser
+      MYSQL_PASSWORD: yourpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  redis-data:
+  mysql-data:
