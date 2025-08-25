@@ -8,7 +8,6 @@ import com.zero.cohousesever.notification.dto.NotificationResponse;
 import com.zero.cohousesever.notification.entity.Notification;
 import com.zero.cohousesever.notification.repository.NotificationRepository;
 import com.zero.cohousesever.notification.type.NotificationStatus;
-import com.zero.cohousesever.notification.type.NotificationType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -51,16 +50,16 @@ public class NotificationService {
     /**
      * 로그인 사용자의 알림 목록 조회
      */
-    public List<NotificationResponse> getNotifications(Long memberId, NotificationType type, Boolean read) {
+    public List<NotificationResponse> list(Long memberId) {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
         List<Notification> list = notificationRepository.findByMember(
-                memberId, cutoff, NotificationStatus.ACTIVE, type, read
+                memberId, cutoff, NotificationStatus.ACTIVE
         );
         return list.stream().map(NotificationResponse::from).toList();
     }
 
     /**
-     * 사용자의 모든 유효 알림을 소프트 딜리트
+     * 사용자 알림 전체 소프트 딜리트
      */
     @Transactional
     public void softDeleteAll(Long memberId) {
@@ -92,8 +91,7 @@ public class NotificationService {
         if (updated > 0) return;
 
         Boolean readFlag = notificationRepository.findReadFlagForActiveMember(
-                notificationId, memberId, NotificationStatus.ACTIVE
-        );
+                notificationId, memberId, NotificationStatus.ACTIVE);
 
         if (readFlag == null) {
             throw new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND);

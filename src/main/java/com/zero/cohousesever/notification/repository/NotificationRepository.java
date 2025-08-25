@@ -2,7 +2,6 @@ package com.zero.cohousesever.notification.repository;
 
 import com.zero.cohousesever.notification.entity.Notification;
 import com.zero.cohousesever.notification.type.NotificationStatus;
-import com.zero.cohousesever.notification.type.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,8 +16,7 @@ import java.util.List;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     /**
-     * 로그인 사용자의 유효 알림 목록 (정렬: createdAt DESC)
-     * - :type, :read 가 null이면 해당 조건 생략
+     * 사용자 알림 목록 (최근 30일, ACTIVE, 최신순)
      */
     @Query("""
                 SELECT n
@@ -26,18 +24,14 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                  WHERE n.member.id = :memberId
                    AND n.status = :active
                    AND n.createdAt >= :cutoff
-                   AND (:type IS NULL OR n.type = :type)
-                   AND (:read IS NULL OR n.isRead = :read)
                  ORDER BY n.createdAt DESC
             """)
     List<Notification> findByMember(Long memberId,
                                     LocalDateTime cutoff,
-                                    NotificationStatus active,
-                                    NotificationType type,
-                                    Boolean read);
+                                    NotificationStatus active);
 
     /**
-     * 사용자의 모든 유효 알림을 소프트 딜리트
+     * 전체 소프트 딜리트
      */
     @Modifying
     @Query("""
@@ -75,9 +69,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     int markRead(Long notificationId, Long memberId, NotificationStatus active, LocalDateTime now);
 
     /**
-     * 단건 존재/상태/읽음 여부 확인용 경량 조회.
-     * - select 절을 최소화하여 불필요한 필드 로딩을 방지합니다.
-     * - 결과가 없으면 null을 반환합니다.
+     * 읽음 여부 경량 조회(null=존재X/권한X/삭제됨
+     * true=이미 읽음, false=아직 미읽음)
      */
     @Query("""
                 SELECT n.isRead

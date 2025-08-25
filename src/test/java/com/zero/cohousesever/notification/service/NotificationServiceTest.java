@@ -53,19 +53,17 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("알림 목록 조회 - 필터 없음(전체)")
-    void getNotifications_noFilters_returnsList() {
+    @DisplayName("알림 목록 조회")
+    void list_all() {
         // given
         when(notificationRepository.findByMember(
                 eq(10L),
                 any(LocalDateTime.class),
-                eq(NotificationStatus.ACTIVE),
-                isNull(),   // type 없음
-                isNull()    // read 없음
+                eq(NotificationStatus.ACTIVE)
         )).thenReturn(List.of(n1));
 
         // when
-        var list = notificationService.getNotifications(10L, null, null);
+        var list = notificationService.list(10L);
 
         // then
         assertThat(list).hasSize(1);
@@ -75,56 +73,7 @@ class NotificationServiceTest {
         assertThat(res.getTitle()).isEqualTo("공지 알림");
 
         verify(notificationRepository, times(1)).findByMember(
-                eq(10L), any(LocalDateTime.class), eq(NotificationStatus.ACTIVE), isNull(), isNull()
-        );
-    }
-
-    @Test
-    @DisplayName("알림 목록 조회 - 타입 필터(ANNOUNCEMENT) 적용")
-    void getNotifications_withType_returnsFilteredList() {
-        // given
-        when(notificationRepository.findByMember(
-                eq(10L),
-                any(LocalDateTime.class),
-                eq(NotificationStatus.ACTIVE),
-                eq(NotificationType.ANNOUNCEMENT), // type=ANNOUNCEMENT
-                isNull()
-        )).thenReturn(List.of(n1));
-
-        // when
-        var list = notificationService.getNotifications(10L, NotificationType.ANNOUNCEMENT, null);
-
-        // then
-        assertThat(list).hasSize(1);
-        assertThat(list.get(0).getType()).isEqualTo(NotificationType.ANNOUNCEMENT);
-
-        verify(notificationRepository, times(1)).findByMember(
-                eq(10L), any(LocalDateTime.class), eq(NotificationStatus.ACTIVE), eq(NotificationType.ANNOUNCEMENT), isNull()
-        );
-    }
-
-    @Test
-    @DisplayName("알림 목록 조회 - 읽음 여부 필터(false) 적용")
-    void getNotifications_withReadFilter_returnsFilteredList() {
-        // given
-        when(notificationRepository.findByMember(
-                eq(10L),
-                any(LocalDateTime.class),
-                eq(NotificationStatus.ACTIVE),
-                isNull(),
-                eq(false)
-        )).thenReturn(List.of(n1));
-
-        // when
-        var list = notificationService.getNotifications(10L, null, false);
-
-        // then
-        assertThat(list).hasSize(1);
-        assertThat(list.get(0).isRead()).isFalse();
-
-        verify(notificationRepository, times(1)).findByMember(
-                eq(10L), any(LocalDateTime.class), eq(NotificationStatus.ACTIVE), isNull(), eq(false)
-        );
+                eq(10L), any(LocalDateTime.class), eq(NotificationStatus.ACTIVE));
     }
 
     @Test
