@@ -30,10 +30,10 @@ public class NotificationController {
             @AuthenticationPrincipal(expression = "id") Long memberId,
             @Valid @RequestBody NotificationCreateRequest request
     ) {
-        NotificationResponse body = notificationService.create(memberId, request);
+        NotificationResponse created = notificationService.create(memberId, request);
         // Location: /api/notifications/{id}
-        return ResponseEntity.created(URI.create("/api/notifications/" + body.getId()))
-                .body(body);
+        return ResponseEntity.created(URI.create("/api/notifications/" + created.getId()))
+                .body(created);
     }
 
     /**
