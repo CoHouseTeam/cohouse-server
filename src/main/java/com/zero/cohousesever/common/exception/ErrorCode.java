@@ -25,6 +25,7 @@ public enum ErrorCode {
     GROUP_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 그룹 멤버를 찾을 수 없습니다."),
     GROUP_MEMBER_ALREADY_INACTIVE(HttpStatus.UNAUTHORIZED, "비활성화된 그룹 멤버입니다."),
     NOT_GROUP_LEADER(HttpStatus.FORBIDDEN, "그룹장만 접근할 수 있습니다."),
+    INVITE_CODE_INVALID(HttpStatus.BAD_REQUEST, "초대 코드가 잘못되었거나 만료되었습니다."),
 
     // 할일 관련 오류
     TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 템플릿을 찾을 수 없습니다."),
@@ -48,8 +49,11 @@ public enum ErrorCode {
     OVERRIDE_NOT_SAME_GROUP(HttpStatus.FORBIDDEN, "같은 그룹의 그룹멤버만 가능합니다."),
     OVERRIDE_SWAP_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "스왑 대상 할일 배정을 찾을 수 없습니다."),
     OVERRIDE_SWAP_DIFFERENT_GROUP(HttpStatus.FORBIDDEN, "서로 변경은 같은 그룹 내에서만 가능합니다."),
-    // 게시물 관련 오류
 
+    // 게시물 관련 오류
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
+    POST_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 게시글입니다."),
+    UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "본인 게시글만 수정/삭제할 수 있습니다."),
     // 정산 관련 오류
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 정산 정보를 찾을 수 없습니다."),
     SETTLEMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 정산 내역입니다."),
@@ -64,7 +68,7 @@ public enum ErrorCode {
     INVALID_PARTICIPANT_COUNT(HttpStatus.BAD_REQUEST, "참여자 수는 1명 이상이어야 합니다."),
 
     // 송금 관련 오류
-    PAYMENT_TRANSFER_FAILED (HttpStatus.INTERNAL_SERVER_ERROR, "송금 처리에 실패했습니다."),
+    PAYMENT_TRANSFER_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "송금 처리에 실패했습니다."),
 
     // 정산 및 송금 히스토리 관련 오류
     PAYMENT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 송금 내역을 찾을 수 없습니다."),
@@ -74,6 +78,13 @@ public enum ErrorCode {
     NOT_THE_SETTLEMENT_PAYER(HttpStatus.FORBIDDEN, "정산 결제자가 아닙니다."),
 
     // 알림 관련 오류
+
+    // 파일 업로드 관련 오류
+    FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "파일이 존재하지 않습니다."),
+    FILE_NOT_IMAGE(HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
+    FILE_SIZE_EXCEED(HttpStatus.BAD_REQUEST, "파일 크기는 1MB를 초과할 수 없습니다."),
+    FILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 이미지 파일이 존재합니다. 삭제 후 재업로드 해주세요."),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드 중 오류가 발생했습니다."),
 
     // 서버 오류
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");

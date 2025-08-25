@@ -5,8 +5,8 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class GroupInviteUrlDto {
+public class GroupInviteDto {
 
-    private String inviteUrl;
-    private Integer expiresIn;
+    private Long groupId;
+    private String inviteCode;
 }

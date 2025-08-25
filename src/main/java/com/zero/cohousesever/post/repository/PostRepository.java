@@ -12,17 +12,14 @@ import java.util.Optional;
 public interface PostRepository extends JpaRepository<Post, Long> {
 
     /**
-     * 그룹의 전체 게시글 페이징 조회
+     * 상태값(게시중/삭제)으로 게시글 조회 (상세)
      */
-    Page<Post> findByGroupId(Long groupId, Pageable pageable);
+    Optional<Post> findByIdAndStatus(Long id, PostStatus status);
 
     /**
-     * 그룹의 타입(공지/자유 등) 페이징 조회
+     * 그룹의 타입(공지/자유 등) 페이징 조회 (목록)
+     * - 목록 화면은 항상 탭(type) 선택이므로 type + status로만 조회
      */
-    Page<Post> findByGroupIdAndType(Long groupId, PostType type, Pageable pageable);
+    Page<Post> findByGroupIdAndTypeAndStatus(Long groupId, PostType type, PostStatus status, Pageable pageable);
 
-    /**
-     * 상태값(게시중/삭제)으로 게시글 조회
-     */
-    Optional<Post> findByIdAndStatus(Long id,  PostStatus status);
 }
