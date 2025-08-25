@@ -3,42 +3,52 @@ package com.zero.cohousesever.settlement.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
+import com.zero.cohousesever.settlement.dto.ParticipantResponse;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
-import com.zero.cohousesever.settlement.dto.SettlementResponseDto;
+import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.entity.*;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class SettlementService {
     public final MemberRepository memberRepository;
+    public final GroupRepository groupRepository;
     public final GroupMemberRepository groupMemberRepository;
     public final SettlementParticipantRepository settlementParticipantRepository;
     private final SettlementRepository settlementRepository;
     private final SettlementHistoryRepository settlementHistoryRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
 
+    private final S3Service s3Service;
+
     /**
      * 정산 등록
      */
-    public SettlementResponseDto createSettlement(Long payerId, CreateSettlementRequest request) {
+    public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request) {
         Member payer = memberRepository.findById(payerId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
@@ -73,14 +83,14 @@ public class SettlementService {
 
         SettlementHistory history = SettlementHistory.builder()
                 .settlement(savedSettlement)
-                .changedBy(payer)
+                .payer(payer)
                 .title(savedSettlement.getTitle())
                 .status(savedSettlement.getStatus())
                 .changedAt(LocalDateTime.now())
                 .build();
         settlementHistoryRepository.save(history);
 
-        return SettlementResponseDto.fromEntity(savedSettlement);
+        return SettlementResponse.fromEntity(savedSettlement);
     }
 
     // 균등 분배 참여자 생성 메서드
@@ -149,7 +159,6 @@ public class SettlementService {
 
     /**
      * 정산 취소 처리
-     *
      * - 정산 취소 시 송금을 한 정산 참여자만 환불 상태로 변경
      */
     @Transactional
@@ -186,7 +195,7 @@ public class SettlementService {
 
         SettlementHistory.builder()
                 .settlement(settlement)
-                .changedBy(findMemberOrThrow(memberId))
+                .payer(findMemberOrThrow(memberId))
                 .title(settlement.getTitle())
                 .status(SettlementStatus.CANCELED)
                 .changedAt(LocalDateTime.now())
@@ -198,41 +207,160 @@ public class SettlementService {
     }
 
     /**
-     * 정산 목록 조회 (페이징 및 필터링 포함)
+     * 나의 정산 목록 조회
      */
-    public void getSettlements() {
+    public Page<SettlementResponse> getMySettlements(Long memberId, Pageable pageable) {
+        // 해당 멤버가 참여한 모든 정산 조회
+        Member member = findMemberOrThrow(memberId);
+        Page<Settlement> settlements = settlementRepository.findAllByParticipantMember(member, pageable);
+
+        return settlements.map(SettlementResponse::fromEntity);
     }
 
     /**
-     * 특정 정산 상세 정보 조회
+     * 나의 특정 정산 상세 조회
      */
-    public void getSettlement() {
+    public SettlementResponse getSettlementDetail(Long memberId, Long settlementId) {
+        Member member = findMemberOrThrow(memberId);
+        Settlement settlement = settlementRepository.findById(settlementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
+
+        // 해당 멤버가 이 정산에 참여하고 있는지 확인
+        if (!settlementParticipantRepository.existsBySettlementIdAndMember(settlementId, member)) {
+            throw new CustomException(ErrorCode.NOT_A_SETTLEMENT_PARTICIPANT);
+        }
+
+        return SettlementResponse.fromEntity(settlement);
+    }
+
+    /**
+     * 그룹의 정산 목록 조회 (그룹장용)
+     */
+    public Page<SettlementResponse> getGroupSettlements(Long memberId, Long groupId, Pageable pageable) {
+        Member member = findMemberOrThrow(memberId);
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
+
+        // 그룹 멤버 중에서 해당 회원이 그룹장인지 확인
+        if (!groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, member)) {
+            throw new CustomException(ErrorCode.NOT_GROUP_LEADER);
+        }
+
+        Page<Settlement> settlements = settlementRepository.findAllByGroup(group, pageable);
+
+        return settlements.map(SettlementResponse::fromEntity);
     }
 
     /**
      * 정산 참여자 목록 조회
      */
-    public void getParticipants() {
+    public List<ParticipantResponse> getSettlementParticipants(Long memberId, Long settlementId) {
+        Member member = findMemberOrThrow(memberId);
+        Settlement settlement = settlementRepository.findById(settlementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
+
+        // 해당 멤버가 이 정산에 참여하고 있는지 확인
+        if (!settlementParticipantRepository.existsBySettlementIdAndMember(settlementId, member)) {
+            throw new CustomException(ErrorCode.NOT_A_SETTLEMENT_PARTICIPANT);
+        }
+
+        List<SettlementParticipant> participants = settlementParticipantRepository.findAllBySettlement(settlement);
+
+        return participants.stream()
+                .map(ParticipantResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
-     * 영수증 이미지 업로드 및 처리
+     * 나의 정산 히스토리 조회
      */
-    public void uploadReceiptImage() {
+    public Page<SettlementHistoryResponse> getMySettlementHistories(Long memberId, Pageable pageable) {
+        Member member = findMemberOrThrow(memberId);
+        Page<SettlementHistory> settlementHistories =
+                settlementHistoryRepository.findAllBySender(member, pageable);
+
+        return settlementHistories.map(SettlementHistoryResponse::fromEntity);
     }
 
     /**
-     * 정산 전체 히스토리 조회
+     * 영수증 이미지 업로드
      */
-    public List<SettlementHistoryResponse> getSettlementHistories(Long groupId, Long settlementId) {
-        return null;
+    public String uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+        Settlement settlement = findSettlementOrThrow(settlementId);
+        Member member = findMemberOrThrow(memberId);
+
+        if (!settlement.getPayer().equals(member)) {
+            throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+        }
+
+        // 기존 이미지가 있으면 업로드 막음
+        if (settlement.getImageUrl() != null && !settlement.getImageUrl().isEmpty()) {
+            throw new CustomException(ErrorCode.FILE_ALREADY_EXISTS);
+        }
+
+        // 이미지 검증
+        s3Service.validateImageFile(file);
+
+        // 경로 생성
+        String dirName = String.format("groups/%d/settlements/%d/receipt", groupId, settlementId);
+
+        String imageUrl = s3Service.uploadFile(file, dirName);
+
+        settlement.setImageUrl(imageUrl);
+        settlementRepository.save(settlement);
+
+        return imageUrl;
     }
 
     /**
-     * 그룹의 정산 히스토리 조회
+     * 영수증 이미지 업데이트
+     * - 기존 영수증 이미지 삭제 후 최신 이미지 등록
      */
-    public List<SettlementHistoryResponse> getGroupSettlementHistories(Long groupId, Long settlementId, LocalDate fromDate, LocalDate toDate) {
-        return null;
+    public String updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+        try {
+            Settlement settlement = findSettlementOrThrow(settlementId);
+
+            Member member = findMemberOrThrow(memberId);
+            if (!settlement.getPayer().equals(member)) {
+                throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+            }
+
+            String imageUrl = settlement.getImageUrl();
+            if (settlement.getImageUrl() == null || imageUrl.isEmpty()) {
+                throw new CustomException(ErrorCode.FILE_NOT_FOUND);
+            }
+
+            // 기존 파일 삭제
+            deleteReceiptImage(memberId, settlementId);
+
+            // 새 이미지 업로드
+            return uploadReceiptImage(memberId, file, groupId, settlementId);
+
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+    }
+
+    /**
+     * 영수증 이미지 삭제
+     */
+    public void deleteReceiptImage(Long memberId, Long settlementId) throws IOException {
+        Settlement settlement = findSettlementOrThrow(settlementId);
+        Member member = findMemberOrThrow(memberId);
+        if (!settlement.getPayer().equals(member)) {
+            throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+        }
+
+        String imageUrl = settlement.getImageUrl();
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            throw new CustomException(ErrorCode.FILE_NOT_FOUND);
+        }
+
+        String extractedFilePath = s3Service.extractFilePath(imageUrl);
+
+        s3Service.deleteFile(extractedFilePath);
+        settlement.setImageUrl(null);
+        settlementRepository.save(settlement);
     }
 
     // 회원 엔티티 조회 메서드
