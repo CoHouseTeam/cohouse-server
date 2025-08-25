@@ -5,6 +5,7 @@ import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
+import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -379,5 +380,56 @@ class GroupServiceTest {
         assertThatThrownBy(() -> groupService.groupInvite(memberId, groupId))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining(NOT_GROUP_LEADER.getMessage());
+    }
+
+    @Test
+    @DisplayName("그룹 멤버 정보 수정 성공 테스트")
+    void updateGroupMember_Success() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+        String newNickname = "수정된 닉네임";
+        GroupMemberSummary requestDto = GroupMemberSummary.builder()
+                .id(1L)
+                .memberId(memberId)
+                .groupId(groupId)
+                .nickname(newNickname)
+                .build();
+
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+        when(groupMemberRepository.save(any(GroupMember.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        GroupMemberSummary result = groupService.updateGroupMember(memberId, groupId, requestDto);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getNickname()).isEqualTo(newNickname);
+        verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
+        verify(groupMemberRepository).save(any(GroupMember.class));
+    }
+
+    @Test
+    @DisplayName("그룹 멤버 정보 수정시 그룹 멤버가 존재하지 않으면 예외 발생")
+    void updateGroupMember_groupMemberNotFound() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 999L;
+        GroupMemberSummary requestDto = GroupMemberSummary.builder()
+                .id(1L)
+                .memberId(memberId)
+                .groupId(groupId)
+                .nickname("수정된 닉네임")
+                .build();
+
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> groupService.updateGroupMember(memberId, groupId, requestDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(GROUP_MEMBER_NOT_FOUND.getMessage());
     }
 }
