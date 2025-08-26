@@ -12,8 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import static com.zero.cohousesever.common.exception.ErrorCode.INTERNAL_SERVER_ERROR;
-import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_INACTIVE;
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
