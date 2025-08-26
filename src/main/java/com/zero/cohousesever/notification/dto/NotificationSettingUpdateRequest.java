@@ -1,16 +1,26 @@
 package com.zero.cohousesever.notification.dto;
 
-import com.zero.cohousesever.notification.type.NotificationType;
+import jakarta.validation.constraints.AssertTrue;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * 알림 설정 변경 요청 DTO
- * - 특정 타입의 on/off 값을 전달합니다.
+ * - null이 아닌 필드만 반영(부분 갱신)
+ * - 모든 필드가 null이면 검증 실패로 간주
  */
 @Getter
+@Setter
 @NoArgsConstructor
 public class NotificationSettingUpdateRequest {
-    private NotificationType type;
-    private boolean enabled;
+
+    private Boolean taskEnabled;         // null이면 변경 없음
+    private Boolean announcementEnabled; // null이면 변경 없음
+    private Boolean settlementEnabled;   // null이면 변경 없음
+
+    @AssertTrue(message = "최소 하나의 설정 값이 필요합니다.")
+    public boolean hasAnyField() {
+        return taskEnabled != null || announcementEnabled != null || settlementEnabled != null;
+    }
 }

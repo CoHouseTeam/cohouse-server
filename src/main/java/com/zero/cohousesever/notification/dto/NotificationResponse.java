@@ -15,18 +15,14 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class NotificationResponse {
-    Long id;
-    NotificationType type;
-    String title;
-    String content;
+    private Long id;
+    private NotificationType type;
+    private String title;
+    private String content;
 
-    Long settlementId;
-    Long taskId;
-    Long groupId;
-
-    boolean read;
-    LocalDateTime readAt;
-    LocalDateTime createdAt;
+    private boolean read;
+    private LocalDateTime readAt;
+    private LocalDateTime createdAt;
 
     /**
      * 엔티티 -> DTO 변환
@@ -37,9 +33,6 @@ public class NotificationResponse {
                 .type(n.getType())
                 .title(n.getTitle())
                 .content(n.getContent())
-                .settlementId(n.getSettlementId())
-                .taskId(n.getTaskId())
-                .groupId(n.getGroupId())
                 .read(n.isRead())
                 .readAt(n.getReadAt())
                 .createdAt(n.getCreatedAt())

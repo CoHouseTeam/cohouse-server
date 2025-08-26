@@ -6,7 +6,11 @@ import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.notification.dto.NotificationCreateRequest;
 import com.zero.cohousesever.notification.dto.NotificationResponse;
 import com.zero.cohousesever.notification.entity.Notification;
+import com.zero.cohousesever.notification.entity.NotificationSetting;
+import com.zero.cohousesever.notification.policy.DeliveryDecision;
+import com.zero.cohousesever.notification.policy.NotificationPolicy;
 import com.zero.cohousesever.notification.repository.NotificationRepository;
+import com.zero.cohousesever.notification.repository.NotificationSettingRepository;
 import com.zero.cohousesever.notification.type.NotificationStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -16,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -23,15 +28,21 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationSettingRepository notificationSettingRepository;
+    private final NotificationPolicy notificationPolicy;
 
     @PersistenceContext
     private EntityManager em;
 
     /**
-     * 알림 생성
+     * 알림 생성 + 정책 판단
+     * - DB 저장 후, 사용자 설정/앱 접속 여부를 바탕으로 SEND_NOW/SCHEDULED/SKIP 결정
      */
     @Transactional
-    public NotificationResponse create(Long memberId, NotificationCreateRequest req) {
+    public NotificationResponse create(Long memberId,
+                                       NotificationCreateRequest req,
+                                       boolean isAppActive
+    ) {
         Notification entity = Notification.builder()
                 .member(em.getReference(Member.class, memberId))
                 .type(req.getType())
@@ -43,9 +54,22 @@ public class NotificationService {
                 .build();
 
         Notification saved = notificationRepository.save(entity);
+
+        // 타입별 설정 1건 로드 (없으면 Optional.empty)
+        Optional<NotificationSetting> setting =
+                notificationSettingRepository.findByMember_Id(memberId);
+        // 정책 판단
+        DeliveryDecision decision = notificationPolicy.decide(saved, setting, isAppActive);
+
+        // 이 단계에서는 "결정만" 수행합니다.
+        // - SEND_NOW  : 웹소켓 즉시 푸시로 보낼 파이프라인에 전달
+        // - SCHEDULED : 사용자 지정 시각에 맞춰 스케줄러 큐에 적재
+        // - SKIP      : 아무것도 안 함
+        //
+        // 실제 송신/스케줄링 연결은 후속 PR(#111 Scheduler)에서 붙입니다.
+
         return NotificationResponse.from(saved);
     }
-
 
     /**
      * 로그인 사용자의 알림 목록 조회
@@ -86,8 +110,8 @@ public class NotificationService {
      */
     public void markAsRead(Long memberId, Long notificationId) {
         int updated = notificationRepository.markRead(
-                notificationId, memberId, NotificationStatus.ACTIVE, LocalDateTime.now()
-        );
+                notificationId, memberId, NotificationStatus.ACTIVE, LocalDateTime.now());
+
         if (updated > 0) return;
 
         Boolean readFlag = notificationRepository.findReadFlagForActiveMember(
@@ -103,9 +127,8 @@ public class NotificationService {
      * 미읽음(미확인) 알림 개수: 30일 컷 + ACTIVE + isRead=false
      */
     public long getUnreadCount(Long memberId) {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
         return notificationRepository.countUnread(
-                memberId, NotificationStatus.ACTIVE, LocalDateTime.now().minusDays(30)
-        );
+                memberId, NotificationStatus.ACTIVE, cutoff);
     }
-
 }

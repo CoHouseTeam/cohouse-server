@@ -2,8 +2,10 @@ package com.zero.cohousesever.notification.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.notification.dto.NotificationResponse;
 import com.zero.cohousesever.notification.entity.Notification;
+import com.zero.cohousesever.notification.entity.NotificationSetting;
 import com.zero.cohousesever.notification.repository.NotificationRepository;
 import com.zero.cohousesever.notification.type.NotificationStatus;
 import com.zero.cohousesever.notification.type.NotificationType;
@@ -156,5 +158,33 @@ class NotificationServiceTest {
 
         verify(notificationRepository, times(1))
                 .findReadFlagForActiveMember(eq(100L), eq(10L), eq(NotificationStatus.ACTIVE));
+    }
+
+    @Test
+    @DisplayName("타입별 ON/OFF 매핑 - TASK/ANNOUNCEMENT/SETTLEMENT")
+    void isEnabled_mapping_basic() {
+        NotificationSetting setting = NotificationSetting.builder()
+                .member(new Member())              // 최소 객체
+                .taskEnabled(true)
+                .announcementEnabled(false)
+                .settlementEnabled(true)
+                .build();
+
+        assertThat(setting.isEnabled(NotificationType.TASK)).isTrue();
+        assertThat(setting.isEnabled(NotificationType.ANNOUNCEMENT)).isFalse();
+        assertThat(setting.isEnabled(NotificationType.SETTLEMENT)).isTrue();
+    }
+
+    @Test
+    @DisplayName("DELETE_REQUEST는 항상 발송")
+    void isEnabled_deleteRequest_alwaysTrue() {
+        NotificationSetting setting = NotificationSetting.builder()
+                .member(new Member())
+                .taskEnabled(false)
+                .announcementEnabled(false)
+                .settlementEnabled(false)
+                .build();
+
+        assertThat(setting.isEnabled(NotificationType.DELETE_REQUEST)).isTrue();
     }
 }

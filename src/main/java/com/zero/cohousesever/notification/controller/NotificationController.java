@@ -31,10 +31,12 @@ public class NotificationController {
     @PostMapping
     public ResponseEntity<NotificationResponse> create(
             @AuthenticationPrincipal CustomUserDetails principal,
+            @RequestHeader(defaultValue = "false") boolean isAppActive,
             @Valid @RequestBody NotificationCreateRequest request
     ) {
-        NotificationResponse created = notificationService.create(principal.getId(), request);
-        // Location: /api/notifications/{id}
+        NotificationResponse created = notificationService.create(
+                principal.getId(), request, isAppActive);
+
         return ResponseEntity.created(URI.create("/api/notifications/" + created.getId()))
                 .body(created);
     }

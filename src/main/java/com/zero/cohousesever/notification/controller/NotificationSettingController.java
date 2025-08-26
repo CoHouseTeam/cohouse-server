@@ -4,13 +4,11 @@ import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.notification.dto.NotificationSettingResponse;
 import com.zero.cohousesever.notification.dto.NotificationSettingUpdateRequest;
 import com.zero.cohousesever.notification.service.NotificationSettingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * 알림 설정 API
@@ -22,27 +20,28 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NotificationSettingController {
 
-    private final NotificationSettingService settingService;
+    private final NotificationSettingService notificationSettingService;
 
     /**
-     * 설정 목록 조회(누락 타입은 기본 true로 채워 반환)
+     * 설정 조회(없으면 기본 생성 후 반환)
      */
     @GetMapping
-    public ResponseEntity<List<NotificationSettingResponse>> list(
+    public ResponseEntity<NotificationSettingResponse> getSettings(
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        return ResponseEntity.ok(settingService.getSettings(principal.getId()));
+        NotificationSettingResponse body = notificationSettingService.getOrCreate(principal.getId());
+        return ResponseEntity.ok(body);
     }
 
     /**
-     * 설정 변경(upsert)
+     * 설정 변경(부분 갱신, 204)
      */
     @PutMapping
-    public ResponseEntity<Map<String, String>> update(
+    public ResponseEntity<Void> updateSettings(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody NotificationSettingUpdateRequest request
+            @Valid @RequestBody NotificationSettingUpdateRequest request
     ) {
-        settingService.updateSetting(principal.getId(), request.getType(), request.isEnabled());
-        return ResponseEntity.ok(Map.of("message", "알림 설정이 변경되었습니다."));
+        notificationSettingService.update(principal.getId(), request);
+        return ResponseEntity.noContent().build();
     }
 }

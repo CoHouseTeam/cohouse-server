@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
-/**
+ * /**
  * 알림 생성 요청 DTO
  * - 필수: type, content (title은 선택)
  */

@@ -1,18 +1,20 @@
 package com.zero.cohousesever.notification.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.notification.dto.NotificationSettingResponse;
 import com.zero.cohousesever.notification.dto.NotificationSettingUpdateRequest;
 import com.zero.cohousesever.notification.entity.NotificationSetting;
 import com.zero.cohousesever.notification.repository.NotificationSettingRepository;
-import com.zero.cohousesever.notification.type.NotificationType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 알림 설정 서비스
@@ -23,29 +25,26 @@ import java.util.*;
 @RequiredArgsConstructor
 public class NotificationSettingService {
 
-    private final NotificationSettingRepository settingRepository;
+    private final NotificationSettingRepository notificationSettingRepository;
 
     @PersistenceContext
     private EntityManager em;
 
     /**
-     * 회원 전체 설정 조회(누락 타입은 기본 true로 보정)
+     * 조회(없으면 기본값 생성 후 반환)
      */
-    public List<NotificationSettingResponse> getSettings(Long memberId) {
-        // DB에 저장된 설정 로드
-        List<NotificationSetting> stored = settingRepository.findByMember_Id(memberId);
-        Map<NotificationType, Boolean> map = new EnumMap<>(NotificationType.class);
-        for (NotificationSetting s : stored) {
-            map.put(s.getType(), s.isEnabled());
+    @Transactional
+    public NotificationSettingResponse getOrCreate(Long memberId) {
+        Optional<NotificationSetting> found = notificationSettingRepository.findByMember_Id(memberId);
+        if (found.isPresent()) {
+            return NotificationSettingResponse.from(found.get());
         }
 
-        // 모든 타입 기준으로 누락은 기본 true 채움
-        List<NotificationSettingResponse> result = new ArrayList<>();
-        for (NotificationType type : NotificationType.values()) {
-            boolean enabled = map.getOrDefault(type, true);
-            result.add(new NotificationSettingResponse(type, enabled));
-        }
-        return result;
+        // 기본값(모든 타입 ON) 생성
+        Member ref = em.getReference(Member.class, memberId);
+        NotificationSetting created = NotificationSetting.createDefault(ref);
+        NotificationSetting saved = notificationSettingRepository.save(created);
+        return NotificationSettingResponse.from(saved);
     }
 
     /**
@@ -53,20 +52,37 @@ public class NotificationSettingService {
      * - @Transactional: 변경성 작업의 원자성/동시성 보장을 위해 필요합니다.
      */
     @Transactional
-    public void updateSetting(Long memberId, NotificationType type, boolean isEnabled) {
-        settingRepository.findByMember_IdAndType(memberId, type)
-                .ifPresentOrElse(
-                        // 존재하면 enabled만 갱신
-                        s -> s.setEnabled(isEnabled),
-                        // 없으면 생성(지연 로딩 프록시로 Member 참조)
-                        () -> {
-                            NotificationSetting created = NotificationSetting.builder()
-                                    .member(em.getReference(Member.class, memberId))
-                                    .type(type)
-                                    .isEnabled(isEnabled)
-                                    .build();
-                            settingRepository.save(created);
-                        }
-                );
+    public void update(Long memberId, NotificationSettingUpdateRequest request) {
+        if (allNull(request)) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST); // 최소 하나는 있어야 함
+        }
+
+        // 없으면 기본값 생성 후 갱신
+        NotificationSetting setting = notificationSettingRepository
+                .findByMember_Id(memberId)
+                .orElseGet(() -> NotificationSetting.createDefault(
+                        em.getReference(Member.class, memberId)
+                ));
+
+        if (request.getTaskEnabled() != null) {
+            setting.setTaskEnabled(request.getTaskEnabled());
+        }
+        if (request.getAnnouncementEnabled() != null) {
+            setting.setAnnouncementEnabled(request.getAnnouncementEnabled());
+        }
+        if (request.getSettlementEnabled() != null) {
+            setting.setSettlementEnabled(request.getSettlementEnabled());
+        }
+
+        notificationSettingRepository.save(setting);
+    }
+
+    /**
+     * 모두 null인지 검사(부분 갱신 유효성)
+     */
+    private boolean allNull(NotificationSettingUpdateRequest req) {
+        return Objects.isNull(req.getTaskEnabled())
+                && Objects.isNull(req.getAnnouncementEnabled())
+                && Objects.isNull(req.getSettlementEnabled());
     }
 }

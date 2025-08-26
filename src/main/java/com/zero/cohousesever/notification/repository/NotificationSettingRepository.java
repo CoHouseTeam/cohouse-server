@@ -1,10 +1,8 @@
 package com.zero.cohousesever.notification.repository;
 
 import com.zero.cohousesever.notification.entity.NotificationSetting;
-import com.zero.cohousesever.notification.type.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -13,7 +11,13 @@ import java.util.Optional;
  */
 public interface NotificationSettingRepository extends JpaRepository<NotificationSetting, Long> {
 
-    List<NotificationSetting> findByMember_Id(Long memberId);
+    /**
+     * 회원 ID로 알림 설정 조회
+     */
+    Optional<NotificationSetting> findByMember_Id(Long memberId);
 
-    Optional<NotificationSetting> findByMember_IdAndType(Long memberId, NotificationType type);
+    /**
+     * 회원 알림 설정 존재 여부 확인
+     */
+    boolean existsByMember_Id(Long memberId);
 }
