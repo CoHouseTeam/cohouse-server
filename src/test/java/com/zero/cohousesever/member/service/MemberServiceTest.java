@@ -87,10 +87,7 @@ class MemberServiceTest {
         String email = "new@example.com";
         String encodedPassword = "newEncodedPassword";
 
-        when(memberRepository.save(any(Member.class))).thenAnswer(invocation -> {
-            Member savedMember = invocation.getArgument(0);
-            return savedMember;
-        });
+        when(memberRepository.save(any(Member.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         Member result = memberService.createMember(name, email, encodedPassword);
