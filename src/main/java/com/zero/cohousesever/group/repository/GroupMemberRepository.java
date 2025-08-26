@@ -19,6 +19,8 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
 
     boolean existsByMemberIdAndStatus(Long memberId, GroupMemberStatus status);
 
+    boolean existsByMemberIdAndGroupIdAndIsLeaderTrue(Long memberId, Long groupId);
+
     // 그룹장 여부 확인
     boolean existsByGroupAndMemberAndIsLeaderTrue(Group group, Member member);
 }

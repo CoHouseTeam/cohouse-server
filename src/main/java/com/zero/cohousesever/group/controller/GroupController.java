@@ -148,13 +148,17 @@ public class GroupController {
         return ResponseEntity.ok().build();
     }
 
-    // 그룹 탈퇴 요청
+    // 그룹 탈퇴 요청 조회
     @GetMapping("/{groupId}/leave-requests")
     public ResponseEntity<List<LeaveRequestSummary>> getGroupLeaveRequests(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        List<LeaveRequestSummary> responseDto = groupLeaveService.getGroupLeaveList(memberId, groupId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 탈퇴 요청

@@ -1,7 +1,6 @@
 package com.zero.cohousesever.group.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
-import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestReasonDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestSummary;
 import com.zero.cohousesever.group.entity.GroupLeaveRequest;
@@ -16,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
@@ -51,5 +51,17 @@ public class GroupLeaveService {
         GroupLeaveRequest saved = groupLeaveRequestRepository.save(groupLeaveRequest);
 
         return LeaveRequestSummary.fromEntity(saved);
+    }
+
+    public List<LeaveRequestSummary> getGroupLeaveList(Long memberId, Long groupId) {
+        if (!groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(memberId, groupId)) {
+            throw new CustomException(NOT_GROUP_LEADER);
+        }
+
+        List<GroupLeaveRequest> list = groupLeaveRequestRepository.findByGroupIdAndStatus(groupId, LeaveRequestStatus.PENDING);
+
+        return list.stream()
+                .map(LeaveRequestSummary::fromEntity)
+                .toList();
     }
 }
