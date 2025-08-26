@@ -1,11 +1,22 @@
 spring:
-  activate:
-    on-profile: prod
   datasource:
-    url: jdbc:mysql://mysql:3306/cohouse_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://mysql:3306/cohouse_db?useSSL=false&serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true
     username: root
     password: 1
-    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+    multipart:
+      enabled: true
+      max-file-size: 1MB
+      max-request-size: 1MB
+
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: cohouse
+
   data:
     redis:
       host: redis
