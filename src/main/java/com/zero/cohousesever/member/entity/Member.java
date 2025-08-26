@@ -39,4 +39,8 @@ public class Member extends BaseEntity {
 
     @Column(columnDefinition = "TINYINT")
     private Boolean gender; // 0: Male, 1: Female
+
+    public void withdraw() {
+        this.status = MemberStatus.INACTIVE;
+    }
 }
