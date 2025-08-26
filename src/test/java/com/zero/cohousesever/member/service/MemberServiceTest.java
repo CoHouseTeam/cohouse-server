@@ -1,8 +1,10 @@
 package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
@@ -15,6 +17,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +47,10 @@ class MemberServiceTest {
                 .name("테스트유저")
                 .email("test@example.com")
                 .password("encodedPassword")
+                .gender(false) // male
+                .birthDate(LocalDate.of(2000, 1, 1))
+                .alertTime(LocalTime.of(12, 0, 0))
+                .profileImageUrl("www.test.com/123")
                 .status(MemberStatus.ACTIVE)
                 .build();
         ReflectionTestUtils.setField(testMember, "id", 1L);
@@ -94,6 +102,47 @@ class MemberServiceTest {
         assertThat(result.getStatus()).isEqualTo(MemberStatus.ACTIVE);
 
         verify(memberRepository).save(any(Member.class));
+    }
+
+    @Test
+    @DisplayName("회원 프로필 조회 성공")
+    void getMemberProfile_Success() {
+        // given
+        Long memberId = 1L;
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.of(testMember));
+
+        // when
+        MemberProfileSummary result = memberService.getMemberProfile(memberId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(testMember.getId());
+        assertThat(result.getName()).isEqualTo(testMember.getName());
+        assertThat(result.getEmail()).isEqualTo(testMember.getEmail());
+        assertThat(result.getGender()).isEqualTo(testMember.getGender() ? "여자" : "남자");
+        assertThat(result.getBirthDate()).isEqualTo(testMember.getBirthDate());
+        assertThat(result.getAlertTime()).isEqualTo(testMember.getAlertTime());
+        assertThat(result.getProfileImageUrl()).isEqualTo(testMember.getProfileImageUrl());
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("회원 프로필 조회시 이미 탈퇴한 회원일 경우 예외 발생")
+    void getMemberProfile_ThrowsException_WhenInactiveMember() {
+        // given
+        Long memberId = 1L;
+        ReflectionTestUtils.setField(testMember, "status", MemberStatus.INACTIVE);
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> memberService.getMemberProfile(memberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
     }
 
     @Test

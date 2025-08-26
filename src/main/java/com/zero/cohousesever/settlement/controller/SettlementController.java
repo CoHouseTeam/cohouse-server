@@ -1,16 +1,25 @@
 package com.zero.cohousesever.settlement.controller;
 
-import com.zero.cohousesever.settlement.dto.PaymentCompleteRequest;
-import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
+import com.zero.cohousesever.file.dto.FileUploadResponse;
+import com.zero.cohousesever.file.service.S3Service;
+import com.zero.cohousesever.member.security.CustomUserDetails;
+import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
+import com.zero.cohousesever.settlement.dto.ParticipantResponse;
 import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
+import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -19,77 +28,135 @@ import java.util.List;
 public class SettlementController {
     private final SettlementService settlementService;
     private final PaymentService paymentService;
+    private final S3Service s3Service;
 
-    //FIXME 글로벌 예외 처리 테스트
-    @GetMapping("/exception-test")
-    public ResponseEntity<?> testGlobalException() {
-        System.out.println("HELLO");
-        settlementService.testGlobalException();
-        return ResponseEntity.ok().build();
-    }
-
-    // 정산 목록 조회
-    @GetMapping
-    public ResponseEntity<?> getSettlements() {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 정산 등록
+    /**
+     * 정산 등록
+     */
     @PostMapping
-    public ResponseEntity<?> createSettlement() {
-
-        return ResponseEntity.ok().build();
+    public ResponseEntity<SettlementResponse> createSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                               @RequestBody CreateSettlementRequest request) {
+        Long payerId = userDetails.getId();
+        System.out.println(payerId);
+        SettlementResponse settlementResponse = settlementService.createSettlement(payerId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(settlementResponse);
     }
 
-    // 정산 상세 조회
-    @GetMapping("/{settlementId}")
-    public ResponseEntity<?> getSettlement() {
-
-        return ResponseEntity.ok().build();
-    }
-
-    // 정산 취소
+    /**
+     * 정산 취소
+     */
     @DeleteMapping("/{settlementId}")
-    public ResponseEntity<?> cancelSettlement() {
+    public ResponseEntity<?> cancelSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                              @PathVariable Long settlementId) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        settlementService.cancelSettlement(memberId, settlementId);
+        return ResponseEntity.noContent().build();
     }
 
-    // 정산 참여자 목록 조회
+    /**
+     * 나의 정산 목록 조회
+     */
+    @GetMapping("/my")
+    public ResponseEntity<Page<SettlementResponse>> getMySettlements(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                     Pageable pageable) {
+        Page<SettlementResponse> settlements = settlementService.getMySettlements(userDetails.getId(), pageable);
+        return ResponseEntity.ok(settlements);
+    }
+
+    /**
+     * 나의 특정 정산 상세 조회
+     */
+    @GetMapping("/{settlementId}")
+    public ResponseEntity<SettlementResponse> getSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                            @PathVariable Long settlementId) {
+        Long memberId = userDetails.getId();
+        SettlementResponse settlement = settlementService.getSettlementDetail(memberId, settlementId);
+        return ResponseEntity.ok(settlement);
+    }
+
+    /**
+     * 그룹의 정산 목록 조회 (그룹장 권한 필요)
+     */
+    @GetMapping("/group/{groupId}")
+    public ResponseEntity<Page<SettlementResponse>> getGroupSettlements(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                        @PathVariable Long groupId,
+                                                                        Pageable pageable) {
+        Page<SettlementResponse> settlements = settlementService.getGroupSettlements(userDetails.getId(), groupId, pageable);
+        return ResponseEntity.ok(settlements);
+    }
+
+    /**
+     * 정산 참여자 목록 조회
+     */
     @GetMapping("/{settlementId}/participants")
-    public ResponseEntity<?> getParticipants() {
-
-        return ResponseEntity.ok().build();
+    public ResponseEntity<List<ParticipantResponse>> getParticipants(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                     @PathVariable Long settlementId) {
+        Long memberId = userDetails.getId();
+        List<ParticipantResponse> participants = settlementService.getSettlementParticipants(memberId, settlementId);
+        return ResponseEntity.ok(participants);
     }
 
-    // 정산 참여자 추가
-    @PostMapping("/{settlementId}/participants")
-    public ResponseEntity<?> addParticipant() {
-
-        return ResponseEntity.ok().build();
+    /**
+     * 나의 정산 히스토리 조회
+     */
+    @GetMapping("/my/history")
+    public ResponseEntity<Page<SettlementHistoryResponse>> getMySettlementHistory(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                                  Pageable pageable) {
+        Page<SettlementHistoryResponse> history = settlementService.getMySettlementHistories(userDetails.getId(), pageable);
+        return ResponseEntity.ok(history);
     }
 
-    // 정산 참여자 제거
-    @DeleteMapping("/{settlementId}/participants/{participantId}")
-    public ResponseEntity<?> removeParticipant() {
+    /**
+     * 영수증 이미지 업로드
+     */
+    @PostMapping("/{settlementId}/receipt")
+    public ResponseEntity<FileUploadResponse> uploadReceiptImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam Long groupId,
+            @PathVariable Long settlementId,
+            @RequestParam("file") MultipartFile file) throws IOException {
 
-        return ResponseEntity.ok().build();
+        // 서비스 메서드 내부에서 이미지 검증 수행
+        String imageUrl = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        return ResponseEntity.ok(new FileUploadResponse(imageUrl));
     }
 
-    // 영수증 이미지 업로드
-    @PostMapping("/{settlementId}/image")
-    public ResponseEntity<?> uploadReceiptImage() {
+    /**
+     * 영수증 이미지 업데이트
+     */
+    @PutMapping("/{settlementId}/receipt")
+    public ResponseEntity<FileUploadResponse> updateReceiptImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam Long groupId,
+            @PathVariable Long settlementId,
+            @RequestParam("file") MultipartFile file) throws IOException {
 
-        return ResponseEntity.ok().build();
+        // 서비스 메서드 내부에서 이미지 검증 수행
+        String imageUrl = settlementService.updateReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        return ResponseEntity.ok(new FileUploadResponse(imageUrl));
+    }
+
+    /**
+     * 영수증 이미지 삭제
+     */
+    @DeleteMapping("/{settlementId}/receipt")
+    public ResponseEntity<?> deleteReceiptImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long settlementId) throws IOException {
+
+        settlementService.deleteReceiptImage(userDetails.getId(), settlementId);
+
+        return ResponseEntity.noContent().build();
     }
 
     // 송금 완료 처리
     @PostMapping("/{settlementId}/payment")
-    public ResponseEntity<?> completePayment(
-            @PathVariable Long settlementId,
-            @RequestBody PaymentCompleteRequest request) {
+    public ResponseEntity<?> completePayment(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                             @PathVariable Long settlementId) throws AccessDeniedException {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        paymentService.processPayment(memberId, settlementId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

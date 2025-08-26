@@ -60,7 +60,12 @@ public class AuthController {
 
     // 로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<MessageDto> logout() {
+    public ResponseEntity<Void> logout(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        authService.logout(memberId);
 
         return ResponseEntity.ok().build();
     }
