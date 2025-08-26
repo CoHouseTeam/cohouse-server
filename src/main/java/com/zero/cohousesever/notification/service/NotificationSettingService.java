@@ -11,7 +11,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -33,7 +32,6 @@ public class NotificationSettingService {
     /**
      * 조회(없으면 기본값 생성 후 반환)
      */
-    @Transactional
     public NotificationSettingResponse getOrCreate(Long memberId) {
         Optional<NotificationSetting> found = notificationSettingRepository.findByMember_Id(memberId);
         if (found.isPresent()) {
@@ -51,7 +49,6 @@ public class NotificationSettingService {
      * 단일 타입 설정 변경(upsert)
      * - @Transactional: 변경성 작업의 원자성/동시성 보장을 위해 필요합니다.
      */
-    @Transactional
     public void update(Long memberId, NotificationSettingUpdateRequest request) {
         if (allNull(request)) {
             throw new CustomException(ErrorCode.INVALID_REQUEST); // 최소 하나는 있어야 함

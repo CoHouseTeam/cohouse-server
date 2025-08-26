@@ -16,7 +16,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,7 +37,6 @@ public class NotificationService {
      * 알림 생성 + 정책 판단
      * - DB 저장 후, 사용자 설정/앱 접속 여부를 바탕으로 SEND_NOW/SCHEDULED/SKIP 결정
      */
-    @Transactional
     public NotificationResponse create(Long memberId,
                                        NotificationCreateRequest req,
                                        boolean isAppActive
@@ -85,7 +83,6 @@ public class NotificationService {
     /**
      * 사용자 알림 전체 소프트 딜리트
      */
-    @Transactional
     public void softDeleteAll(Long memberId) {
         notificationRepository.softDeleteAllByMember(
                 memberId, NotificationStatus.DELETED, LocalDateTime.now()
@@ -95,7 +92,6 @@ public class NotificationService {
     /**
      * 보관기간이 지난 알림을 일괄 소프트 딜리트 (배치/스케줄러용)
      */
-    @Transactional
     public int softDeleteOutdated() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
         return notificationRepository.softDeleteOlderThan(
