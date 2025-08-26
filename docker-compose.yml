@@ -1,40 +1,32 @@
 version: '3.8'
-
 services:
-  app:
-    image: your-project-image:latest
-    ports:
-      - "8080:8080"
-    environment:
-      - REDIS_HOST=redis
-      - MYSQL_HOST=mysql
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=yourpassword
-      - MYSQL_DATABASE=yourdb
-    depends_on:
-      - redis
-      - mysql
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-
   mysql:
-    image: mysql:8.0
-    restart: always
+    image: mysql:8
+    container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: yourpassword
-      MYSQL_DATABASE: yourdb
-      MYSQL_USER: youruser
-      MYSQL_PASSWORD: yourpassword
+      MYSQL_ROOT_PASSWORD: 1
+      MYSQL_DATABASE: cohouse_db
     ports:
       - "3306:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  app:
+    image: blubincod/cohouse-server:1.0
+    container_name: app
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - redis
 
 volumes:
-  redis-data:
-  mysql-data:
+  mysql_data:

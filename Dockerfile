@@ -1,20 +1,13 @@
-# 빌드 환경
-FROM gradle:8.0-jdk21 AS build
-
-WORKDIR /app
-
-COPY build.gradle settings.gradle ./
-RUN gradle dependencies --no-daemon
-
-COPY src ./src
-RUN gradle bootJar -x test --no-daemon
-
-# 실행 환경
 FROM amazoncorretto:21
 
+# 환경변수 설정
+ENV JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
+ENV PATH="$JAVA_HOME/bin:$PATH"
+ENV TESSDATA_PREFIX=/usr/share/tessdata
+
 WORKDIR /app
 
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY build/libs/*.jar app.jar
 
 EXPOSE 8080
 
