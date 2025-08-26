@@ -149,7 +149,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 이미지 업데이트 성공 - 기존 이미지가 있는 경우")
+    @DisplayName("회원 프로필 이미지 업데이트 성공 - 기존 이미지가 있는 경우")
     void updateProfileImage_Success_WithExistingImage() throws IOException {
         // given
         Long memberId = 1L;
@@ -187,7 +187,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 이미지 업데이트 성공 - 기존 이미지가 없는 경우")
+    @DisplayName("회원 프로필 이미지 업데이트 성공 - 기존 이미지가 없는 경우")
     void updateProfileImage_Success_WithoutExistingImage() throws IOException {
         // given
         Long memberId = 2L;
@@ -233,7 +233,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 이미지 업데이트시 파일 검증에 실패하면 예외 발생")
+    @DisplayName("회원 프로필 이미지 업데이트시 파일 검증에 실패하면 예외 발생")
     void updateProfileImage_ThrowsException_WhenValidationFails() throws IOException {
         // given
         Long memberId = 1L;
@@ -264,7 +264,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 이미지 업데이트 실패 - 존재하지 않는 회원")
+    @DisplayName("회원 프로필 이미지 업데이트 실패 - 존재하지 않는 회원")
     void updateProfileImage_ThrowsException_WhenMemberNotFound() throws IOException {
         // given
         Long memberId = 999L;
@@ -290,7 +290,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 이미지 업데이트 실패 - 파일 업로드 중 예외 발생")
+    @DisplayName("회원 프로필 이미지 업데이트 실패 - 파일 업로드 중 예외 발생")
     void updateProfileImage_ThrowsException_WhenUploadException() throws Exception {
         // given
         Long memberId = 1L;
@@ -325,7 +325,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 이미지 업데이트 - 기존 이미지 삭제 실패해도 성공 반환")
+    @DisplayName("회원 프로필 이미지 업데이트 - 기존 이미지 삭제 실패해도 성공 반환")
     void updateProfileImage_Success_EvenWhenDeleteFails() throws Exception {
         // given
         Long memberId = 1L;
