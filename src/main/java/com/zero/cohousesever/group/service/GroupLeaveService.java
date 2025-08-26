@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
+
 @Service
 @RequiredArgsConstructor
 public class GroupLeaveService {
@@ -28,10 +30,14 @@ public class GroupLeaveService {
     public LeaveRequestSummary requestGroupLeave(Long memberId, Long groupId, LeaveRequestReasonDto requestDto) {
 
         GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)
-                .orElseThrow(() -> new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        if (groupMember.getIsLeader()) {
+            throw new CustomException(GROUP_LEADER_LEAVE_FORBIDDEN);
+        }
 
         if (settlementRepository.existsByIdAndStatus(memberId, SettlementStatus.PENDING)) {
-            throw new CustomException(ErrorCode.UNSETTLED_SETTLEMENT_EXISTS);
+            throw new CustomException(UNSETTLED_SETTLEMENT_EXISTS);
         }
 
         GroupLeaveRequest groupLeaveRequest = GroupLeaveRequest.builder()
