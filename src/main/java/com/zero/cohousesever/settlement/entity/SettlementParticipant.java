@@ -29,10 +29,4 @@ public class SettlementParticipant extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
-
-//    // 실제 송금 금액
-//    @Column(name = "paid_amount")
-//    private Long paidAmount;
-//
-//    private LocalDateTime paidAt;
 }

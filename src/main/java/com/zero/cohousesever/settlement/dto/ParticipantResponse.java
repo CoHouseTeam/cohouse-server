@@ -10,16 +10,14 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ParticipantDto {
-    private Long id;
+public class ParticipantResponse {
     private Long memberId;
     private String memberName;
     private Long shareAmount;
     private PaymentStatus status;
 
-    public static ParticipantDto fromEntity(SettlementParticipant participant) {
-        return new ParticipantDto(
-                participant.getId(),
+    public static ParticipantResponse fromEntity(SettlementParticipant participant) {
+        return new ParticipantResponse(
                 participant.getMember().getId(),
                 participant.getMember().getName(),
                 participant.getShareAmount(),
