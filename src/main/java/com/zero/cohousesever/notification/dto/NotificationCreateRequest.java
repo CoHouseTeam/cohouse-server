@@ -22,4 +22,10 @@ public class NotificationCreateRequest {
 
     @NotBlank
     private String content;
+
+    public NotificationCreateRequest(NotificationType type, String title, String content) {
+        this.type = type;
+        this.title = title;
+        this.content = content;
+    }
 }
