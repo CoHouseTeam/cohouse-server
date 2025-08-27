@@ -2,14 +2,12 @@ package com.zero.cohousesever.notification.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.member.entity.Member;
-import com.zero.cohousesever.notification.converter.JsonMapConverter;
 import com.zero.cohousesever.notification.type.NotificationStatus;
 import com.zero.cohousesever.notification.type.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * 알림 엔티티
