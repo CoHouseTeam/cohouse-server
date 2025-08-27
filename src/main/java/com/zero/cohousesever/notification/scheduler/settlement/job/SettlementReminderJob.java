@@ -4,42 +4,42 @@ import com.zero.cohousesever.notification.dto.NotificationCreateRequest;
 import com.zero.cohousesever.notification.service.NotificationService;
 import com.zero.cohousesever.notification.type.NotificationType;
 import lombok.RequiredArgsConstructor;
-import org.quartz.*;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
 import org.springframework.stereotype.Component;
 
 /**
- * 매일 22:00 실행: “여전히 미송금”이면 정산 리마인드 알림 전송
- * - 도메인 연결 전까지 unpaid=true 임시값. 실제 연결 시 질의로 대체
+ * 정산 미송금 리마인드 잡(매일 22:00)
+ * - TODO: 실제로는 정산 서비스에 질의해 "여전히 미송금"이면 발송, 아니면 자기 자신 해제 가능
  */
 @Component
 @RequiredArgsConstructor
 public class SettlementReminderJob implements Job {
 
     private final NotificationService notificationService;
-    // private final SettlementQueryPort settlementQueryPort; // 실제 연결 시 주입해서 사용
+    // private final SettlementQueryService settlementQueryService; // 후속 주입
 
     @Override
     public void execute(JobExecutionContext context) {
         JobDataMap m = context.getMergedJobDataMap();
-        Long memberId     = m.getLong("memberId");
+        Long memberId = m.getLong("memberId");
         Long settlementId = m.getLong("settlementId");
 
-        // TODO: 실제 구현으로 대체: boolean unpaid = settlementQueryPort.isUnpaid(settlementId, memberId);
-        boolean unpaid = true;
+        // TODO: 실제 체크로 대체
+        boolean unpaid = true; // settlementQueryService.isUnpaid(settlementId, memberId)
 
         if (unpaid) {
-            notificationService.create(
-                    memberId,
-                    new NotificationCreateRequest(
-                            NotificationType.SETTLEMENT,
-                            "정산 리마인드",
-                            "아직 송금이 완료되지 않았습니다. (settlementId=" + settlementId + ")"
-                    ),
-                    false // 스케줄 실행 시 보통 미접속 가정. 정책상 SETTLEMENT는 즉시 발송 결정됨
-            );
+            NotificationCreateRequest req = NotificationCreateRequest.builder()
+                    .type(NotificationType.SETTLEMENT)
+                    .title("정산 리마인드")
+                    .content("아직 송금이 완료되지 않았습니다. (settlementId=" + settlementId + ")")
+                    .build();
+
+            notificationService.create(memberId, req, false);
         } else {
-            // 필요 시 자기 자신 예약 해제:
-            // try { context.getScheduler().deleteJob(context.getJobDetail().getKey()); } catch (Exception ignore) {}
+            // 더 이상 필요 없으면 자기 자신 해제 가능
+            // context.getScheduler().deleteJob(context.getJobDetail().getKey());
         }
     }
 }

@@ -5,10 +5,14 @@ import com.zero.cohousesever.notification.scheduler.support.AppPresenceChecker;
 import com.zero.cohousesever.notification.service.NotificationService;
 import com.zero.cohousesever.notification.type.NotificationType;
 import lombok.RequiredArgsConstructor;
-import org.quartz.*;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
 import org.springframework.stereotype.Component;
 
-/** 공지 알림 1회 발송 잡 */
+/**
+ * 공지 알림 1회 발송 잡
+ */
 @Component
 @RequiredArgsConstructor
 public class PostAnnouncementJob implements Job {
@@ -20,7 +24,7 @@ public class PostAnnouncementJob implements Job {
     public void execute(JobExecutionContext context) {
         JobDataMap m = context.getMergedJobDataMap();
         Long memberId = m.getLong("memberId");
-        Long postId   = m.getLong("postId");
+        Long postId = m.getLong("postId");
 
         boolean active = presenceChecker.isActive(memberId);
 

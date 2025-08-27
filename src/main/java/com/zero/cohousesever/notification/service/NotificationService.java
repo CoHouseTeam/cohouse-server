@@ -55,7 +55,7 @@ public class NotificationService {
 
         // 타입별 설정 1건 로드 (없으면 Optional.empty)
         Optional<NotificationSetting> setting =
-                notificationSettingRepository.findByMember_Id(memberId);
+                notificationSettingRepository.findByMemberId(memberId);
         // 정책 판단
         DeliveryDecision decision = notificationPolicy.decide(saved, setting, isAppActive);
 

@@ -3,6 +3,8 @@ package com.zero.cohousesever.notification.dto;
 import com.zero.cohousesever.notification.type.NotificationType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +14,8 @@ import lombok.NoArgsConstructor;
  * - 필수: type, content (title은 선택)
  */
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class NotificationCreateRequest {
 
@@ -22,10 +26,4 @@ public class NotificationCreateRequest {
 
     @NotBlank
     private String content;
-
-    public NotificationCreateRequest(NotificationType type, String title, String content) {
-        this.type = type;
-        this.title = title;
-        this.content = content;
-    }
 }

@@ -79,6 +79,10 @@ public enum ErrorCode {
     NOT_THE_SETTLEMENT_PAYER(HttpStatus.FORBIDDEN, "정산 결제자가 아닙니다."),
 
     // 알림 관련 오류
+    SCHEDULER_REGISTER_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "알림 스케줄 등록에 실패했습니다."),
+    SCHEDULER_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"스케줄 내부 오류가 발생했습니다."),
+    SCHEDULER_CANCEL_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "알림 스케줄 취소에 실패했습니다."),
+    NOTIFICATION_SETTING_DISABLED(HttpStatus.OK, "사용자가 해당 알림을 비활성화했습니다."),
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림이 존재하지 않거나 접근할 수 없습니다."),
 
     // 파일 업로드 관련 오류

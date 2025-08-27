@@ -14,10 +14,10 @@ public interface NotificationSettingRepository extends JpaRepository<Notificatio
     /**
      * 회원 ID로 알림 설정 조회
      */
-    Optional<NotificationSetting> findByMember_Id(Long memberId);
+    Optional<NotificationSetting> findByMemberId(Long memberId);
 
     /**
      * 회원 알림 설정 존재 여부 확인
      */
-    boolean existsByMember_Id(Long memberId);
+    boolean existsByMemberId(Long memberId);
 }

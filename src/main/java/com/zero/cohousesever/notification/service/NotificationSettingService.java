@@ -3,10 +3,12 @@ package com.zero.cohousesever.notification.service;
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.notification.dto.NotificationSettingResponse;
 import com.zero.cohousesever.notification.dto.NotificationSettingUpdateRequest;
 import com.zero.cohousesever.notification.entity.NotificationSetting;
 import com.zero.cohousesever.notification.repository.NotificationSettingRepository;
+import com.zero.cohousesever.notification.type.NotificationType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.util.Optional;
 public class NotificationSettingService {
 
     private final NotificationSettingRepository notificationSettingRepository;
+    private final MemberRepository memberRepository;
 
     @PersistenceContext
     private EntityManager em;
@@ -33,7 +36,7 @@ public class NotificationSettingService {
      * 조회(없으면 기본값 생성 후 반환)
      */
     public NotificationSettingResponse getOrCreate(Long memberId) {
-        Optional<NotificationSetting> found = notificationSettingRepository.findByMember_Id(memberId);
+        Optional<NotificationSetting> found = notificationSettingRepository.findByMemberId(memberId);
         if (found.isPresent()) {
             return NotificationSettingResponse.from(found.get());
         }
@@ -47,7 +50,6 @@ public class NotificationSettingService {
 
     /**
      * 단일 타입 설정 변경(upsert)
-     * - @Transactional: 변경성 작업의 원자성/동시성 보장을 위해 필요합니다.
      */
     public void update(Long memberId, NotificationSettingUpdateRequest request) {
         if (allNull(request)) {
@@ -56,7 +58,7 @@ public class NotificationSettingService {
 
         // 없으면 기본값 생성 후 갱신
         NotificationSetting setting = notificationSettingRepository
-                .findByMember_Id(memberId)
+                .findByMemberId(memberId)
                 .orElseGet(() -> NotificationSetting.createDefault(
                         em.getReference(Member.class, memberId)
                 ));
@@ -81,5 +83,28 @@ public class NotificationSettingService {
         return Objects.isNull(req.getTaskEnabled())
                 && Objects.isNull(req.getAnnouncementEnabled())
                 && Objects.isNull(req.getSettlementEnabled());
+    }
+
+    /**
+     * 멤버의 알림 설정을 조회.
+     * 없으면 "기본값(전부 ON)"으로 생성 후 반환.
+     */
+    public NotificationSetting get(Long memberId) {
+        return notificationSettingRepository.findByMemberId(memberId)
+                .orElseGet(() -> {
+                    // 영속 프록시(쿼리 X)로 Member 참조
+                    Member ref = memberRepository.getReferenceById(memberId);
+                    NotificationSetting created = NotificationSetting.createDefault(ref);
+                    return notificationSettingRepository.save(created);
+                });
+    }
+
+    /**
+     * 특정 타입의 알림이 켜져있는지 여부 (편의 메서드)
+     */
+    public boolean isEnabled(Long memberId, NotificationType type) {
+        return notificationSettingRepository.findByMemberId(memberId)
+                .map(s -> s.isEnabled(type))
+                .orElse(true); // 설정이 아직 없으면 기본 ON 취급
     }
 }

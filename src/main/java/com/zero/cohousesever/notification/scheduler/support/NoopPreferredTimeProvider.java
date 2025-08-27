@@ -6,7 +6,9 @@ import org.springframework.stereotype.Component;
 import java.time.LocalTime;
 import java.util.Optional;
 
-/** 임시 구현: 항상 비어있음(기본 시각 사용) */
+/**
+ * 임시 구현: 항상 비어있음(기본 시각 사용)
+ */
 @Component
 public class NoopPreferredTimeProvider implements PreferredTimeProvider {
     @Override

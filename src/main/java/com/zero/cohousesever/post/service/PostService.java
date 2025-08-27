@@ -4,11 +4,13 @@ import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
+import com.zero.cohousesever.post.event.PostAnnouncementCreatedEvent;
 import com.zero.cohousesever.post.repository.PostRepository;
 import com.zero.cohousesever.post.type.PostColor;
 import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,8 @@ import org.springframework.stereotype.Service;
 public class PostService {
 
     private final PostRepository postRepository;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     // 페이지네이션 기본 상수
     private static final int DEFAULT_PAGE = 0;
@@ -78,6 +82,17 @@ public class PostService {
                 .build();
 
         Post saved = postRepository.save(post);
+
+        // 공지일 때만 이벤트 발행 (리스너가 즉시/예약/설정 OFF 처리)
+        if (PostType.ANNOUNCEMENT.equals(saved.getType())) {
+            eventPublisher.publishEvent(
+                    PostAnnouncementCreatedEvent.builder()
+                            .groupId(saved.getGroupId())
+                            .postId(saved.getId())
+                            .build()
+            );
+        }
+
         return PostResponse.from(saved);
     }
 
