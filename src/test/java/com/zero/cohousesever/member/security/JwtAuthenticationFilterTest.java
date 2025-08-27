@@ -1,5 +1,7 @@
 package com.zero.cohousesever.member.security;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.enums.TokenValidationStatus;
@@ -14,10 +16,13 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.io.IOException;
 
+import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -88,15 +93,14 @@ class JwtAuthenticationFilterTest {
         when(jwtTokenProvider.validateToken(expiredToken)).thenReturn(TokenValidationStatus.EXPIRED);
 
         // when
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(request, response, filterChain))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(ErrorCode.ACCESS_TOKEN_EXPIRED.getMessage());
 
         // then
         verify(jwtTokenProvider).validateToken(expiredToken);
         verify(jwtTokenProvider, never()).getEmailFromToken(anyString());
         verify(customUserDetailsService, never()).loadUserByUsername(anyString());
-
-        // 401 Unauthorized 응답 확인
-        assertThat(response.getStatus()).isEqualTo(401);
 
         // SecurityContext에 인증 정보가 설정되지 않았는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
@@ -144,15 +148,14 @@ class JwtAuthenticationFilterTest {
         when(jwtTokenProvider.validateToken(invalidToken)).thenReturn(TokenValidationStatus.INVALID);
 
         // when
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(request, response, filterChain))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(ErrorCode.ACCESS_TOKEN_INVALID.getMessage());
 
         // then
         verify(jwtTokenProvider).validateToken(invalidToken);
         verify(jwtTokenProvider, never()).getEmailFromToken(anyString());
         verify(customUserDetailsService, never()).loadUserByUsername(anyString());
-
-        // 401 Unauthorized 응답 확인
-        assertThat(response.getStatus()).isEqualTo(401);
 
         // SecurityContext에 인증 정보가 설정되지 않았는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
@@ -212,18 +215,17 @@ class JwtAuthenticationFilterTest {
         when(jwtTokenProvider.validateToken(validToken)).thenReturn(TokenValidationStatus.VALID);
         when(jwtTokenProvider.getEmailFromToken(validToken)).thenReturn(email);
         when(customUserDetailsService.loadUserByUsername(email))
-                .thenThrow(new RuntimeException("User not found"));
+                .thenThrow(new CustomException(MEMBER_NOT_FOUND));
 
         // when
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(request, response, filterChain))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(MEMBER_NOT_FOUND.getMessage());
 
         // then
         verify(jwtTokenProvider).validateToken(validToken);
         verify(jwtTokenProvider).getEmailFromToken(validToken);
         verify(customUserDetailsService).loadUserByUsername(email);
-
-        // 401 Unauthorized 응답 확인
-        assertThat(response.getStatus()).isEqualTo(401);
 
         // SecurityContext에 인증 정보가 설정되지 않았는지 확인
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
