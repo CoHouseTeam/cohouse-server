@@ -26,7 +26,7 @@ public class PostAnnouncementJob implements Job {
         Long memberId = m.getLong("memberId");
         Long postId = m.getLong("postId");
 
-        boolean active = presenceChecker.isActive(memberId);
+        boolean active = presenceChecker.isOnline(memberId);
 
         notificationService.create(
                 memberId,

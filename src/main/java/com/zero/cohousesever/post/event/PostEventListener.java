@@ -52,7 +52,7 @@ public class PostEventListener {
             }
 
             // 2-2) 접속 중이면 즉시 발송
-            boolean active = presenceChecker.isActive(memberId);
+            boolean active = presenceChecker.isOnline(memberId);
             if (active) {
                 notificationService.create(
                         memberId,

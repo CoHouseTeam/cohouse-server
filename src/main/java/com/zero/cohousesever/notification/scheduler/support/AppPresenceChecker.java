@@ -5,5 +5,5 @@ package com.zero.cohousesever.notification.scheduler.support;
  * - 실제 구현을 세션/웹소켓/레디스 등으로 교체하세요.
  */
 public interface AppPresenceChecker {
-    boolean isActive(Long memberId);
+    boolean isOnline(Long memberId);
 }

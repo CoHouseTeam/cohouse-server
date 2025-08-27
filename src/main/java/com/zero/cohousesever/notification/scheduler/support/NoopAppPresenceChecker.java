@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class NoopAppPresenceChecker implements AppPresenceChecker {
     @Override
-    public boolean isActive(Long memberId) {
+    public boolean isOnline(Long memberId) {
         return false;
     }
 }
