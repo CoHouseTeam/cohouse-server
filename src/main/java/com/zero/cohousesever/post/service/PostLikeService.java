@@ -32,10 +32,11 @@ public class PostLikeService {
                     .build();
         }
 
+        //FIXME null 부분 수정 필요 @박홍준
         try {
             PostLike like = PostLike.builder()
-                    .postId(postId)
-                    .memberId(memberId)
+                    .post(null)
+                    .member(null)
                     .build();
 
             postLikeRepository.saveAndFlush(like);
