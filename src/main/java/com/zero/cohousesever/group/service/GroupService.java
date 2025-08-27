@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 
 import static com.zero.cohousesever.common.exception.ErrorCode.*;
@@ -106,15 +105,17 @@ public class GroupService {
             throw new CustomException(GROUP_MEMBERS_LEFT_IN_GROUP);
         }
 
-        GroupMember groupMember = group.getMembers().get(0);
-        if (!Objects.equals(memberId, groupMember.getMember().getId())) {
+        GroupMember leader = groupMemberRepository.findByGroupIdAndStatusAndIsLeaderTrue(groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        if (!Objects.equals(memberId, leader.getMember().getId())) {
             throw new CustomException(NOT_GROUP_LEADER);
         }
 
-        group.removeMember(groupMember);
+        group.removeMember(leader);
         group.updateStatus(GroupStatus.INACTIVE);
         groupRepository.save(group);
-        groupMemberRepository.save(groupMember);
+        groupMemberRepository.save(leader);
     }
 
     public GroupInviteDto groupInvite(Long memberId, Long groupId) {

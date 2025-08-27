@@ -13,5 +13,7 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
 
     Optional<GroupMember> findByMemberIdAndStatus(Long memberId, GroupMemberStatus status);
 
+    Optional<GroupMember> findByGroupIdAndStatusAndIsLeaderTrue(Long groupId, GroupMemberStatus groupMemberStatus);
+
     int countByGroupIdAndStatus(Long groupId, GroupMemberStatus status);
 }
