@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -50,6 +51,7 @@ public class Settlement extends BaseEntity {
     private LocalDateTime completedAt; // 정산 완료일시
 
     // 정산 참여자 목록
+    @Builder.Default
     @OneToMany(mappedBy = "settlement", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<SettlementParticipant> settlementParticipants;
+    private List<SettlementParticipant> settlementParticipants = new ArrayList<>();;
 }

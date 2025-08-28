@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SettlementResponseDto {
+public class SettlementResponse {
     private Long id;
     private SettlementCategory category;
     private String title;
@@ -27,16 +27,16 @@ public class SettlementResponseDto {
     private String payerName;
     private Long platformSupportAmount;
     private boolean equalDistribution;
-    private List<ParticipantDto> participants;
+    private List<ParticipantResponse> participants;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static SettlementResponseDto fromEntity(Settlement settlement) {
-        List<ParticipantDto> participantDtos = settlement.getSettlementParticipants().stream()
-                .map(ParticipantDto::fromEntity)
+    public static SettlementResponse fromEntity(Settlement settlement) {
+        List<ParticipantResponse> participantResponses = settlement.getSettlementParticipants().stream()
+                .map(ParticipantResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        return new SettlementResponseDto(
+        return new SettlementResponse(
                 settlement.getId(),
                 settlement.getCategory(),
                 settlement.getTitle(),
@@ -48,7 +48,7 @@ public class SettlementResponseDto {
                 settlement.getPayer().getName(),
                 settlement.getPlatformSupportAmount(),
                 settlement.isEqualDistribution(),
-                participantDtos,
+                participantResponses,
                 settlement.getCreatedAt(),
                 settlement.getUpdatedAt()
         );

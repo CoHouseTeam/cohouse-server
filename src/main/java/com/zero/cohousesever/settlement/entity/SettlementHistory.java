@@ -23,7 +23,7 @@ public class SettlementHistory extends BaseEntity {
     private Settlement settlement;
 
     @Column(nullable = false)
-    private String title; // 정산 제목
+    private String title;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -32,6 +32,6 @@ public class SettlementHistory extends BaseEntity {
     private LocalDateTime changedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "changed_by_member_id")
-    private Member changedBy; // 변경자 정보
+    @JoinColumn(name = "payer_id")
+    private Member payer;
 }
