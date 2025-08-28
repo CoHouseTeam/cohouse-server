@@ -10,7 +10,6 @@ import com.zero.cohousesever.settlement.dto.SettlementResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import com.zero.cohousesever.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
-import net.sourceforge.tess4j.TesseractException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -109,32 +108,19 @@ public class SettlementController {
     }
 
     /**
-     * 영수증 이미지 업로드
+     * 영수증 이미지 업로드/업데이트
+     * - 기존 이미지 존재하지 않을 시 새 이미지 업로드
+     * - 기존 이미지 존재 시 기존 이미지 삭제 후 업로드
      */
     @PostMapping("/{settlementId}/receipt")
     public ResponseEntity<FileUploadResponse> uploadReceiptImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam Long groupId,
             @PathVariable Long settlementId,
-            @RequestParam("file") MultipartFile file) throws IOException, TesseractException {
-
-        // 서비스 메서드 내부에서 이미지 검증 수행
-        FileUploadResponse response = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * 영수증 이미지 업데이트
-     */
-    @PutMapping("/{settlementId}/receipt")
-    public ResponseEntity<FileUploadResponse> updateReceiptImage(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam Long groupId,
-            @PathVariable Long settlementId,
             @RequestParam("file") MultipartFile file) throws IOException {
 
         // 서비스 메서드 내부에서 이미지 검증 수행
-        FileUploadResponse response = settlementService.updateReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        FileUploadResponse response = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
         return ResponseEntity.ok(response);
     }
 
