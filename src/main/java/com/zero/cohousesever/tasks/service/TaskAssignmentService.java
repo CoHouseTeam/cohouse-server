@@ -41,6 +41,7 @@ public class TaskAssignmentService {
   private final TaskTemplateRepository taskTemplateRepository;
   private final RepeatDayRepository repeatDayRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final TaskAssignmentHistoryService taskAssignmentHistoryService;
 
   /**
    * 후보 중 '과거 배정 전무' 멤버를 1순위로,
@@ -203,6 +204,9 @@ public class TaskAssignmentService {
 
     a.setStatus(status);
     TaskAssignment saved = taskAssignmentRepository.save(a);
+
+    // 히스토리 기록 추가
+    taskAssignmentHistoryService.recordStatusChange(saved);
 
     String repeatType = repeatDayRepository.existsByTaskTemplate_Id(saved.getTemplate().getId()) ? "WEEKLY" : "NONE";
     return TaskAssignmentResponse.from(saved, repeatType);
