@@ -45,4 +45,8 @@ public class Member extends BaseEntity {
         this.birthDate = birthDate;
         this.gender = gender;
     }
+
+    public void withdraw() {
+        this.status = MemberStatus.INACTIVE;
+    }
 }
