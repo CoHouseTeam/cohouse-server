@@ -1,7 +1,6 @@
 package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
-import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
@@ -53,18 +52,29 @@ public class MemberService {
         return MemberProfileSummary.fromEntity(saved);
     }
 
+    public MemberProfileSummary updateMemberAlertTime(Long memberId, MemberProfileSummary requestDto) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        member.updateAlertTime(requestDto.getAlertTime());
+
+        Member saved = memberRepository.save(member);
+
+        return MemberProfileSummary.fromEntity(saved);
+    }
+
     // soft delete 구현
     public void deleteMember(Long memberId) {
         // 소속된 그룹이 존재하는 경우
         if (groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)) {
-            throw new CustomException(ErrorCode.MEMBER_STILL_IN_GROUP);
+            throw new CustomException(MEMBER_STILL_IN_GROUP);
         }
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
 
         if (!member.getStatus().equals(MemberStatus.ACTIVE)) {
-            throw new CustomException(ErrorCode.MEMBER_INACTIVE);
+            throw new CustomException(MEMBER_INACTIVE);
         }
 
         member.withdraw();

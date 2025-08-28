@@ -46,6 +46,10 @@ public class Member extends BaseEntity {
         this.gender = gender;
     }
 
+    public void updateAlertTime(LocalTime alertTime) {
+        this.alertTime = alertTime;
+    }
+
     public void withdraw() {
         this.status = MemberStatus.INACTIVE;
     }
