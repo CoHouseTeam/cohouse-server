@@ -1,6 +1,7 @@
 package com.zero.cohousesever.tasks.repository;
 
 import com.zero.cohousesever.tasks.entity.TaskAssignment;
+import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import jakarta.persistence.LockModeType;
 import java.time.LocalDate;
 import java.util.List;
@@ -24,7 +25,6 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
   List<TaskAssignment> findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(
       Long groupId, Long groupMemberId, LocalDate start, LocalDate end);
 
-  // feature/86에서 추가한 메서드들 유지
   boolean existsByTemplate_GroupIdAndGroupMemberId(Long groupId, Long groupMemberId);
 
   // 기준일 이전의 가장 최근 배정 1건 (담당 그대로 유지용)
@@ -34,4 +34,10 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select ta from TaskAssignment ta where ta.id = :id")
   Optional<TaskAssignment> findByIdForUpdate(@Param("id") Long id);
+
+  List<TaskAssignment> findByTemplate_GroupIdAndDateBetweenAndStatusNot(
+      Long groupId, LocalDate start, LocalDate end, AssignmentStatus status);
+
+  List<TaskAssignment> findByTemplate_GroupIdAndGroupMemberIdAndDateBetweenAndStatusNot(
+      Long groupId, Long groupMemberId, LocalDate start, LocalDate end, AssignmentStatus status);
 }
