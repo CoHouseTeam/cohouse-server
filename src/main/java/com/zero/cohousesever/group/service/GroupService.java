@@ -4,6 +4,7 @@ import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
+import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
@@ -111,5 +113,16 @@ public class GroupService {
                 .groupId(groupId)
                 .inviteCode(inviteCode)
                 .build();
+    }
+
+    public List<GroupMemberSummary> getGroupMembers(Long memberId, Long groupId) {
+
+        if (!groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(NOT_GROUP_MEMBER);
+        }
+
+        List<GroupMember> groupMembers = groupMemberRepository.findAllByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
+
+        return groupMembers.stream().map(GroupMemberSummary::fromEntity).toList();
     }
 }
