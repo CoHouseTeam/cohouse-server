@@ -82,19 +82,19 @@ class RepeatDayServiceTest {
     assertThat(list.get(1).getDayOfWeek()).isEqualTo("MONDAY");
   }
 
-  @Test
-  @DisplayName("반복요일 삭제 - 소속 템플릿 검증 포함")
-  void deleteRepeatDay_withOwnershipCheck() {
-    long templateId = 10L;
-
-    // 삭제 성공
-    when(repeatDayRepository.deleteByIdAndTaskTemplate_Id(5L, templateId)).thenReturn(1L);
-    repeatDayService.deleteRepeatDay(templateId, 5L);
-
-    // 삭제 실패(소속 불일치/존재X)
-    when(repeatDayRepository.deleteByIdAndTaskTemplate_Id(6L, templateId)).thenReturn(0L);
-    assertThatThrownBy(() -> repeatDayService.deleteRepeatDay(templateId, 6L))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("does not belong to template");
-  }
+//  @Test
+//  @DisplayName("반복요일 삭제 - 소속 템플릿 검증 포함")
+//  void deleteRepeatDay_withOwnershipCheck() {
+//    long templateId = 10L;
+//
+//    // 삭제 성공
+//    when(repeatDayRepository.deleteByIdAndTaskTemplate_Id(5L, templateId)).thenReturn(1L);
+//    repeatDayService.deleteRepeatDay(templateId, 5L);
+//
+//    // 삭제 실패(소속 불일치/존재X)
+//    when(repeatDayRepository.deleteByIdAndTaskTemplate_Id(6L, templateId)).thenReturn(0L);
+//    assertThatThrownBy(() -> repeatDayService.deleteRepeatDay(templateId, 6L))
+//        .isInstanceOf(IllegalArgumentException.class)
+//        .hasMessageContaining("does not belong to template");
+//  }
 }

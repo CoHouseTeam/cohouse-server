@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static com.zero.cohousesever.common.exception.ErrorCode.*;
@@ -166,7 +167,7 @@ class GroupServiceTest {
     }
 
     @Test
-    @DisplayName("활성 그룹 멤버가 없을 때 예외 발생 테스트")
+    @DisplayName("내 그룹 조회 시 활성 그룹 멤버가 없을 때 예외 발생 테스트")
     void getGroupByMemberId_ThrowsException_WhenActiveGroupMemberNotFound() {
         // given
         Long memberId = 999L;
@@ -381,6 +382,182 @@ class GroupServiceTest {
         assertThatThrownBy(() -> groupService.groupInvite(memberId, groupId))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining(NOT_GROUP_LEADER.getMessage());
+    }
+
+    @Test
+    @DisplayName("그룹 멤버 목록 조회 성공 테스트")
+    void getGroupMembers_Success() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+
+        // List 조회를 위해 다른 사용자를 그룹에 추가
+        Member anotherMember = Member.builder()
+                .name("다른 사용자")
+                .email("test2@example.com")
+                .password("password1234")
+                .status(MemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(anotherMember, "id", 2L);
+
+        GroupMember anotherGroupMember = GroupMember.builder()
+                .member(anotherMember)
+                .group(testGroup)
+                .nickname("다른 사용자")
+                .isLeader(false)
+                .status(GroupMemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .build();
+        ReflectionTestUtils.setField(anotherGroupMember, "id", 2L);
+
+        List<GroupMember> groupMembers = List.of(testGroupMember, anotherGroupMember);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(true);
+        when(groupMemberRepository.findAllByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(groupMembers);
+
+        // when
+        List<GroupMemberSummary> result = groupService.getGroupMembers(memberId, groupId);
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getMemberId()).isEqualTo(1L);
+        assertThat(result.get(0).getIsLeader()).isTrue();
+        assertThat(result.get(1).getMemberId()).isEqualTo(2L);
+        assertThat(result.get(1).getIsLeader()).isFalse();
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
+        verify(groupMemberRepository).findAllByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("그룹 멤버 목록 조회 시 그룹 멤버가 아닐 때 예외 발생 테스트")
+    void getGroupMembers_ThrowsException_WhenNotGroupMember() {
+        // given
+        Long memberId = 999L;
+        Long groupId = 1L;
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> groupService.getGroupMembers(memberId, groupId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(NOT_GROUP_MEMBER.getMessage());
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
+        verify(groupMemberRepository, never()).findAllByGroupIdAndStatus(any(), any());
+    }
+
+    @Test
+    @DisplayName("그룹 멤버 조회 성공 테스트")
+    void getGroupMember_success() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+        Long groupMemberId = 2L;
+
+        Member otherMember = Member.builder()
+                .name("다른 멤버")
+                .build();
+        ReflectionTestUtils.setField(otherMember, "id", 2L);
+        GroupMember otherGroupMember = GroupMember.builder()
+                .member(otherMember)
+                .group(testGroup)
+                .nickname("다른 그룹멤버")
+                .status(GroupMemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(otherGroupMember, "id", 2L);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(true);
+        when(groupMemberRepository.findById(groupMemberId))
+                .thenReturn(Optional.of(otherGroupMember));
+
+        // when
+        GroupMemberSummary result = groupService.getGroupMember(memberId, groupId, groupMemberId);
+
+        // then
+        assertThat(result.getId()).isEqualTo(groupMemberId);
+        assertThat(result.getMemberId()).isEqualTo(otherMember.getId());
+        assertThat(result.getNickname()).isEqualTo("다른 그룹멤버");
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
+        verify(groupMemberRepository).findById(groupMemberId);
+    }
+
+    @Test
+    @DisplayName("그룹 멤버 조회시 그룹 멤버가 아닐 때 예외 발생 테스트")
+    void getGroupMember_ThrowsException_WhenNotGroupMember() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 2L;
+        Long groupMemberId = 2L;
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> groupService.getGroupMember(memberId, groupId, groupMemberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining(NOT_GROUP_MEMBER.getMessage());
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
+        verify(groupMemberRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("그룹 멤버 조회시 그룹 멤버가 존재하지 않을 때 예외 발생")
+    void getGroupMember_ThrowsException_WhenGroupMemberNotFound() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+        Long groupMemberId = 2L;
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(true);
+        when(groupMemberRepository.findById(groupMemberId))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> groupService.getGroupMember(memberId, groupId, groupMemberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining(GROUP_MEMBER_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("그룹 멤버 조회시 다른 그룹의 멤버일 때 예외 발생")
+    void getGroupMember_ThrowsException_WhenGroupMismatch() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+        Long groupMemberId = 2L;
+
+        Group anotherGroup = Group.builder()
+                .name("다른 그룹")
+                .build();
+        ReflectionTestUtils.setField(anotherGroup, "id", 2L);
+        Member otherMember = Member.builder()
+                .name("다른 멤버")
+                .build();
+        ReflectionTestUtils.setField(otherMember, "id", 2L);
+        GroupMember otherGroupMember = GroupMember.builder()
+                .member(otherMember)
+                .group(anotherGroup) // groupId 불일치
+                .status(GroupMemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(otherGroupMember, "id", 2L);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(true);
+        when(groupMemberRepository.findById(groupMemberId))
+                .thenReturn(Optional.of(otherGroupMember));
+
+        // when & then
+        assertThatThrownBy(() -> groupService.getGroupMember(memberId, groupId, groupMemberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining(NOT_GROUP_MEMBER.getMessage());
     }
 
     @Test
