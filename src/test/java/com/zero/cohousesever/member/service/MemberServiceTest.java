@@ -146,6 +146,60 @@ class MemberServiceTest {
     }
 
     @Test
+    @DisplayName("회원 프로필 수정 성공")
+    void updateMemberProfile_Success() {
+        // given
+        Long memberId = 1L;
+        String name = "수정된 유저";
+        LocalDate birthDate = LocalDate.of(2000, 12, 31);
+        String gender = "여자";
+
+        MemberProfileSummary requestDto = MemberProfileSummary.fromEntity(testMember);
+        ReflectionTestUtils.setField(requestDto, "name", name);
+        ReflectionTestUtils.setField(requestDto, "birthDate", birthDate);
+        ReflectionTestUtils.setField(requestDto, "gender", gender);
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.of(testMember));
+        when(memberRepository.save(any(Member.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        MemberProfileSummary result = memberService.updateMemberProfile(memberId, requestDto);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(testMember.getId());
+        assertThat(result.getName()).isEqualTo(name);
+        assertThat(result.getBirthDate()).isEqualTo(birthDate);
+        assertThat(result.getGender()).isEqualTo(gender);
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+        verify(memberRepository).save(testMember);
+    }
+
+    @Test
+    @DisplayName("회원 프로필 수정시 이미 탈퇴한 회원일 경우 예외 발생")
+    void updateMemberProfile_ThrowsException_WhenInactiveMember() {
+        // given
+        Long memberId = 1L;
+        ReflectionTestUtils.setField(testMember, "status", MemberStatus.INACTIVE);
+
+        MemberProfileSummary requestDto = MemberProfileSummary.fromEntity(testMember);
+        ReflectionTestUtils.setField(requestDto, "name", "수정된 유저");
+        ReflectionTestUtils.setField(requestDto, "birthDate", LocalDate.of(2000, 12, 31));
+        ReflectionTestUtils.setField(requestDto, "gender", "여자");
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> memberService.updateMemberProfile(memberId, requestDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+    }
+
+    @Test
     @DisplayName("회원 탈퇴 성공 - 정상적으로 상태가 INACTIVE로 변경")
     void deleteMember_Success() {
         // given

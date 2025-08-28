@@ -11,7 +11,7 @@ import com.zero.cohousesever.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_INACTIVE;
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +36,21 @@ public class MemberService {
                 .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
 
         return MemberProfileSummary.fromEntity(member);
+    }
+
+    public MemberProfileSummary updateMemberProfile(Long memberId, MemberProfileSummary requestDto) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        member.updateProfile(
+                requestDto.getName(),
+                requestDto.getBirthDate(),
+                MemberProfileSummary.genderBooleanFromString(requestDto.getGender())
+        );
+
+        Member saved = memberRepository.save(member);
+
+        return MemberProfileSummary.fromEntity(saved);
     }
 
     // soft delete 구현

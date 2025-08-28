@@ -32,10 +32,14 @@ public class ProfileController {
     // 회원 프로필 수정
     @PutMapping("/profile")
     public ResponseEntity<MemberProfileSummary> updateProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody MemberProfileSummary requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        MemberProfileSummary responseDto = memberService.updateMemberProfile(memberId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 알림 발송 설정 시간 변경
