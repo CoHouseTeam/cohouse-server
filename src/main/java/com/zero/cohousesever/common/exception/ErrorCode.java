@@ -48,10 +48,10 @@ public enum ErrorCode {
     OVERRIDE_PAST_DATE_FORBIDDEN(HttpStatus.BAD_REQUEST, "과거 날짜의 할일은 처리할 수 없습니다."),
     OVERRIDE_REQUESTER_MUST_BE_ASSIGNEE(HttpStatus.FORBIDDEN, "현재 담당자만 요청을 생성할 수 있습니다."),
     OVERRIDE_ACCEPTOR_MUST_BE_TARGET(HttpStatus.FORBIDDEN, "요청 대상자만 응답할 수 있습니다."),
-    OVERRIDE_BROADCAST_REJECT_FORBIDDEN(HttpStatus.FORBIDDEN, "브로드캐스트 요청은 거절할 수 없습니다."),
     OVERRIDE_NOT_SAME_GROUP(HttpStatus.FORBIDDEN, "같은 그룹의 그룹멤버만 가능합니다."),
     OVERRIDE_SWAP_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "스왑 대상 할일 배정을 찾을 수 없습니다."),
     OVERRIDE_SWAP_DIFFERENT_GROUP(HttpStatus.FORBIDDEN, "서로 변경은 같은 그룹 내에서만 가능합니다."),
+    REQUESTER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "요청자 ID가 필요합니다."),
 
     // 게시물 관련 오류
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),

@@ -44,14 +44,14 @@ public class RepeatDayService {
 
     String raw = request.getDayOfWeek();
     if (raw == null || raw.isBlank()) {
-      throw new CustomException(ErrorCode.INVALID_REQUEST);
+      throw new CustomException(ErrorCode.REPEAT_DAY_NOT_FOUND);
     }
 
     final DayOfWeek dow;
     try {
       dow = DayOfWeek.valueOf(raw.trim().toUpperCase());
     } catch (IllegalArgumentException e) {
-      throw new CustomException(ErrorCode.INVALID_REQUEST);
+      throw new CustomException(ErrorCode.DATE_FORMAT_INVALID);
     }
 
     return repeatDayRepository.findByTaskTemplate_IdAndDayOfWeek(templateId, dow)
@@ -67,7 +67,45 @@ public class RepeatDayService {
   /**
    * 반복 요일 수정
    */
+  public RepeatDayResponse updateRepeatDay(Long templateId, Long repeatDayId, RepeatDayRequest request) {
+    TaskTemplate template = taskTemplateRepository.findById(templateId)
+        .orElseThrow(() -> new CustomException(ErrorCode.TEMPLATE_NOT_FOUND));
 
+    // 반복요일 파라미터 검증
+    String raw = request.getDayOfWeek();
+    if (raw == null || raw.isBlank()) {
+      throw new CustomException(ErrorCode.INVALID_REQUEST); // ← 비어있음: 요청값 오류
+    }
+
+    final DayOfWeek dow;
+    try {
+      dow = DayOfWeek.valueOf(raw.trim().toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw new CustomException(ErrorCode.DATE_FORMAT_INVALID); // ← 잘못된 요일 문자열
+    }
+
+    // 수정 대상 조회 + 템플릿 소속 검증
+    RepeatDay target = repeatDayRepository.findById(repeatDayId)
+        .orElseThrow(() -> new CustomException(ErrorCode.REPEAT_DAY_NOT_FOUND));
+    if (!target.getTaskTemplate().getId().equals(template.getId())) {
+      // 다른 템플릿의 항목을 수정하려는 경우
+      throw new CustomException(ErrorCode.REPEAT_DAY_NOT_FOUND);
+    }
+    // 동일 요일 중복 방지(자기 자신 제외)
+    var dup = repeatDayRepository.findByTaskTemplate_IdAndDayOfWeek(templateId, dow);
+    if (dup.isPresent() && !dup.get().getId().equals(repeatDayId)) {
+      throw new CustomException(ErrorCode.REPEAT_DAY_ALREADY_EXISTS);
+    }
+
+    // 변경 없으면 그대로 반환
+    if (target.getDayOfWeek() == dow) {
+      return RepeatDayResponse.from(target);
+    }
+
+    target.setDayOfWeek(dow);
+    RepeatDay saved = repeatDayRepository.save(target);
+    return RepeatDayResponse.from(saved);
+  }
 
   /**
    * 반복 요일 삭제
