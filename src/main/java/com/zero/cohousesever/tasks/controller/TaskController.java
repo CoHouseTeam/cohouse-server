@@ -332,17 +332,31 @@ public class TaskController {
   // 할일 이행 히스토리 조회
   @GetMapping("/assignments/{assignmentId}/histories")
   public ResponseEntity<List<TaskAssignmentResponse>> getTaskAssignmentHistories(
+      @AuthenticationPrincipal CustomUserDetails user,
       @PathVariable Long assignmentId
   ) {
-    return ResponseEntity.ok(Collections.emptyList()); // TODO
+    var a = taskAssignmentRepository.findById(assignmentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
+
+    Long groupId = a.getTemplate().getGroupId();
+    ensureMember(user.getId(), groupId);
+
+    return ResponseEntity.ok(taskAssignmentHistoryService.getAssignmentHistories(assignmentId));
   }
 
   // 담당자 변경 요청 히스토리 조회
   @GetMapping("/override-requests/{requestId}/histories")
   public ResponseEntity<List<AssignmentOverrideResponse>> getAssignmentOverrideHistories(
-
+      @AuthenticationPrincipal CustomUserDetails user,
+      @PathVariable Long requestId
   ) {
-    return ResponseEntity.ok(Collections.emptyList()); // TODO
+    var r = assignmentOverrideRepository.findById(requestId)
+        .orElseThrow(() -> new CustomException(ErrorCode.OVERRIDE_REQUEST_NOT_FOUND));
+
+    Long groupId = r.getAssignment().getTemplate().getGroupId();
+    ensureMember(user.getId(), groupId);
+
+    return ResponseEntity.ok(assignmentOverrideHistoryService.getOverrideHistories(requestId));
   }
 
 
