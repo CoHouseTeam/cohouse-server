@@ -19,3 +19,7 @@ cloud:
   aws:
     region:
       static: ap-northeast-2
+
+firebase:
+  project-id: cohouse-6ba91
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}

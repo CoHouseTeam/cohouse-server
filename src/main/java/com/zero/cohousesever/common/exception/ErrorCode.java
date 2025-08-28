@@ -85,6 +85,10 @@ public enum ErrorCode {
     NOTIFICATION_SETTING_DISABLED(HttpStatus.OK, "사용자가 해당 알림을 비활성화했습니다."),
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림이 존재하지 않거나 접근할 수 없습니다."),
 
+    FCM_INIT_FAIL(HttpStatus.INTERNAL_SERVER_ERROR,"FCM 초기화 실패"),
+    FCM_SEND_FAIL(HttpStatus.INTERNAL_SERVER_ERROR,"FCM 발송 실패"),
+    FCM_TOKEN_MISSING(HttpStatus.BAD_REQUEST,"FCM 토큰 없음"),
+
     // 파일 업로드 관련 오류
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "파일이 존재하지 않습니다."),
     FILE_NOT_IMAGE(HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
