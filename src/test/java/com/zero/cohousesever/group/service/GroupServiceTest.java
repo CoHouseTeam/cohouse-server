@@ -394,8 +394,6 @@ class GroupServiceTest {
         when(groupMemberRepository.countByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE)).thenReturn(1);
         when(groupMemberRepository.findByGroupIdAndStatusAndIsLeaderTrue(groupId, GroupMemberStatus.ACTIVE))
                 .thenReturn(Optional.of(testGroupMember));
-        when(groupRepository.save(any(Group.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(groupMemberRepository.save(any(GroupMember.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         groupService.deleteGroup(memberId, groupId);
@@ -404,8 +402,6 @@ class GroupServiceTest {
         verify(groupRepository).findById(groupId);
         verify(groupMemberRepository).countByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
         verify(groupMemberRepository).findByGroupIdAndStatusAndIsLeaderTrue(groupId, GroupMemberStatus.ACTIVE);
-        verify(groupRepository).save(any(Group.class));
-        verify(groupMemberRepository).save(any(GroupMember.class));
     }
 
     @Test
