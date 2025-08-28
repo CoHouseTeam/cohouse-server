@@ -89,10 +89,14 @@ public class GroupController {
     // 초대 코드로 그룹 가입
     @PostMapping("/join")
     public ResponseEntity<GroupMemberSummary> joinGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody GroupJoinDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupMemberSummary responseDto = groupService.joinGroup(memberId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 내 그룹 정보 조회
