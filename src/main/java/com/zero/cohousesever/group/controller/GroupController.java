@@ -1,6 +1,6 @@
 package com.zero.cohousesever.group.controller;
 
-import com.zero.cohousesever.group.dto.group.GroupInviteUrlDto;
+import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
@@ -45,18 +45,23 @@ public class GroupController {
     public ResponseEntity<GroupSummary> getGroup(
             @PathVariable("groupId") Long groupId
     ) {
+        GroupSummary responseDto = groupService.getGroup(groupId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 정보 수정
     @PutMapping("/{groupId}")
     public ResponseEntity<GroupSummary> updateGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId,
             @RequestBody GroupSummary requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupSummary responseDto = groupService.updateGroup(memberId, groupId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 해체
@@ -68,54 +73,75 @@ public class GroupController {
         return ResponseEntity.ok().build();
     }
 
-    // 그룹 초대 링크 발급
+    // 그룹 초대 코드 발급
     @PostMapping("/{groupId}/invitations")
-    public ResponseEntity<GroupInviteUrlDto> createGroupInviteUrl(
+    public ResponseEntity<GroupInviteDto> createGroupInviteCode(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupInviteDto responseDto = groupService.groupInvite(memberId, groupId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
-    // 초대 링크로 그룹 가입
+    // 초대 코드로 그룹 가입
     @PostMapping("/join")
     public ResponseEntity<GroupMemberSummary> joinGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody GroupJoinDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupMemberSummary responseDto = groupService.joinGroup(memberId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 내 그룹 정보 조회
     @GetMapping("/me")
-    public ResponseEntity<GroupSummary> getMyGroup() {
+    public ResponseEntity<GroupSummary> getMyGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupSummary responseDto = groupService.getGroupByMemberId(memberId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 멤버 목록 조회
     @GetMapping("/{groupId}/members")
     public ResponseEntity<List<GroupMemberSummary>> getGroupMemberList(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("groupId") Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        List<GroupMemberSummary> responseDto = groupService.getGroupMembers(memberId, groupId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 멤버 상세 조회
     @GetMapping("/{groupId}/members/{groupMemberId}")
     public ResponseEntity<GroupMemberSummary> getGroupMember(
-            @PathVariable Long groupId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable("groupId") Long groupId,
             @PathVariable("groupMemberId") Long groupMemberId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupMemberSummary responseDto = groupService.getGroupMember(memberId, groupId, groupMemberId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 본인의 그룹 멤버 정보 수정
     @PutMapping("/{groupId}/members/me")
     public ResponseEntity<GroupMemberSummary> updateGroupMember(
-            @PathVariable Long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody GroupMemberSummary requestDto
     ) {
 

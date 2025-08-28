@@ -2,6 +2,8 @@ package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.group.enums.GroupMemberStatus;
+import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
@@ -22,14 +24,16 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private GroupMemberRepository groupMemberRepository;
 
     @InjectMocks
     private MemberService memberService;
@@ -241,5 +245,79 @@ class MemberServiceTest {
                 .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 성공 - 정상적으로 상태가 INACTIVE로 변경")
+    void deleteMember_Success() {
+        // given
+        Long memberId = 1L;
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(false);
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
+        when(memberRepository.save(any(Member.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        memberService.deleteMember(memberId);
+
+        // then
+        assertThat(testMember.getStatus()).isEqualTo(MemberStatus.INACTIVE);
+        verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
+        verify(memberRepository).findById(memberId);
+        verify(memberRepository).save(any(Member.class));
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴시 그룹에 속해있는 경우 예외 발생")
+    void deleteMember_ThrowsException_WhenStillInGroup() {
+        // given
+        Long memberId = 1L;
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> memberService.deleteMember(memberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("아직 그룹에 소속된 회원입니다.");
+
+        verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
+        verify(memberRepository, never()).findById(anyLong());
+        verify(memberRepository, never()).save(any(Member.class));
+    }
+
+    @Test
+    @DisplayName("회원 탈시 존재하지 않는 회원이면 예외 발생")
+    void deleteMember_ThrowsException_WhenMemberNotFound() {
+        // given
+        Long memberId = 999L;
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(false);
+        when(memberRepository.findById(memberId)).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> memberService.deleteMember(memberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("해당 회원을 찾을 수 없습니다."); // ErrorCode.MEMBER_NOT_FOUND 메시지
+
+        verify(memberRepository).findById(memberId);
+        verify(memberRepository, never()).save(any(Member.class));
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴시 이미 비활성 상태인 경우 예외 발생")
+    void deleteMember_ThrowsException_WhenAlreadyInactive() {
+        // given
+        Long memberId = 1L;
+        ReflectionTestUtils.setField(testMember, "status", MemberStatus.INACTIVE);
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(false);
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
+
+        // when & then
+        assertThatThrownBy(() -> memberService.deleteMember(memberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("이미 탈퇴한 회원입니다.");
+
+        verify(memberRepository, never()).save(any(Member.class));
     }
 }
