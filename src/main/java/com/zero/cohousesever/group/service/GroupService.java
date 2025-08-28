@@ -100,6 +100,7 @@ public class GroupService {
         return GroupSummary.fromEntity(saved);
     }
 
+    @Transactional
     public void deleteGroup(Long memberId, Long groupId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
@@ -117,8 +118,6 @@ public class GroupService {
 
         group.removeMember(leader);
         group.updateStatus(GroupStatus.INACTIVE);
-        groupRepository.save(group);
-        groupMemberRepository.save(leader);
     }
 
     public GroupInviteDto groupInvite(Long memberId, Long groupId) {
