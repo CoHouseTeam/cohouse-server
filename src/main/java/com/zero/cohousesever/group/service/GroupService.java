@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
@@ -124,5 +125,21 @@ public class GroupService {
         List<GroupMember> groupMembers = groupMemberRepository.findAllByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
 
         return groupMembers.stream().map(GroupMemberSummary::fromEntity).toList();
+    }
+
+    public GroupMemberSummary getGroupMember(Long memberId, Long groupId, Long groupMemberId) {
+
+        // 본인 그룹만 조회 가능
+        if (!groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(NOT_GROUP_MEMBER);
+        }
+
+        GroupMember groupMember = groupMemberRepository.findById(groupMemberId)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+        if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
+            throw new CustomException(NOT_GROUP_MEMBER);
+        }
+
+        return GroupMemberSummary.fromEntity(groupMember);
     }
 }
