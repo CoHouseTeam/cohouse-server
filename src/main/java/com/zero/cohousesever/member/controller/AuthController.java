@@ -60,7 +60,12 @@ public class AuthController {
 
     // 로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<MessageDto> logout() {
+    public ResponseEntity<Void> logout(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        authService.logout(memberId);
 
         return ResponseEntity.ok().build();
     }
@@ -96,8 +101,14 @@ public class AuthController {
 
     // 회원 탈퇴
     @DeleteMapping("/withdraw")
-    public ResponseEntity<MessageDto> withdraw() {
+    public ResponseEntity<MessageDto> withdraw(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
 
-        return ResponseEntity.ok().build();
+        Long memberId = userDetails.getId();
+
+        memberService.deleteMember(memberId);
+
+        return ResponseEntity.noContent().build();
     }
 }
