@@ -2,6 +2,7 @@ package com.zero.cohousesever.group.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
+import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
@@ -139,6 +140,36 @@ public class GroupService {
         if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
             throw new CustomException(NOT_GROUP_MEMBER);
         }
+
+        return GroupMemberSummary.fromEntity(groupMember);
+    }
+
+    @Transactional
+    public GroupMemberSummary joinGroup(Long memberId, GroupJoinDto requestDto) {
+
+        if (groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(ALREADY_IN_GROUP);
+        }
+
+        String code = requestDto.getInviteCode();
+
+        Long groupId = inviteCodeService.validateInviteCode(code);
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+        GroupMember groupMember = GroupMember.builder()
+                .member(member)
+                .group(group)
+                .nickname(requestDto.getNickname())
+                .isLeader(false)
+                .status(GroupMemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .build();
+
+        group.addMember(groupMember);
+        groupRepository.save(group); // cascade 설정에 의해 groupMember도 자동 저장
 
         return GroupMemberSummary.fromEntity(groupMember);
     }
