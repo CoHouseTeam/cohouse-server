@@ -23,6 +23,7 @@ public class TaskTemplateResponse {
         .category(t.getCategory())
         .createdAt(t.getCreatedAt())
         .updatedAt(t.getUpdatedAt())
+        .randomEnabled(t.isRandomEnabled())
         .build();
   }
 }

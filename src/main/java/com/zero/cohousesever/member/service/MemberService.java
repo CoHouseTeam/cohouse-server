@@ -1,24 +1,29 @@
 package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
-import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_INACTIVE;
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MemberService {
 
     private final MemberRepository memberRepository;
     private final GroupMemberRepository groupMemberRepository;
+    private final S3Service s3Service;
 
     public Member createMember(String name, String email, String encodedPassword) {
         Member newMember = Member.builder()
@@ -38,18 +43,83 @@ public class MemberService {
         return MemberProfileSummary.fromEntity(member);
     }
 
+    public MemberProfileSummary updateMemberProfile(Long memberId, MemberProfileSummary requestDto) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        member.updateProfile(
+                requestDto.getName(),
+                requestDto.getBirthDate(),
+                MemberProfileSummary.genderBooleanFromString(requestDto.getGender())
+        );
+
+        Member saved = memberRepository.save(member);
+
+        return MemberProfileSummary.fromEntity(saved);
+    }
+
+    public MemberProfileSummary updateMemberAlertTime(Long memberId, MemberProfileSummary requestDto) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        member.updateAlertTime(requestDto.getAlertTime());
+
+        Member saved = memberRepository.save(member);
+
+        return MemberProfileSummary.fromEntity(saved);
+    }
+
     // soft delete 구현
+    public MemberProfileImageResponseDto updateProfileImage(Long memberId, MultipartFile profileImage) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        s3Service.validateImageFile(profileImage);
+
+        // 기존 이미지파일이 있다면 제거를 위해 추출
+        String oldProfileImageUrl = member.getProfileImageUrl();
+        String oldFileName = null;
+        if (oldProfileImageUrl != null) {
+            oldFileName = s3Service.extractFilePath(oldProfileImageUrl);
+        }
+
+        String profileImageUrl;
+        try {
+            String dirName = String.format("members/%d", memberId);
+            profileImageUrl = s3Service.uploadFile(profileImage, dirName);
+        } catch (Exception e) {
+            throw new CustomException(INTERNAL_SERVER_ERROR);
+        }
+
+        member.updateProfileImageUrl(profileImageUrl);
+        memberRepository.save(member);
+
+        // 새 이미지 등록 성공 후 기존 이미지 파일 삭제
+        if (oldFileName != null) {
+            try {
+                s3Service.deleteFile(oldFileName);
+            } catch (Exception e) {
+                // 기존 이미지 삭제 실패는 로그만 남기고 진행
+                log.error("프로필 이미지 파일 삭제 실패: {} - {}", oldFileName, e.getMessage());
+            }
+        }
+
+        return MemberProfileImageResponseDto.builder()
+                .imageUrl(profileImageUrl)
+                .build();
+    }
+
     public void deleteMember(Long memberId) {
         // 소속된 그룹이 존재하는 경우
         if (groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)) {
-            throw new CustomException(ErrorCode.MEMBER_STILL_IN_GROUP);
+            throw new CustomException(MEMBER_STILL_IN_GROUP);
         }
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
 
         if (!member.getStatus().equals(MemberStatus.ACTIVE)) {
-            throw new CustomException(ErrorCode.MEMBER_INACTIVE);
+            throw new CustomException(MEMBER_INACTIVE);
         }
 
         member.withdraw();
