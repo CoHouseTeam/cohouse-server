@@ -6,6 +6,8 @@ import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
+import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
+import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -144,6 +146,20 @@ public class GroupService {
         return GroupMemberSummary.fromEntity(groupMember);
     }
 
+    public GroupMemberSummary updateGroupMember(Long memberId, Long groupId, GroupMemberSummary requestDto) {
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(); // TODO: 적절한 예외 던지기
+
+        if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
+            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+        }
+
+        // 그룹멤버 정보 수정
+        groupMember.updateNickname(requestDto.getNickname());
+
+        return GroupMemberSummary.fromEntity(groupMemberRepository.save(groupMember));
+    }
+
     @Transactional
     public GroupMemberSummary joinGroup(Long memberId, GroupJoinDto requestDto) {
 
@@ -172,5 +188,30 @@ public class GroupService {
         groupRepository.save(group); // cascade 설정에 의해 groupMember도 자동 저장
 
         return GroupMemberSummary.fromEntity(groupMember);
+    }
+
+    @Transactional
+    public LeaderTransferResponseDto transferLeader(Long memberId, Long groupId, LeaderTransferRequestDto requestDto) {
+
+        // 요청자가 그룹장인지 확인
+        GroupMember prevLeader = groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+        if (!prevLeader.getIsLeader()) {
+            throw new CustomException(NOT_GROUP_LEADER);
+        }
+
+        // 이양 받을 멤버가 같은 그룹인지 확인
+        GroupMember newLeader = groupMemberRepository.findById(requestDto.getNewLeaderId())
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+        if (!Objects.equals(newLeader.getGroup().getId(), groupId)) {
+            throw new CustomException(NOT_GROUP_MEMBER);
+        }
+
+        prevLeader.transferLeader(newLeader);
+
+        return LeaderTransferResponseDto.builder()
+                .previousLeaderId(prevLeader.getId())
+                .newLeaderId(newLeader.getId())
+                .build();
     }
 }

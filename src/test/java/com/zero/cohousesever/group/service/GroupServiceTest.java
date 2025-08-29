@@ -1,11 +1,12 @@
 package com.zero.cohousesever.group.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
-import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
+import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
+import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
@@ -653,5 +654,117 @@ class GroupServiceTest {
         verify(memberRepository, never()).findById(any());
         verify(groupRepository, never()).findById(any());
         verify(groupRepository, never()).save(any(Group.class));
+    }
+
+    @Test
+    @DisplayName("그룹장 이양 성공 테스트")
+    void transferLeader_Success() {
+        // given
+        Long groupId = 1L;
+        Long newLeaderMemberId = 2L;
+
+        // 그룹장을 이양받을 멤버
+        Member newMember = Member.builder()
+                .name("새로운 사용자")
+                .email("new@example.com")
+                .password("password123")
+                .status(MemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(newMember, "id", newLeaderMemberId);
+
+        GroupMember newGroupMember = GroupMember.builder()
+                .member(newMember)
+                .nickname("새로운 사용자")
+                .isLeader(false)
+                .status(GroupMemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .group(testGroup)
+                .build();
+        ReflectionTestUtils.setField(newGroupMember, "id", 2L);
+
+        LeaderTransferRequestDto requestDto = new LeaderTransferRequestDto();
+        ReflectionTestUtils.setField(requestDto, "newLeaderId", 2L);
+
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+        when(groupMemberRepository.findById(newGroupMember.getId()))
+                .thenReturn(Optional.of(newGroupMember));
+
+        // when
+        LeaderTransferResponseDto response = groupService.transferLeader(testMember.getId(), groupId, requestDto);
+
+        // then
+        assertThat(testGroupMember.getIsLeader()).isFalse();
+        assertThat(newGroupMember.getIsLeader()).isTrue();
+        assertThat(response.getPreviousLeaderId()).isEqualTo(testGroupMember.getId());
+        assertThat(response.getNewLeaderId()).isEqualTo(newGroupMember.getId());
+    }
+
+    @Test
+    @DisplayName("요청자가 그룹장이 아니면 예외 발생 테스트")
+    void transferLeader_Fails_WhenRequesterIsNotLeader() {
+        // given
+        Long groupId = 1L;
+
+        // 요청자가 그룹장이 아닌 경우
+        ReflectionTestUtils.setField(testGroupMember, "isLeader", false);
+
+        LeaderTransferRequestDto requestDto = new LeaderTransferRequestDto();
+        ReflectionTestUtils.setField(requestDto, "newLeaderId", 999L);
+
+
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+
+        // when & then
+        assertThatThrownBy(() -> groupService.transferLeader(testMember.getId(), groupId, requestDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(NOT_GROUP_LEADER.getMessage());
+    }
+
+    @Test
+    @DisplayName("새로운 리더가 같은 그룹이 아니면 예외 발생 테스트")
+    void transferLeader_Fails_WhenNewLeaderNotInSameGroup() {
+        // given
+        Long groupId = 1L;
+        Long prevLeaderMemberId = 1L;
+
+        // 다른 그룹에 속하는 멤버
+        Group otherGroup = Group.builder()
+                .name("다른 그룹")
+                .status(GroupStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(otherGroup, "id", 99L);
+
+        Member newMember = Member.builder()
+                .name("다른 그룹 사용자")
+                .email("other@example.com")
+                .password("password123")
+                .status(MemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(newMember, "id", 2L);
+
+        GroupMember newGroupMember = GroupMember.builder()
+                .member(newMember)
+                .nickname("다른 그룹 사용자")
+                .isLeader(false)
+                .status(GroupMemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .group(otherGroup)
+                .build();
+        ReflectionTestUtils.setField(newGroupMember, "id", 2L);
+
+        LeaderTransferRequestDto requestDto = new LeaderTransferRequestDto();
+        ReflectionTestUtils.setField(requestDto, "newLeaderId", 2L);
+
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(prevLeaderMemberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+        when(groupMemberRepository.findById(newGroupMember.getId()))
+                .thenReturn(Optional.of(newGroupMember));
+
+        // when & then
+        assertThatThrownBy(() -> groupService.transferLeader(testMember.getId(), groupId, requestDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(NOT_GROUP_MEMBER.getMessage());
     }
 }
