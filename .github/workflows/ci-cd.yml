@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - 162-github-actions-CI/CD-setup
+      - feature/162-github-actions-CI/CD-setup
 
 jobs:
   build-and-deploy:
