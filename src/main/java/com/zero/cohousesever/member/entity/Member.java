@@ -40,6 +40,10 @@ public class Member extends BaseEntity {
     @Column(columnDefinition = "TINYINT")
     private Boolean gender; // 0: Male, 1: Female
 
+    public void updatePassword(String password) {
+        this.password = password;
+    }
+
     public void updateProfile(String name, LocalDate birthDate, Boolean gender) {
         this.name = name;
         this.birthDate = birthDate;
