@@ -29,13 +29,10 @@ public class DbPreferredTimeProvider implements PreferredTimeProvider {
         // 타입별로 선호 시각(or 기본값) 결정
         switch (type) {
             case ANNOUNCEMENT: {
-                // 예시) NotificationSetting에 announcementTime(LocalTime) 필드가 있다고 가정
-                // 없다면 팀에서 쓰는 실제 필드명으로 바꿔주세요.
                 LocalTime t = opt.map(NotificationSetting::getAnnouncementTime).orElse(LocalTime.of(22, 0));
                 return Optional.of(t);
             }
             case TASK: {
-                // 예시) taskTime(LocalTime) 필드가 있다고 가정
                 LocalTime t = opt.map(NotificationSetting::getTaskTime).orElse(LocalTime.of(8, 0));
                 return Optional.of(t);
             }

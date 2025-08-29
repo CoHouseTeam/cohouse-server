@@ -6,6 +6,8 @@ import com.zero.cohousesever.notification.type.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalTime;
+
 @Entity
 @Table(name = "notification_settings")
 @Getter
@@ -27,6 +29,14 @@ public class NotificationSetting extends BaseEntity {
 
     @Column(nullable = false)
     private boolean settlementEnabled;
+
+    // 공지 알림 선호 시각 (없으면 기본 22:00)
+    @Column(name = "announcement_time")
+    private LocalTime announcementTime;
+
+    // 할일 알림 선호 시각 (없으면 기본 08:00)
+    @Column(name = "task_time")
+    private LocalTime taskTime;
 
     /**
      * 타입별 ON/OFF 조회

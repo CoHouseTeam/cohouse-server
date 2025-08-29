@@ -61,20 +61,11 @@ public class FirebasePushSender implements PushSender {
             String messageId = FirebaseMessaging.getInstance().send(builder.build());
             log.info("[FCM] sent: memberId={}, messageId={}", cmd.getMemberId(), messageId);
 
-        } catch (FirebaseMessagingException fme) {
-            String code = fme.getErrorCode(); // ex) "registration-token-not-registered"
-            log.warn("[FCM] send fail(memberId={}, code={}): {}", cmd.getMemberId(), code, fme.getMessage());
-
-            // 무효/만료 토큰 → 비활성화 처리(중복 재시도 방지)
-            if ("registration-token-not-registered".equals(code) || "invalid-argument".equals(code)) {
-                tokenAdminService.deactivate(cmd.getToken());
-            }
-
-            throw new CustomException(ErrorCode.FCM_SEND_FAIL);
-
         } catch (CustomException e) {
             throw e;
-
+        } catch (FirebaseMessagingException e) {
+            log.error("[FCM] send fail (firebase): {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.FCM_SEND_FAIL);
         } catch (Exception e) {
             log.error("[FCM] send fail: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.FCM_SEND_FAIL);

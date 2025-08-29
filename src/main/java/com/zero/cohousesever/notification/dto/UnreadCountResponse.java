@@ -1,4 +1,4 @@
-package com.zero.cohousesever.notification.dto; // 패키지 선언: 프로젝트 DTO가 모여있는 위치
+package com.zero.cohousesever.notification.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
