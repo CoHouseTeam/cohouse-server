@@ -1,21 +1,23 @@
 package com.zero.cohousesever.tasks.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.tasks.dto.repeat.RepeatDayRequest;
 import com.zero.cohousesever.tasks.dto.repeat.RepeatDayResponse;
 import com.zero.cohousesever.tasks.entity.RepeatDay;
 import com.zero.cohousesever.tasks.entity.TaskTemplate;
 import com.zero.cohousesever.tasks.repository.RepeatDayRepository;
 import com.zero.cohousesever.tasks.repository.TaskTemplateRepository;
+import java.time.DayOfWeek;
+import java.util.List;
+import java.util.Optional;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.time.DayOfWeek;
-import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -94,7 +96,7 @@ class RepeatDayServiceTest {
     // 삭제 실패(소속 불일치/존재X)
     when(repeatDayRepository.deleteByIdAndTaskTemplate_Id(6L, templateId)).thenReturn(0L);
     assertThatThrownBy(() -> repeatDayService.deleteRepeatDay(templateId, 6L))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("does not belong to template");
+        .isInstanceOf(CustomException.class)
+        .extracting("errorCode").isEqualTo(ErrorCode.REPEAT_DAY_NOT_FOUND);
   }
 }

@@ -3,6 +3,7 @@ package com.zero.cohousesever.settlement.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.file.dto.FileUploadResponse;
 import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
@@ -11,20 +12,20 @@ import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
-import com.zero.cohousesever.settlement.dto.CreateSettlementRequest;
-import com.zero.cohousesever.settlement.dto.ParticipantResponse;
-import com.zero.cohousesever.settlement.dto.SettlementHistoryResponse;
-import com.zero.cohousesever.settlement.dto.SettlementResponse;
+import com.zero.cohousesever.ocr.TesseractOcrService;
+import com.zero.cohousesever.settlement.dto.*;
 import com.zero.cohousesever.settlement.entity.*;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SettlementService {
@@ -43,6 +45,7 @@ public class SettlementService {
     private final SettlementHistoryRepository settlementHistoryRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
 
+    private final TesseractOcrService tesseractOcrService;
     private final S3Service s3Service;
 
     /**
@@ -161,7 +164,7 @@ public class SettlementService {
      * 정산 취소 처리
      * - 정산 취소 시 송금을 한 정산 참여자만 환불 상태로 변경
      */
-    @Transactional
+//    @Transactional FIXME 트랜잭션 여부 다시 생각
     public void cancelSettlement(Long memberId, Long settlementId) {
         findMemberOrThrow(memberId);
         Settlement settlement = findSettlementOrThrow(settlementId);
@@ -283,9 +286,11 @@ public class SettlementService {
     }
 
     /**
-     * 영수증 이미지 업로드
+     * 영수증 이미지 업로드/업데이트
+     * - 기존 이미지 존재하지 않을 시 새 이미지 업로드
+     * - 기존 이미지 존재 시 기존 이미지 삭제 후 업로드
      */
-    public String uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+    public FileUploadResponse uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
         Settlement settlement = findSettlementOrThrow(settlementId);
         Member member = findMemberOrThrow(memberId);
 
@@ -293,52 +298,43 @@ public class SettlementService {
             throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
         }
 
-        // 기존 이미지가 있으면 업로드 막음
+        // 기존 이미지가 있으면 삭제
         if (settlement.getImageUrl() != null && !settlement.getImageUrl().isEmpty()) {
-            throw new CustomException(ErrorCode.FILE_ALREADY_EXISTS);
+            deleteReceiptImage(memberId, settlementId);
         }
 
-        // 이미지 검증
+        // 이미지 검증 및 업로드
         s3Service.validateImageFile(file);
-
-        // 경로 생성
         String dirName = String.format("groups/%d/settlements/%d/receipt", groupId, settlementId);
-
         String imageUrl = s3Service.uploadFile(file, dirName);
 
         settlement.setImageUrl(imageUrl);
         settlementRepository.save(settlement);
 
-        return imageUrl;
+        OcrResult ocrResult = processOCR(file, settlement);
+
+        FileUploadResponse response = FileUploadResponse.builder()
+                .imageUrl(settlement.getImageUrl())
+                .settlementAmount(ocrResult.getAmount())
+                .ocrSuccess(ocrResult.isSuccess())
+                .build();
+
+        return response;
     }
 
-    /**
-     * 영수증 이미지 업데이트
-     * - 기존 영수증 이미지 삭제 후 최신 이미지 등록
-     */
-    public String updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+    private OcrResult processOCR(MultipartFile file, Settlement settlement) {
         try {
-            Settlement settlement = findSettlementOrThrow(settlementId);
+            Long amount = tesseractOcrService.extractAmountFromReceipt(file);
 
-            Member member = findMemberOrThrow(memberId);
-            if (!settlement.getPayer().equals(member)) {
-                throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+            // OCR로 금액을 성공적으로 추출했을 때만 금액 업데이트
+            if (amount != null) {
+                settlement.setSettlementAmount(amount);
+                return new OcrResult(amount, true);
             }
-
-            String imageUrl = settlement.getImageUrl();
-            if (settlement.getImageUrl() == null || imageUrl.isEmpty()) {
-                throw new CustomException(ErrorCode.FILE_NOT_FOUND);
-            }
-
-            // 기존 파일 삭제
-            deleteReceiptImage(memberId, settlementId);
-
-            // 새 이미지 업로드
-            return uploadReceiptImage(memberId, file, groupId, settlementId);
-
-        } catch (IOException e) {
-            throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
+        } catch (Exception e) {
+            log.warn("OCR failed: {}", e.getMessage());
         }
+        return new OcrResult(settlement.getSettlementAmount(), false);
     }
 
     /**
@@ -357,6 +353,7 @@ public class SettlementService {
         }
 
         String extractedFilePath = s3Service.extractFilePath(imageUrl);
+        System.out.println(extractedFilePath);
 
         s3Service.deleteFile(extractedFilePath);
         settlement.setImageUrl(null);

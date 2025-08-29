@@ -9,5 +9,4 @@ public class LeaderTransferResponseDto {
 
     private Long previousLeaderId;
     private Long newLeaderId;
-    private String message;
 }

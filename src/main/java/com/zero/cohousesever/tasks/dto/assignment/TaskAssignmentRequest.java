@@ -15,9 +15,10 @@ public class TaskAssignmentRequest {
   private Long templateId;
   private List<Long> groupMemberId;
 
-  //이번 주부터 적용 여부. null이면 true로 처리
-  private Boolean applyThisWeek;
 
-  // 주마다 랜덤 배정 여부. true면 랜덤, false면 직전 담당자 그대로 유지
+  // 랜덤 유지용 null이면 템플릿 randomEnabled를 따라감
   private Boolean randomEnabled;
+
+  // 수동 지정용 값이 오면 무조건 이 멤버로 배정 (그룹장만 사용)
+  private Long fixedAssigneeId;
 }

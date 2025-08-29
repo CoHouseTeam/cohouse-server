@@ -1,7 +1,6 @@
 package com.zero.cohousesever.member.security;
 
 import com.zero.cohousesever.common.exception.CustomException;
-import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.enums.TokenValidationStatus;
@@ -16,11 +15,10 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.io.IOException;
 
-import static com.zero.cohousesever.common.exception.ErrorCode.MEMBER_NOT_FOUND;
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -85,7 +83,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("만료된 JWT 토큰으로 인증 실패")
-    void shouldNotAuthenticateWithExpiredJwtToken() throws ServletException, IOException {
+    void shouldNotAuthenticateWithExpiredJwtToken() {
         // given
         String expiredToken = "expired.jwt.token";
         request.addHeader("Authorization", "Bearer " + expiredToken);
@@ -95,7 +93,7 @@ class JwtAuthenticationFilterTest {
         // when
         assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(request, response, filterChain))
                 .isInstanceOf(CustomException.class)
-                .hasMessage(ErrorCode.ACCESS_TOKEN_EXPIRED.getMessage());
+                .hasMessage(ACCESS_TOKEN_EXPIRED.getMessage());
 
         // then
         verify(jwtTokenProvider).validateToken(expiredToken);
@@ -140,7 +138,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("잘못된 JWT 토큰으로 인증 실패")
-    void shouldNotAuthenticateWithInvalidJwtToken() throws ServletException, IOException {
+    void shouldNotAuthenticateWithInvalidJwtToken() {
         // given
         String invalidToken = "invalid.jwt.token";
         request.addHeader("Authorization", "Bearer " + invalidToken);
@@ -150,7 +148,7 @@ class JwtAuthenticationFilterTest {
         // when
         assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(request, response, filterChain))
                 .isInstanceOf(CustomException.class)
-                .hasMessage(ErrorCode.ACCESS_TOKEN_INVALID.getMessage());
+                .hasMessage(ACCESS_TOKEN_INVALID.getMessage());
 
         // then
         verify(jwtTokenProvider).validateToken(invalidToken);
@@ -205,7 +203,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("토큰 검증 후 사용자 정보를 찾을 수 없는 경우")
-    void shouldHandleUserNotFoundAfterTokenValidation() throws ServletException, IOException {
+    void shouldHandleUserNotFoundAfterTokenValidation() {
         // given
         String validToken = "valid.jwt.token";
         String email = "nonexistent@example.com";

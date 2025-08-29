@@ -2,8 +2,12 @@ package com.zero.cohousesever.group.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
+import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
+import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
+import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
+import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
@@ -17,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 import static com.zero.cohousesever.common.exception.ErrorCode.*;
 
@@ -110,6 +116,102 @@ public class GroupService {
         return GroupInviteDto.builder()
                 .groupId(groupId)
                 .inviteCode(inviteCode)
+                .build();
+    }
+
+    public List<GroupMemberSummary> getGroupMembers(Long memberId, Long groupId) {
+
+        if (!groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(NOT_GROUP_MEMBER);
+        }
+
+        List<GroupMember> groupMembers = groupMemberRepository.findAllByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
+
+        return groupMembers.stream().map(GroupMemberSummary::fromEntity).toList();
+    }
+
+    public GroupMemberSummary getGroupMember(Long memberId, Long groupId, Long groupMemberId) {
+
+        // 본인 그룹만 조회 가능
+        if (!groupMemberRepository.existsByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(NOT_GROUP_MEMBER);
+        }
+
+        GroupMember groupMember = groupMemberRepository.findById(groupMemberId)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+        if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
+            throw new CustomException(NOT_GROUP_MEMBER);
+        }
+
+        return GroupMemberSummary.fromEntity(groupMember);
+    }
+
+    public GroupMemberSummary updateGroupMember(Long memberId, Long groupId, GroupMemberSummary requestDto) {
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(); // TODO: 적절한 예외 던지기
+
+        if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
+            throw new RuntimeException(); // TODO: 적절한 예외 던지기
+        }
+
+        // 그룹멤버 정보 수정
+        groupMember.updateNickname(requestDto.getNickname());
+
+        return GroupMemberSummary.fromEntity(groupMemberRepository.save(groupMember));
+    }
+
+    @Transactional
+    public GroupMemberSummary joinGroup(Long memberId, GroupJoinDto requestDto) {
+
+        if (groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(ALREADY_IN_GROUP);
+        }
+
+        String code = requestDto.getInviteCode();
+
+        Long groupId = inviteCodeService.validateInviteCode(code);
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+        GroupMember groupMember = GroupMember.builder()
+                .member(member)
+                .group(group)
+                .nickname(requestDto.getNickname())
+                .isLeader(false)
+                .status(GroupMemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .build();
+
+        group.addMember(groupMember);
+        groupRepository.save(group); // cascade 설정에 의해 groupMember도 자동 저장
+
+        return GroupMemberSummary.fromEntity(groupMember);
+    }
+
+    @Transactional
+    public LeaderTransferResponseDto transferLeader(Long memberId, Long groupId, LeaderTransferRequestDto requestDto) {
+
+        // 요청자가 그룹장인지 확인
+        GroupMember prevLeader = groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+        if (!prevLeader.getIsLeader()) {
+            throw new CustomException(NOT_GROUP_LEADER);
+        }
+
+        // 이양 받을 멤버가 같은 그룹인지 확인
+        GroupMember newLeader = groupMemberRepository.findById(requestDto.getNewLeaderId())
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+        if (!Objects.equals(newLeader.getGroup().getId(), groupId)) {
+            throw new CustomException(NOT_GROUP_MEMBER);
+        }
+
+        prevLeader.transferLeader(newLeader);
+
+        return LeaderTransferResponseDto.builder()
+                .previousLeaderId(prevLeader.getId())
+                .newLeaderId(newLeader.getId())
                 .build();
     }
 }
