@@ -92,13 +92,4 @@ public class PostController {
         postService.deletePost(id, principal.getId());
         return ResponseEntity.noContent().build(); // 204
     }
-
-//    /**
-//     * 공지 게시글 상단 고정
-//     */
-//    @PatchMapping("/{postId}/pin")
-//    public ResponseEntity<Void> pinPost(@PathVariable Long postId) {
-//        return ResponseEntity.ok().build();
-//    }
-
 }
