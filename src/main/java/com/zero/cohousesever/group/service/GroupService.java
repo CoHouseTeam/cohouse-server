@@ -147,12 +147,8 @@ public class GroupService {
     }
 
     public GroupMemberSummary updateGroupMember(Long memberId, Long groupId, GroupMemberSummary requestDto) {
-        GroupMember groupMember = groupMemberRepository.findByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)
-                .orElseThrow(); // TODO: 적절한 예외 던지기
-
-        if (!Objects.equals(groupMember.getGroup().getId(), groupId)) {
-            throw new RuntimeException(); // TODO: 적절한 예외 던지기
-        }
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
 
         // 그룹멤버 정보 수정
         groupMember.updateNickname(requestDto.getNickname());
