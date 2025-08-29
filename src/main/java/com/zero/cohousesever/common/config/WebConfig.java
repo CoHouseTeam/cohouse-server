@@ -13,7 +13,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "http://localhost:3000",
                         "http://localhost:3001",
-                        "https://cohouse-client.vercel.app"
+                        "https://cohouse-client.vercel.app",
+                        "https://cohouse-client-git-deploy-haneuls-projects-cd5f58ce.vercel.app"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowCredentials(true);
