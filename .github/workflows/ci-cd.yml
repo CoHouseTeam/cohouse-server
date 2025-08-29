@@ -53,6 +53,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/cohouse-server:latest
 
+      # sudo 추가 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.6
         with:
