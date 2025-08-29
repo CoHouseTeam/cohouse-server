@@ -12,5 +12,4 @@ public class CohouseSeverApplication {
     public static void main(String[] args) {
         SpringApplication.run(CohouseSeverApplication.class, args);
     }
-
 }
