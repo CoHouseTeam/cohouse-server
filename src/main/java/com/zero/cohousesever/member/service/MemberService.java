@@ -134,11 +134,15 @@ public class MemberService {
             return;
         }
 
+        String fileName = s3Service.extractFilePath(member.getProfileImageUrl());
         try {
-            String fileName = s3Service.extractFilePath(member.getProfileImageUrl());
             s3Service.deleteFile(fileName);
         } catch (Exception e) {
-            throw new CustomException(INTERNAL_SERVER_ERROR);
+            // 기존 이미지 삭제 실패는 로그만 남기고 진행
+            log.error("프로필 이미지 파일 삭제 실패: {} - {}", fileName, e.getMessage());
         }
+
+        member.updateProfileImageUrl(null);
+        memberRepository.save(member);
     }
 }

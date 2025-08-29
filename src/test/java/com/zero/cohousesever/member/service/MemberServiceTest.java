@@ -545,10 +545,11 @@ class MemberServiceTest {
     void deleteProfileImage_Success() {
         // given
         Long memberId = 1L;
+        String profileImageUrl = testMember.getProfileImageUrl();
 
         when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE))
                 .thenReturn(Optional.of(testMember));
-        when(s3Service.extractFilePath(testMember.getProfileImageUrl()))
+        when(s3Service.extractFilePath(profileImageUrl))
                 .thenReturn("old-image-path");
         doNothing().when(s3Service).deleteFile("old-image-path");
 
@@ -557,7 +558,7 @@ class MemberServiceTest {
 
         // then
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
-        verify(s3Service).extractFilePath(testMember.getProfileImageUrl());
+        verify(s3Service).extractFilePath(profileImageUrl);
         verify(s3Service).deleteFile("old-image-path");
     }
 
@@ -614,22 +615,21 @@ class MemberServiceTest {
     void deleteMemberProfileImage_ThrowsException_WhenS3DeleteFails() {
         // given
         Long memberId = 1L;
+        String profileImageUrl = testMember.getProfileImageUrl();
         String fileName = "old-image-path";
 
         when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE))
                 .thenReturn(Optional.of(testMember));
-        when(s3Service.extractFilePath(testMember.getProfileImageUrl()))
+        when(s3Service.extractFilePath(profileImageUrl))
                 .thenReturn(fileName);
         doThrow(new RuntimeException("S3 삭제 실패"))
                 .when(s3Service).deleteFile(fileName);
 
         // when & then
-        assertThatThrownBy(() -> memberService.deleteMemberProfileImage(memberId))
-                .isInstanceOf(CustomException.class)
-                .hasMessage(INTERNAL_SERVER_ERROR.getMessage());
+        memberService.deleteMemberProfileImage(memberId);
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
-        verify(s3Service).extractFilePath(testMember.getProfileImageUrl());
+        verify(s3Service).extractFilePath(profileImageUrl);
         verify(s3Service).deleteFile(fileName);
     }
 }
