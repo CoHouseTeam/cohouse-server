@@ -8,15 +8,17 @@ import com.zero.cohousesever.common.exception.ErrorCode;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.List;
+import java.util.Base64;
 
+/**
+ * FirebaseConfig
+ * - 서버 부팅 시 FirebaseApp을 1회 초기화한다.
+ */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
@@ -25,20 +27,15 @@ public class FirebaseConfig {
     @Value("${firebase.project-id}")
     private String projectId;
 
-    @Value("${firebase.credentials-path:}")
-    private String credentialsPath;
-
     /**
-     * FirebaseApp 1회 초기화.
-     * - 1순위: env FIREBASE_CREDENTIALS_B64 (Base64-encoded JSON)
-     * - 2순위: credentials-path (파일 경로)
+     * - 스프링 컨텍스트가 준비되면 FirebaseApp 1회 초기화.
+     * - 이미 초기화된 경우 재초기화하지 않음.
      */
     @PostConstruct
     public void init() {
         try {
             if (!FirebaseApp.getApps().isEmpty()) {
-                // 이미 초기화됨
-                return;
+                return; // 이미 초기화됨
             }
 
             InputStream credStream = resolveCredentialStream();
@@ -57,17 +54,13 @@ public class FirebaseConfig {
         }
     }
 
-    private InputStream resolveCredentialStream() throws Exception {
+    private InputStream resolveCredentialStream() {
         String b64 = System.getenv("FIREBASE_CREDENTIALS_B64");
         if (b64 != null && !b64.isBlank()) {
-            byte[] decoded = Base64.decodeBase64(b64);
+            byte[] decoded = Base64.getDecoder().decode(b64);
             return new ByteArrayInputStream(decoded);
         }
-        if (credentialsPath != null && !credentialsPath.isBlank()) {
-            return new FileInputStream(credentialsPath);
-        }
-        // 로컬 개발 편의를 위해: GOOGLE_APPLICATION_CREDENTIALS 표준 경로도 동작(환경에서 처리)
-        // 아무 것도 없으면 실패
-        throw new IllegalStateException("No Firebase credentials provided (env FIREBASE_CREDENTIALS_B64 or firebase.credentials-path)");
+        // 자격증명이 전혀 없으면 공통 예외
+        throw new CustomException(ErrorCode.FCM_INIT_FAIL);
     }
 }

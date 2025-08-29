@@ -22,4 +22,3 @@ cloud:
 
 firebase:
   project-id: cohouse-6ba91
-  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
