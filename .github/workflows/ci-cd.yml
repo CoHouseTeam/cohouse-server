@@ -64,4 +64,4 @@ jobs:
             sudo docker-compose down || true
             sudo docker-compose pull
             sudo docker-compose up -d
-            docker image prune -f
+            sudo docker image prune -f
