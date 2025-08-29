@@ -9,9 +9,10 @@ import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,12 +30,14 @@ public class PasswordResetService {
     private static final int TOKEN_LENGTH = 32;
 
     private final MemberRepository memberRepository;
-    private final JavaMailSender mailSender;
+    private final MailSender mailSender;
     private final StringRedisTemplate redisTemplate;
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom random = new SecureRandom();
 
+    @Value("${app.frontend.url}")
     private String frontendUrl;
+    @Value("${spring.mail.username}")
     private String senderEmail;
 
     public void sendPasswordResetMail(PasswordForgotRequestDto requestDto) {
@@ -76,28 +79,27 @@ public class PasswordResetService {
     }
 
     private void sendEmail(String email, String name, String token) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setFrom(senderEmail);
+        message.setSubject("[CoHouse] 비밀번호 재설정 안내");
+
+        String resetUrl = frontendUrl + "/reset-password?token=" + token;
+        String messageBody = String.format(
+                "안녕하세요 %s님,\n\n" +
+                        "비밀번호 재설정을 요청하셨습니다.\n" +
+                        "아래 링크를 클릭하여 비밀번호를 재설정해 주세요.\n\n" +
+                        "%s\n\n" +
+                        "이 링크는 30분 후에 만료됩니다.\n" +
+                        "본인이 요청하지 않았다면 이 이메일을 무시해 주세요.\n\n" +
+                        "감사합니다.\n" +
+                        "CoHouse 팀",
+                name, resetUrl
+        );
+        message.setText(messageBody);
+
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setFrom(senderEmail);
-            message.setSubject("[CoHouse] 비밀번호 재설정 안내");
-
-            String resetUrl = frontendUrl + "/reset-password?token=" + token;
-            String messageBody = String.format(
-                    "안녕하세요 %s님,\n\n" +
-                            "비밀번호 재설정을 요청하셨습니다.\n" +
-                            "아래 링크를 클릭하여 비밀번호를 재설정해 주세요.\n\n" +
-                            "%s\n\n" +
-                            "이 링크는 30분 후에 만료됩니다.\n" +
-                            "본인이 요청하지 않았다면 이 이메일을 무시해 주세요.\n\n" +
-                            "감사합니다.\n" +
-                            "CoHouse 팀",
-                    name, resetUrl
-            );
-
-            message.setText(messageBody);
             mailSender.send(message);
-
         } catch (Exception e) {
             // 이메일 전송 실패시 로그만 남기고 진행
             log.error("비밀번호 재설정 이메일 전송 실패: {} - {}", email, e.getMessage());
