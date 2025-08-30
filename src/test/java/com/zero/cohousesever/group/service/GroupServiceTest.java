@@ -5,6 +5,7 @@ import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
+import com.zero.cohousesever.group.dto.groupmember.IsLeaderDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
@@ -924,5 +925,64 @@ class GroupServiceTest {
         assertThatThrownBy(() -> groupService.transferLeader(testMember.getId(), groupId, requestDto))
                 .isInstanceOf(CustomException.class)
                 .hasMessage(NOT_GROUP_MEMBER.getMessage());
+    }
+
+    @Test
+    @DisplayName("그룹장 여부 조회 성공 - 그룹장인 경우")
+    void getIsLeader_Success_WithIsLeaderTrue() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+
+        // when
+        IsLeaderDto result = groupService.getIsLeader(memberId, groupId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.isLeader()).isEqualTo(true);
+
+        verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("그룹장 여부 조회 성공 - 그룹장이 아닌 경우")
+    void getIsLeader_Success_WithIsLeaderFalse() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+        ReflectionTestUtils.setField(testGroupMember, "isLeader", false);
+
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+
+        // when
+        IsLeaderDto result = groupService.getIsLeader(memberId, groupId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.isLeader()).isEqualTo(false);
+
+        verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("그룹장 여부 조회 시 그룹 멤버가 존재하지 않으면 예외 발생")
+    void getIsLeader_ThrowsException_WhenGroupMemberNotFound() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 999L;
+
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> groupService.getIsLeader(memberId, groupId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(GROUP_MEMBER_NOT_FOUND.getMessage());
+
+        verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
     }
 }
