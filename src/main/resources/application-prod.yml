@@ -1,13 +1,33 @@
 spring:
-  activate:
-    on-profile: prod
+  datasource:
+    url: jdbc:mysql://mysql:3306/cohouse_db?useSSL=false&serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: root
+    password: 1
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
 
+    multipart:
+      enabled: true
+      max-file-size: 1MB
+      max-request-size: 1MB
+
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: cohouse
+
+  data:
+    redis:
+      host: redis
+      port: 6379
 cloud:
   aws:
     credentials:
       access-key: ${AWS_ACCESS_KEY}
       secret-key: ${AWS_SECRET_KEY}
     s3:
-      bucket: cohouse-bucket
+      bucket: ${AWS_S3_BUCKET}
+      base-url: ${AWS_S3_BASE_URL}
     stack:
       auto: false

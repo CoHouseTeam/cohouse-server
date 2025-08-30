@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -26,7 +26,7 @@ public class S3Service {
     private String bucketName;
 
     @Value("${cloud.aws.s3.base-url}")
-    private String  s3BaseUrl;
+    private String s3BaseUrl;
 
     private static final long MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 
@@ -34,7 +34,7 @@ public class S3Service {
      * 파일 업로드
      */
     public String uploadFile(MultipartFile file, String dirName) throws IOException {
-        String fileName = createFileName(file.getOriginalFilename(), dirName);
+        String fileName = createFileName(dirName);
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
@@ -63,8 +63,8 @@ public class S3Service {
     /**
      * 파일명 생성 (중복 방지)
      */
-    private String createFileName(String originalFileName, String dirName) {
-        return dirName + "/" + UUID.randomUUID() + "_" + originalFileName;
+    private String createFileName(String dirName) {
+        return dirName + "/" + UUID.randomUUID();
     }
 
     /**

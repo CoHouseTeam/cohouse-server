@@ -25,7 +25,7 @@ public class PostController {
      * - 페이지네이션: page/size
      * - 상태(status) 반영
      */
-    @GetMapping("/{groupId}")
+    @GetMapping("/group/{groupId}")
     public ResponseEntity<PostListResponse<PostSummaryResponse>> getPostListByGroup(
             @PathVariable Long groupId,
             @RequestParam(required = false) Integer page,
@@ -59,8 +59,8 @@ public class PostController {
      * 게시글 상세 조회
      * - ACTIVE 상태만 조회
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<PostResponse> getPostDetail(@PathVariable Long id) {
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponse> getPostDetail(@PathVariable("postId") Long id) {
         return ResponseEntity.ok(postService.getPostDetail(id));
     }
 
@@ -92,13 +92,5 @@ public class PostController {
         postService.deletePost(id, principal.getId());
         return ResponseEntity.noContent().build(); // 204
     }
-
-//    /**
-//     * 공지 게시글 상단 고정
-//     */
-//    @PatchMapping("/{postId}/pin")
-//    public ResponseEntity<Void> pinPost(@PathVariable Long postId) {
-//        return ResponseEntity.ok().build();
-//    }
 
 }
