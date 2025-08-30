@@ -42,6 +42,10 @@ public class GroupService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
 
+        if (groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(ALREADY_IN_GROUP);
+        }
+
         GroupMember leader = GroupMember.builder()
                 .member(member)
                 .nickname(member.getName()) // 이름을 기본 닉네임으로 사용
@@ -54,7 +58,6 @@ public class GroupService {
                 .name(groupNameDto.getGroupName())
                 .status(GroupStatus.ACTIVE)
                 .build();
-
 
         group.addMember(leader);
 
