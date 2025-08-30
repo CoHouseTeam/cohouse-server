@@ -96,6 +96,8 @@ class GroupServiceTest {
         // given
         Long memberId = 1L;
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(false);
         when(groupRepository.save(any(Group.class))).thenReturn(testGroup);
 
         // when
@@ -107,6 +109,7 @@ class GroupServiceTest {
         assertThat(result.getStatus()).isEqualTo(GroupStatus.ACTIVE);
 
         verify(memberRepository).findById(memberId);
+        verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
         verify(groupRepository).save(any(Group.class));
     }
 
@@ -120,9 +123,29 @@ class GroupServiceTest {
         // when & then
         assertThatThrownBy(() -> groupService.createGroup(memberId, groupNameDto))
                 .isInstanceOf(CustomException.class)
-                .hasMessage("해당 회원을 찾을 수 없습니다.");
+                .hasMessage(MEMBER_NOT_FOUND.getMessage());
 
         verify(memberRepository).findById(memberId);
+        verify(groupRepository, never()).save(any(Group.class));
+        verify(groupMemberRepository, never()).save(any(GroupMember.class));
+    }
+
+    @Test
+    @DisplayName("그룹 생성 시 이미 그룹에 속해있는 경우 예외 발생 테스트")
+    void createGroup_ThrowsException_WhenMemberAlreadyInGroup() {
+        // given
+        Long memberId = 999L;
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> groupService.createGroup(memberId, groupNameDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(ALREADY_IN_GROUP.getMessage());
+
+        verify(memberRepository).findById(memberId);
+        verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
         verify(groupRepository, never()).save(any(Group.class));
         verify(groupMemberRepository, never()).save(any(GroupMember.class));
     }
@@ -133,6 +156,8 @@ class GroupServiceTest {
         // given
         Long memberId = 1L;
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
+        when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE))
+                .thenReturn(false);
         when(groupRepository.save(any(Group.class))).thenReturn(testGroup);
 
         // when
@@ -212,7 +237,7 @@ class GroupServiceTest {
         // when & then
         assertThatThrownBy(() -> groupService.getGroup(groupId))
                 .isInstanceOf(CustomException.class)
-                .hasMessage("해당 그룹을 찾을 수 없습니다.");
+                .hasMessage(GROUP_NOT_FOUND.getMessage());
 
         verify(groupRepository).findById(groupId);
     }
@@ -277,7 +302,7 @@ class GroupServiceTest {
         // when & then
         assertThatThrownBy(() -> groupService.updateGroup(memberId, groupId, requestDto))
                 .isInstanceOf(CustomException.class)
-                .hasMessage("그룹장만 접근할 수 있습니다.");
+                .hasMessage(NOT_GROUP_LEADER.getMessage());
 
         verify(groupMemberRepository).findByMemberIdAndGroupId(memberId, groupId);
         verify(groupRepository, never()).save(any(Group.class));
@@ -301,7 +326,7 @@ class GroupServiceTest {
         // when & then
         assertThatThrownBy(() -> groupService.updateGroup(memberId, groupId, requestDto))
                 .isInstanceOf(CustomException.class)
-                .hasMessage("해당 그룹 멤버를 찾을 수 없습니다."); // GROUP_MEMBER_NOT_FOUND 메시지로 교체
+                .hasMessage(GROUP_MEMBER_NOT_FOUND.getMessage());
 
         verify(groupMemberRepository).findByMemberIdAndGroupId(memberId, groupId);
         verify(groupRepository, never()).save(any(Group.class));
@@ -327,7 +352,7 @@ class GroupServiceTest {
         // when & then
         assertThatThrownBy(() -> groupService.updateGroup(memberId, groupId, requestDto))
                 .isInstanceOf(CustomException.class)
-                .hasMessage("해당 그룹을 찾을 수 없습니다."); // GROUP_NOT_FOUND 메시지
+                .hasMessage(GROUP_NOT_FOUND.getMessage());
 
         verify(groupRepository, never()).save(any(Group.class));
     }
