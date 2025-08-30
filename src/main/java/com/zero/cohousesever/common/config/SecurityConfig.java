@@ -1,5 +1,6 @@
-package com.zero.cohousesever.member.security;
+package com.zero.cohousesever.common.config;
 
+import com.zero.cohousesever.member.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,12 +34,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/**",
-                                "/members/signup",
-                                "/members/check/**",
-                                "/members/login",
-                                "/members/forgot-password",
-                                "/members/reset-password",
-                                "/members/oauth2/**"
+                                "/api/members/signup",
+                                "/api/members/check/**",
+                                "/api/members/login",
+                                "/api/members/forgot-password",
+                                "/api/members/reset-password",
+                                "/api/members/oauth2/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
