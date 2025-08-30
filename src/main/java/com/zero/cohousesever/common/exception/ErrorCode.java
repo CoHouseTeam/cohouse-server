@@ -31,6 +31,7 @@ public enum ErrorCode {
     ALREADY_IN_GROUP(HttpStatus.BAD_REQUEST, "이미 소속된 그룹이 있습니다."),
     UNSETTLED_SETTLEMENT_EXISTS(HttpStatus.CONFLICT, "아직 정산하지 않은 정산 내역이 남아있습니다."),
     GROUP_LEADER_LEAVE_FORBIDDEN(HttpStatus.FORBIDDEN, "그룹장은 탈퇴 요청을 할 수 없습니다."),
+    GROUP_MEMBERS_LEFT_IN_GROUP(HttpStatus.CONFLICT, "그룹에 아직 그룹 멤버가 남아있습니다."),
 
     // 할일 관련 오류
     TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 템플릿을 찾을 수 없습니다."),

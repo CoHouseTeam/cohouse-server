@@ -69,10 +69,14 @@ public class GroupController {
     // 그룹 해체
     @DeleteMapping("/{groupId}")
     public ResponseEntity<Void> deleteGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        groupService.deleteGroup(memberId, groupId);
+
+        return ResponseEntity.noContent().build();
     }
 
     // 그룹 초대 코드 발급
