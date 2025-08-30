@@ -1,5 +1,6 @@
 package com.zero.cohousesever.group.dto.leaverequest;
 
+import com.zero.cohousesever.group.entity.GroupLeaveRequest;
 import com.zero.cohousesever.group.enums.LeaveRequestStatus;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,4 +18,16 @@ public class LeaveRequestSummary {
     private LeaveRequestStatus status;
     private LocalDateTime requestedAt;
     private LocalDateTime respondedAt;
+
+    public static LeaveRequestSummary fromEntity(GroupLeaveRequest entity) {
+        return LeaveRequestSummary.builder()
+                .id(entity.getId())
+                .groupId(entity.getGroup().getId())
+                .memberId(entity.getMember().getId())
+                .reason(entity.getReason())
+                .status(entity.getStatus())
+                .requestedAt(entity.getRequestedAt())
+                .respondedAt(entity.getRespondedAt())
+                .build();
+    }
 }

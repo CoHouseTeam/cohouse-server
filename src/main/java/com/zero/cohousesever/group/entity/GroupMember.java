@@ -47,4 +47,13 @@ public class GroupMember extends BaseEntity {
         this.status = GroupMemberStatus.INACTIVE;
         this.leavedAt = LocalDateTime.now();
     }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void transferLeader(GroupMember newLeader) {
+        this.isLeader = false;
+        newLeader.isLeader = true;
+    }
 }

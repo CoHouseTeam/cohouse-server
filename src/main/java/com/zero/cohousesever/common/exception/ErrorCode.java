@@ -29,6 +29,8 @@ public enum ErrorCode {
     NOT_GROUP_MEMBER(HttpStatus.UNAUTHORIZED, "해당 그룹 소속이 아닙니다."),
     INVITE_CODE_INVALID(HttpStatus.BAD_REQUEST, "초대 코드가 잘못되었거나 만료되었습니다."),
     ALREADY_IN_GROUP(HttpStatus.BAD_REQUEST, "이미 소속된 그룹이 있습니다."),
+    UNSETTLED_SETTLEMENT_EXISTS(HttpStatus.CONFLICT, "아직 정산하지 않은 정산 내역이 남아있습니다."),
+    GROUP_LEADER_LEAVE_FORBIDDEN(HttpStatus.FORBIDDEN, "그룹장은 탈퇴 요청을 할 수 없습니다."),
     GROUP_MEMBERS_LEFT_IN_GROUP(HttpStatus.CONFLICT, "그룹에 아직 그룹 멤버가 남아있습니다."),
 
     // 할일 관련 오류
@@ -49,10 +51,10 @@ public enum ErrorCode {
     OVERRIDE_PAST_DATE_FORBIDDEN(HttpStatus.BAD_REQUEST, "과거 날짜의 할일은 처리할 수 없습니다."),
     OVERRIDE_REQUESTER_MUST_BE_ASSIGNEE(HttpStatus.FORBIDDEN, "현재 담당자만 요청을 생성할 수 있습니다."),
     OVERRIDE_ACCEPTOR_MUST_BE_TARGET(HttpStatus.FORBIDDEN, "요청 대상자만 응답할 수 있습니다."),
-    OVERRIDE_BROADCAST_REJECT_FORBIDDEN(HttpStatus.FORBIDDEN, "브로드캐스트 요청은 거절할 수 없습니다."),
     OVERRIDE_NOT_SAME_GROUP(HttpStatus.FORBIDDEN, "같은 그룹의 그룹멤버만 가능합니다."),
     OVERRIDE_SWAP_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "스왑 대상 할일 배정을 찾을 수 없습니다."),
     OVERRIDE_SWAP_DIFFERENT_GROUP(HttpStatus.FORBIDDEN, "서로 변경은 같은 그룹 내에서만 가능합니다."),
+    REQUESTER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "요청자 ID가 필요합니다."),
 
     // 게시물 관련 오류
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
