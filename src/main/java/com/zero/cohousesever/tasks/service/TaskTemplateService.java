@@ -30,11 +30,12 @@ public class TaskTemplateService {
   /**
    * 템플릿 생성
    */
-  public TaskTemplate createTemplate(Long groupId, String category, List<String> repeatDays) {
+  public TaskTemplate createTemplate(Long groupId, String category, List<String> repeatDays, Boolean randomEnabled) {
     TaskTemplate saved = taskTemplateRepository.save(
         TaskTemplate.builder()
             .groupId(groupId)
             .category(category)
+            .randomEnabled(Boolean.TRUE.equals(randomEnabled))
             .build()
     );
 
@@ -66,6 +67,18 @@ public class TaskTemplateService {
       throw new CustomException(ErrorCode.TEMPLATE_NOT_FOUND);
     }
     taskTemplateRepository.deleteById(templateId);
+  }
+
+  public TaskTemplate getById(Long id) {
+    return taskTemplateRepository.findById(id)
+        .orElseThrow(() -> new CustomException(ErrorCode.TEMPLATE_NOT_FOUND));
+  }
+
+  // groupId만 필요할 때
+  public Long getGroupIdByTemplateId(Long id) {
+    return taskTemplateRepository.findById(id)
+        .map(TaskTemplate::getGroupId)
+        .orElseThrow(() -> new CustomException(ErrorCode.TEMPLATE_NOT_FOUND));
   }
 
 }

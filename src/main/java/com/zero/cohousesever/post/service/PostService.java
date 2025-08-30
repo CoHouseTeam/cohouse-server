@@ -37,7 +37,7 @@ public class PostService {
             PostType type,
             PostStatus status
     ) {
-        int p = (page == null || page < 0) ? DEFAULT_PAGE : page;
+        int p = (page == null || page < 0) ? DEFAULT_PAGE : page - 1;
         int s = (size == null || size <= 0) ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
 
         Sort sort = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));

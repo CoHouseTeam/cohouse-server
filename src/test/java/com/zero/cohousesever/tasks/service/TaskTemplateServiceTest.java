@@ -1,18 +1,19 @@
 package com.zero.cohousesever.tasks.service;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.tasks.dto.repeat.RepeatDayRequest;
 import com.zero.cohousesever.tasks.entity.TaskTemplate;
 import com.zero.cohousesever.tasks.repository.TaskTemplateRepository;
-import jakarta.persistence.EntityNotFoundException;
-import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -27,15 +28,12 @@ class TaskTemplateServiceTest {
   @Test
   @DisplayName("그룹별 템플릿 조회")
   void getAllTemplates_byGroup() {
-    // given
     TaskTemplate t1 = TaskTemplate.builder().groupId(1L).category("CLEANING").build();
     TaskTemplate t2 = TaskTemplate.builder().groupId(1L).category("TRASH").build();
     when(taskTemplateRepository.findByGroupId(1L)).thenReturn(List.of(t1, t2));
 
-    // when
     List<TaskTemplate> list = taskTemplateService.getAllTemplates(1L);
 
-    // then
     assertThat(list).hasSize(2);
     assertThat(list).extracting(TaskTemplate::getCategory)
         .containsExactlyInAnyOrder("CLEANING", "TRASH");
@@ -43,9 +41,8 @@ class TaskTemplateServiceTest {
   }
 
   @Test
-  @DisplayName("템플릿 생성 - 요일 1개")
-  void createTemplate_oneDay() {
-    // given: save()가 넘긴 엔티티에 id 세팅해서 반환
+  @DisplayName("템플릿 생성 - 요일 1개면 addRepeatDay 1회 호출 + randomEnabled 반영")
+  void createTemplate_oneDay_randomOn() {
     when(taskTemplateRepository.save(any(TaskTemplate.class)))
         .thenAnswer(inv -> {
           TaskTemplate t = inv.getArgument(0);
@@ -53,24 +50,22 @@ class TaskTemplateServiceTest {
           return t;
         });
 
-    // when
     TaskTemplate saved = taskTemplateService.createTemplate(
-        10L, "CLEANING", java.util.Collections.singletonList("SUNDAY")
+        10L, "CLEANING", java.util.Collections.singletonList("SUNDAY"), true
     );
 
-    // then
     assertThat(saved.getId()).isEqualTo(100L);
     assertThat(saved.getGroupId()).isEqualTo(10L);
     assertThat(saved.getCategory()).isEqualTo("CLEANING");
+    assertThat(saved.isRandomEnabled()).isTrue();
 
-    // addRepeatDay가 1번 호출되었는지 확인 (반환값은 안 써서 stubbing 불필요)
     verify(repeatDayService, times(1))
-        .addRepeatDay(eq(100L), any(com.zero.cohousesever.tasks.dto.repeat.RepeatDayRequest.class));
+        .addRepeatDay(eq(100L), any(RepeatDayRequest.class));
   }
 
   @Test
-  @DisplayName("템플릿 생성 - 여러 요일")
-  void createTemplate_multiDays() {
+  @DisplayName("템플릿 생성 - 여러 요일이면 addRepeatDay N회 호출 + randomEnabled=false")
+  void createTemplate_multiDays_randomOff() {
     when(taskTemplateRepository.save(any(TaskTemplate.class)))
         .thenAnswer(inv -> {
           TaskTemplate t = inv.getArgument(0);
@@ -79,14 +74,13 @@ class TaskTemplateServiceTest {
         });
 
     var days = java.util.Arrays.asList("SUNDAY", "TUESDAY", "FRIDAY");
-
-    TaskTemplate saved = taskTemplateService.createTemplate(10L, "CLEANING", days);
+    TaskTemplate saved = taskTemplateService.createTemplate(10L, "CLEANING", days, false);
 
     assertThat(saved.getId()).isEqualTo(200L);
+    assertThat(saved.isRandomEnabled()).isFalse();
     verify(repeatDayService, times(3))
-        .addRepeatDay(eq(200L), any(com.zero.cohousesever.tasks.dto.repeat.RepeatDayRequest.class));
+        .addRepeatDay(eq(200L), any(RepeatDayRequest.class));
   }
-
 
   @Test
   @DisplayName("템플릿 수정 - 존재하면 카테고리 변경")
@@ -102,13 +96,14 @@ class TaskTemplateServiceTest {
     verify(taskTemplateRepository).save(found);
   }
 
-//  @Test
-//  @DisplayName("템플릿 수정 - 없으면 예외")
-//  void updateTemplate_notFound() {
-//    when(taskTemplateRepository.findById(999L)).thenReturn(Optional.empty());
-//    assertThatThrownBy(() -> taskTemplateService.updateTemplate(999L, "ANY"))
-//        .isInstanceOf(EntityNotFoundException.class);
-//  }
+  @Test
+  @DisplayName("템플릿 수정 - 없으면 CustomException(TEMPLATE_NOT_FOUND)")
+  void updateTemplate_notFound() {
+    when(taskTemplateRepository.findById(999L)).thenReturn(Optional.empty());
+    assertThatThrownBy(() -> taskTemplateService.updateTemplate(999L, "ANY"))
+        .isInstanceOf(CustomException.class)
+        .extracting("errorCode").isEqualTo(ErrorCode.TEMPLATE_NOT_FOUND);
+  }
 
   @Test
   @DisplayName("템플릿 삭제 - 존재 확인 후 삭제")
@@ -118,11 +113,12 @@ class TaskTemplateServiceTest {
     verify(taskTemplateRepository).deleteById(11L);
   }
 
-//  @Test
-//  @DisplayName("템플릿 삭제 - 없으면 예외")
-//  void deleteTemplate_notFound() {
-//    when(taskTemplateRepository.existsById(77L)).thenReturn(false);
-//    assertThatThrownBy(() -> taskTemplateService.deleteTemplate(77L))
-//        .isInstanceOf(EntityNotFoundException.class);
-//  }
+  @Test
+  @DisplayName("템플릿 삭제 - 없으면 CustomException(TEMPLATE_NOT_FOUND)")
+  void deleteTemplate_notFound() {
+    when(taskTemplateRepository.existsById(77L)).thenReturn(false);
+    assertThatThrownBy(() -> taskTemplateService.deleteTemplate(77L))
+        .isInstanceOf(CustomException.class)
+        .extracting("errorCode").isEqualTo(ErrorCode.TEMPLATE_NOT_FOUND);
+  }
 }
