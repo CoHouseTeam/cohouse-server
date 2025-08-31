@@ -19,8 +19,6 @@ import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,7 +49,7 @@ public class SettlementService {
     /**
      * 정산 등록
      */
-    public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request) {
+    public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request, MultipartFile file) throws IOException {
         Member payer = memberRepository.findById(payerId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
@@ -83,6 +81,10 @@ public class SettlementService {
 
         settlement.setSettlementParticipants(settlementParticipants);
         Settlement savedSettlement = settlementRepository.save(settlement);
+
+        if (file != null && !file.isEmpty()) {
+            updateReceiptImage(payerId, file, group.getId(), savedSettlement.getId());
+        }
 
         SettlementHistory history = SettlementHistory.builder()
                 .settlement(savedSettlement)
@@ -286,11 +288,32 @@ public class SettlementService {
     }
 
     /**
+     * OCR 처리를 위한 임시 이미지 업로드
+     */
+    public FileUploadResponse extractAmountFromTempReceipt(MultipartFile file) {
+        try {
+            s3Service.validateImageFile(file);
+
+            OcrResult ocrResult = processOCR(file);
+
+            return FileUploadResponse.builder()
+                    .settlementAmount(ocrResult.getAmount())
+                    .ocrSuccess(ocrResult.isSuccess())
+                    .build();
+        } catch (Exception e) {
+            return FileUploadResponse.builder()
+                    .settlementAmount(null)
+                    .ocrSuccess(false)
+                    .build();
+        }
+    }
+
+    /**
      * 영수증 이미지 업로드/업데이트
      * - 기존 이미지 존재하지 않을 시 새 이미지 업로드
      * - 기존 이미지 존재 시 기존 이미지 삭제 후 업로드
      */
-    public FileUploadResponse uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+    public FileUploadResponse updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
         Settlement settlement = findSettlementOrThrow(settlementId);
         Member member = findMemberOrThrow(memberId);
 
@@ -308,10 +331,12 @@ public class SettlementService {
         String dirName = String.format("groups/%d/settlements/%d/receipt", groupId, settlementId);
         String imageUrl = s3Service.uploadFile(file, dirName);
 
-        settlement.setImageUrl(imageUrl);
-        settlementRepository.save(settlement);
-
-        OcrResult ocrResult = processOCR(file, settlement);
+        OcrResult ocrResult = processOCR(file);
+        if (ocrResult.isSuccess()) {
+            settlement.setSettlementAmount(ocrResult.getAmount());
+            settlement.setImageUrl(imageUrl);
+            settlementRepository.save(settlement);
+        }
 
         FileUploadResponse response = FileUploadResponse.builder()
                 .imageUrl(settlement.getImageUrl())
@@ -322,19 +347,16 @@ public class SettlementService {
         return response;
     }
 
-    private OcrResult processOCR(MultipartFile file, Settlement settlement) {
+    private OcrResult processOCR(MultipartFile file) {
         try {
             Long amount = tesseractOcrService.extractAmountFromReceipt(file);
-
-            // OCR로 금액을 성공적으로 추출했을 때만 금액 업데이트
             if (amount != null) {
-                settlement.setSettlementAmount(amount);
                 return new OcrResult(amount, true);
             }
         } catch (Exception e) {
             log.warn("OCR failed: {}", e.getMessage());
         }
-        return new OcrResult(settlement.getSettlementAmount(), false);
+        return new OcrResult(null, false);
     }
 
     /**

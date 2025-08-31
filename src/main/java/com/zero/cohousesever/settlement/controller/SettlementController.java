@@ -1,5 +1,7 @@
 package com.zero.cohousesever.settlement.controller;
 
+import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.file.dto.FileUploadResponse;
 import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.member.security.CustomUserDetails;
@@ -35,10 +37,11 @@ public class SettlementController {
      */
     @PostMapping
     public ResponseEntity<SettlementResponse> createSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                               @RequestBody CreateSettlementRequest request) {
+                                                               @RequestBody CreateSettlementRequest request,
+                                                               @RequestParam("file") MultipartFile file) throws IOException {
         Long payerId = userDetails.getId();
         System.out.println(payerId);
-        SettlementResponse settlementResponse = settlementService.createSettlement(payerId, request);
+        SettlementResponse settlementResponse = settlementService.createSettlement(payerId, request, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(settlementResponse);
     }
 
@@ -108,19 +111,32 @@ public class SettlementController {
     }
 
     /**
-     * 영수증 이미지 업로드/업데이트
+     * 정산 등록 시 금액 추출을 위한 OCR 처리
+     */
+    @PostMapping("/ocr/receipt")
+    public ResponseEntity<FileUploadResponse> extractAmountFromTempReceipt(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam("file") MultipartFile file) {
+
+        if (userDetails == null) {
+            throw new CustomException(ErrorCode.AUTHENTICATION_REQUIRED);
+        }
+        return ResponseEntity.ok(settlementService.extractAmountFromTempReceipt(file));
+    }
+
+    /**
+     * 영수증 이미지 업데이트
      * - 기존 이미지 존재하지 않을 시 새 이미지 업로드
      * - 기존 이미지 존재 시 기존 이미지 삭제 후 업로드
      */
     @PostMapping("/{settlementId}/receipt")
-    public ResponseEntity<FileUploadResponse> uploadReceiptImage(
+    public ResponseEntity<FileUploadResponse> updateReceiptImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam Long groupId,
             @PathVariable Long settlementId,
             @RequestParam("file") MultipartFile file) throws IOException {
 
-        // 서비스 메서드 내부에서 이미지 검증 수행
-        FileUploadResponse response = settlementService.uploadReceiptImage(userDetails.getId(), file, groupId, settlementId);
+        FileUploadResponse response = settlementService.updateReceiptImage(userDetails.getId(), file, groupId, settlementId);
         return ResponseEntity.ok(response);
     }
 

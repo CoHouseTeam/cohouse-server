@@ -95,6 +95,9 @@ public enum ErrorCode {
     FILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 이미지 파일이 존재합니다. 삭제 후 재업로드 해주세요."),
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드 중 오류가 발생했습니다."),
 
+    // 접근 권한 관련 오류
+    AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
+
     // 서버 오류
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 
