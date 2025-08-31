@@ -7,7 +7,8 @@ ENV TESSDATA_PREFIX=/usr/share/tessdata
 
 # Tesseract OCR 설치
 RUN yum update -y && \
-    yum install -y epel-release && \
+    yum install -y amazon-linux-extras && \
+    amazon-linux-extras enable epel && \
     yum install -y tesseract tesseract-devel && \
     yum clean all
 
