@@ -2,6 +2,7 @@ package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final GroupMemberRepository groupMemberRepository;
 
     // 페이지네이션 기본 상수
     private static final int DEFAULT_PAGE = 0;
@@ -62,8 +64,14 @@ public class PostService {
     /**
      * 게시글 작성
      * - 작성자는 currentMemberId 사용
+     * - 공지는 그룹장만 작성가능
      */
     public PostResponse createPost(PostRequest request, Long currentMemberId) {
+
+        if (PostType.ANNOUNCEMENT.equals(request.getType()) &&
+                !groupMemberRepository.existsByGroupIdAndMemberIdAndIsLeaderTrue(request.getGroupId(), currentMemberId)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_ANNOUNCEMENT);
+        }
 
         PostColor color = (request.getColor() != null) ? request.getColor() : PostColor.GRAY;
 
@@ -100,7 +108,7 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        if (post.getStatus() != PostStatus.ACTIVE) {
+        if (!PostStatus.ACTIVE.equals(post.getStatus())) {
             throw new CustomException(ErrorCode.POST_ALREADY_DELETED);
         }
         if (!post.getMemberId().equals(currentUserId)) {
@@ -133,7 +141,7 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        if (post.getStatus() != PostStatus.ACTIVE) {
+        if (!PostStatus.ACTIVE.equals(post.getStatus())) {
             throw new CustomException(ErrorCode.POST_ALREADY_DELETED);
         }
         if (!post.getMemberId().equals(currentUserId)) {
