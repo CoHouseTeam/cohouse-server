@@ -29,6 +29,9 @@ public enum ErrorCode {
     NOT_GROUP_MEMBER(HttpStatus.UNAUTHORIZED, "해당 그룹 소속이 아닙니다."),
     INVITE_CODE_INVALID(HttpStatus.BAD_REQUEST, "초대 코드가 잘못되었거나 만료되었습니다."),
     ALREADY_IN_GROUP(HttpStatus.BAD_REQUEST, "이미 소속된 그룹이 있습니다."),
+    UNSETTLED_SETTLEMENT_EXISTS(HttpStatus.CONFLICT, "아직 정산하지 않은 정산 내역이 남아있습니다."),
+    GROUP_LEADER_LEAVE_FORBIDDEN(HttpStatus.FORBIDDEN, "그룹장은 탈퇴 요청을 할 수 없습니다."),
+    GROUP_MEMBERS_LEFT_IN_GROUP(HttpStatus.CONFLICT, "그룹에 아직 그룹 멤버가 남아있습니다."),
 
     // 할일 관련 오류
     TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 템플릿을 찾을 수 없습니다."),
@@ -57,6 +60,8 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
     POST_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 게시글입니다."),
     UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "본인 게시글만 수정/삭제할 수 있습니다."),
+    UNAUTHORIZED_ANNOUNCEMENT(HttpStatus.FORBIDDEN, "공지 작성 권한이 없습니다. (그룹장 전용)"),
+
     // 정산 관련 오류
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 정산 정보를 찾을 수 없습니다."),
     SETTLEMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 정산 내역입니다."),

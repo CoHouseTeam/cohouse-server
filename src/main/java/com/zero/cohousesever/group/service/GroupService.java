@@ -102,6 +102,26 @@ public class GroupService {
         return GroupSummary.fromEntity(saved);
     }
 
+    @Transactional
+    public void deleteGroup(Long memberId, Long groupId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+
+        if (groupMemberRepository.countByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE) > 1) {
+            throw new CustomException(GROUP_MEMBERS_LEFT_IN_GROUP);
+        }
+
+        GroupMember leader = groupMemberRepository.findByGroupIdAndStatusAndIsLeaderTrue(groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        if (!Objects.equals(memberId, leader.getMember().getId())) {
+            throw new CustomException(NOT_GROUP_LEADER);
+        }
+
+        group.removeMember(leader);
+        group.updateStatus(GroupStatus.INACTIVE);
+    }
+
     public GroupInviteDto groupInvite(Long memberId, Long groupId) {
 
         GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId)

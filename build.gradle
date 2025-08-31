@@ -28,11 +28,15 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-    implementation 'software.amazon.awssdk:s3:2.20.0'
+
+    implementation ('software.amazon.awssdk:s3:2.20.0') {
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
 
     // Tesseract Java 래퍼 라이브러리
-    implementation 'net.sourceforge.tess4j:tess4j:5.13.0'
+    implementation ('net.sourceforge.tess4j:tess4j:5.13.0') {
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
     // 이미지 전처리 등 OpenCV 자바포함 라이브러리
     implementation 'org.bytedeco:javacv-platform:1.5.10'
 

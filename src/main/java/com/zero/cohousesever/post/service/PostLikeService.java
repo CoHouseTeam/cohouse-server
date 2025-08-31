@@ -19,6 +19,7 @@ public class PostLikeService {
     /**
      * 좋아요 상태 업데이트 (isLiked=true: 추가 / false: 취소)
      */
+    @Transactional
     public PostLikeToggleResponse updateLikeStatus(Long postId, Long memberId) {
 
         if (postLikeRepository.existsByPostIdAndMemberId(postId, memberId)) {
@@ -32,11 +33,10 @@ public class PostLikeService {
                     .build();
         }
 
-        //FIXME null 부분 수정 필요 @박홍준
         try {
             PostLike like = PostLike.builder()
-                    .post(null)
-                    .member(null)
+                    .postId(postId)
+                    .memberId(memberId)
                     .build();
 
             postLikeRepository.saveAndFlush(like);

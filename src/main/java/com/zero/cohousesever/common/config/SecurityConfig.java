@@ -1,7 +1,6 @@
-package com.zero.cohousesever.member.security;
+package com.zero.cohousesever.common.config;
 
-import com.zero.cohousesever.member.security.oauth2.CustomOAuth2UserService;
-import com.zero.cohousesever.member.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.zero.cohousesever.member.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,8 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomOAuth2UserService oAuth2UserService;
-    private final OAuth2AuthenticationSuccessHandler successHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -36,25 +33,15 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/**", // TODO: 실제 배포시 제거
-                                "/members/signup",
-                                "/members/check/**",
-                                "/members/login",
-                                "/members/forgot-password",
-                                "/members/reset-password",
-                                "/members/oauth2/**",
-                                "/members/oauth2/callback/**"
+                                "/**", // TODO: 최종 배포 전에 제거할 것
+                                "/api/members/signup",
+                                "/api/members/check/**",
+                                "/api/members/login",
+                                "/api/members/forgot-password",
+                                "/api/members/reset-password",
+                                "/api/members/oauth2/**"
                         ).permitAll()
                         .anyRequest().authenticated()
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(config ->
-                                config.baseUri("/members/oauth2"))
-                        .redirectionEndpoint(config ->
-                                config.baseUri("/members/oauth2/callback/*"))
-                        .userInfoEndpoint(config ->
-                                config.userService(oAuth2UserService))
-                        .successHandler(successHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

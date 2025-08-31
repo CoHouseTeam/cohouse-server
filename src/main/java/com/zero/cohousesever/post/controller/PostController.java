@@ -43,6 +43,7 @@ public class PostController {
     /**
      * 게시글 작성
      * - 작성자는 로그인 사용자(principal.id)
+     * - 공지는 그룹장만 작성가능
      */
     @PostMapping
     public ResponseEntity<PostResponse> createPost(

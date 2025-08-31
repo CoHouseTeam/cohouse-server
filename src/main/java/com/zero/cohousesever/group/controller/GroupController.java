@@ -8,8 +8,9 @@ import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestReasonDto;
-import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestRespondDto;
+import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestStatusDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestSummary;
+import com.zero.cohousesever.group.service.GroupLeaveService;
 import com.zero.cohousesever.group.service.GroupService;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.List;
 public class GroupController {
 
     private final GroupService groupService;
+    private final GroupLeaveService groupLeaveService;
 
     // 그룹 생성
     @PostMapping
@@ -67,10 +69,14 @@ public class GroupController {
     // 그룹 해체
     @DeleteMapping("/{groupId}")
     public ResponseEntity<Void> deleteGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        groupService.deleteGroup(memberId, groupId);
+
+        return ResponseEntity.noContent().build();
     }
 
     // 그룹 초대 코드 발급
@@ -178,11 +184,15 @@ public class GroupController {
     // 그룹 탈퇴 요청
     @PostMapping("/{groupId}/leave-requests")
     public ResponseEntity<LeaveRequestSummary> createGroupLeaveRequests(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long groupId,
             @RequestBody LeaveRequestReasonDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        LeaveRequestSummary responseDto = groupLeaveService.requestGroupLeave(memberId, groupId, requestDto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     // 그룹 탈퇴 승인(그룹장)
@@ -190,7 +200,7 @@ public class GroupController {
     public ResponseEntity<LeaveRequestSummary> approveGroupLeaveRequest(
             @PathVariable Long groupId,
             @PathVariable Long leaveRequestId,
-            @RequestBody LeaveRequestRespondDto requestDto
+            @RequestBody LeaveRequestStatusDto requestDto
     ) {
 
         return ResponseEntity.ok().build();
