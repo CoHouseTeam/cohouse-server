@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - develop
-      - 199-temp-ocr-receipt-upload
+      - feature/199-temp-ocr-receipt-upload
 
 jobs:
   build-and-deploy:
