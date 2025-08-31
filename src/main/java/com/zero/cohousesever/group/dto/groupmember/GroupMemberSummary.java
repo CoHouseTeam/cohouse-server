@@ -2,6 +2,7 @@ package com.zero.cohousesever.group.dto.groupmember;
 
 import com.zero.cohousesever.group.entity.GroupMember;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
+import com.zero.cohousesever.member.entity.Member;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -20,16 +21,21 @@ public class GroupMemberSummary {
     private LocalDateTime joinedAt;
     private LocalDateTime leavedAt;
 
+    private String profileImageUrl; // 프론트엔드 요청
+
     public static GroupMemberSummary fromEntity(GroupMember groupMember) {
+        Member member = groupMember.getMember();
+
         return GroupMemberSummary.builder()
                 .id(groupMember.getId())
                 .groupId(groupMember.getGroup().getId())
-                .memberId(groupMember.getMember().getId())
+                .memberId(member.getId())
                 .isLeader(groupMember.getIsLeader())
                 .nickname(groupMember.getNickname())
                 .status(groupMember.getStatus())
                 .joinedAt(groupMember.getJoinedAt())
                 .leavedAt(groupMember.getLeavedAt())
+                .profileImageUrl(member.getProfileImageUrl())
                 .build();
     }
 }
