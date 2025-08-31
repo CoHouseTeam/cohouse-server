@@ -63,9 +63,10 @@ jobs:
           command_timeout: 10m
           script: |
             set -e  # 오류 발생 시 스크립트 종료
+            sudo docker-compose stop nginx app
+            sudo docker-compose rm -f nginx app
             sudo docker-compose pull nginx app
             sudo docker-compose up -d nginx app
-            sudo docker image prune -f
 #            sudo docker-compose down || true
 #            sudo docker-compose pull
 #            sudo docker-compose up -d
