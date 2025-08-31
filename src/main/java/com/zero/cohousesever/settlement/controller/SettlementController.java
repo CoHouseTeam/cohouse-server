@@ -38,7 +38,7 @@ public class SettlementController {
     @PostMapping
     public ResponseEntity<SettlementResponse> createSettlement(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                @RequestBody CreateSettlementRequest request,
-                                                               @RequestParam("file") MultipartFile file) throws IOException {
+                                                               @RequestParam(name = "file", required = false) MultipartFile file) throws IOException {
         Long payerId = userDetails.getId();
         System.out.println(payerId);
         SettlementResponse settlementResponse = settlementService.createSettlement(payerId, request, file);

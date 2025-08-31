@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -49,15 +50,15 @@ public class SettlementService {
     /**
      * 정산 등록
      */
+    @Transactional
     public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request, MultipartFile file) throws IOException {
-        Member payer = memberRepository.findById(payerId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        validateSettlementCreation(payerId, request);
 
+        Member payer = findMemberOrThrow(payerId);
         Group group = groupMemberRepository
                 .findByMemberIdAndStatus(payerId, GroupMemberStatus.ACTIVE)
                 .map(GroupMember::getGroup)
                 .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
-
         Settlement settlement = Settlement.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -69,17 +70,8 @@ public class SettlementService {
                 .isEqualDistribution(request.isEqualDistribution())
                 .build();
 
-        Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
-        allParticipantIds.add(payerId); // 결제자 포함
-
-        List<SettlementParticipant> settlementParticipants = new ArrayList<>();
-        if (request.isEqualDistribution()) {
-            settlementParticipants = createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
-        } else {
-            settlementParticipants = createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
-        }
-
-        settlement.setSettlementParticipants(settlementParticipants);
+        List<SettlementParticipant> participants = processSettlementParticipants(settlement, request, payerId);
+        settlement.setSettlementParticipants(participants);
         Settlement savedSettlement = settlementRepository.save(settlement);
 
         if (file != null && !file.isEmpty()) {
@@ -96,6 +88,49 @@ public class SettlementService {
         settlementHistoryRepository.save(history);
 
         return SettlementResponse.fromEntity(savedSettlement);
+    }
+
+    private List<SettlementParticipant> processSettlementParticipants(Settlement settlement, CreateSettlementRequest request, Long payerId) {
+        Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
+        allParticipantIds.add(payerId); // 결제자 포함
+
+        // 참가자들이 모두 유효한 멤버인지 검증
+        validateParticipants(allParticipantIds);
+
+        if (request.isEqualDistribution()) {
+            return createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
+        } else {
+            return createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
+        }
+    }
+
+    // 정산 생성 검증
+    private void validateSettlementCreation(Long payerId, CreateSettlementRequest request) {
+        if (payerId == null) {
+            throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+        }
+
+        if (request.getSettlementAmount() == null || request.getSettlementAmount() <= 0) {
+            throw new CustomException(ErrorCode.INVALID_SETTLEMENT_AMOUNT);
+        }
+
+        if (request.getParticipantIds() == null || request.getParticipantIds().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_PARTICIPANT_COUNT);
+        }
+
+        // 수동 분배 시 추가 검증
+        if (!request.isEqualDistribution() &&
+                (request.getManualShares() == null || request.getManualShares().isEmpty())) {
+            throw new CustomException(ErrorCode.INVALID_MANUAL_DISTRIBUTION);
+        }
+    }
+
+    private void validateParticipants(Set<Long> participantIds) {
+        for (Long participantId : participantIds) {
+            if (!memberRepository.existsById(participantId)) {
+                throw new CustomException(ErrorCode.PARTICIPANT_NOT_FOUND);
+            }
+        }
     }
 
     // 균등 분배 참여자 생성 메서드
