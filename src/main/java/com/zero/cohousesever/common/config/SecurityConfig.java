@@ -33,7 +33,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/**",
+                                "/**", // TODO: 최종 배포 전에 제거할 것
                                 "/api/members/signup",
                                 "/api/members/check/**",
                                 "/api/members/login",
