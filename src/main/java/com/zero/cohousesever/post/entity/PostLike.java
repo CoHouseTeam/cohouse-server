@@ -1,6 +1,7 @@
 package com.zero.cohousesever.post.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,10 +28,10 @@ import lombok.*;
 )
 public class PostLike extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "post_id",nullable = false)
     private Long postId;
 
-    @Column(nullable = false)
+    @Column(name = "member_id", nullable = false)
     private Long memberId;
 
 }
