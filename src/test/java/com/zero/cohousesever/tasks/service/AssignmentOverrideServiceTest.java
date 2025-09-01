@@ -37,6 +37,7 @@ class AssignmentOverrideServiceTest {
   @Mock GroupMemberRepository groupMemberRepo;
 
   @InjectMocks AssignmentOverrideService service;
+  @Mock AssignmentOverrideHistoryService overrideHistoryService;
 
   private TaskTemplate tpl(long tid, long gid) {
     TaskTemplate t = TaskTemplate.builder().groupId(gid).build();

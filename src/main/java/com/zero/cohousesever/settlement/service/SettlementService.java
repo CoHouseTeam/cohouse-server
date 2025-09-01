@@ -19,13 +19,12 @@ import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -51,15 +50,15 @@ public class SettlementService {
     /**
      * 정산 등록
      */
-    public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request) {
-        Member payer = memberRepository.findById(payerId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    @Transactional
+    public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request, MultipartFile file) throws IOException {
+        validateSettlementCreation(payerId, request);
 
+        Member payer = findMemberOrThrow(payerId);
         Group group = groupMemberRepository
                 .findByMemberIdAndStatus(payerId, GroupMemberStatus.ACTIVE)
                 .map(GroupMember::getGroup)
                 .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
-
         Settlement settlement = Settlement.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -71,18 +70,13 @@ public class SettlementService {
                 .isEqualDistribution(request.isEqualDistribution())
                 .build();
 
-        Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
-        allParticipantIds.add(payerId); // 결제자 포함
-
-        List<SettlementParticipant> settlementParticipants = new ArrayList<>();
-        if (request.isEqualDistribution()) {
-            settlementParticipants = createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
-        } else {
-            settlementParticipants = createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
-        }
-
-        settlement.setSettlementParticipants(settlementParticipants);
+        List<SettlementParticipant> participants = processSettlementParticipants(settlement, request, payerId);
+        settlement.setSettlementParticipants(participants);
         Settlement savedSettlement = settlementRepository.save(settlement);
+
+        if (file != null && !file.isEmpty()) {
+            updateReceiptImage(payerId, file, group.getId(), savedSettlement.getId());
+        }
 
         SettlementHistory history = SettlementHistory.builder()
                 .settlement(savedSettlement)
@@ -94,6 +88,49 @@ public class SettlementService {
         settlementHistoryRepository.save(history);
 
         return SettlementResponse.fromEntity(savedSettlement);
+    }
+
+    private List<SettlementParticipant> processSettlementParticipants(Settlement settlement, CreateSettlementRequest request, Long payerId) {
+        Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
+        allParticipantIds.add(payerId); // 결제자 포함
+
+        // 참가자들이 모두 유효한 멤버인지 검증
+        validateParticipants(allParticipantIds);
+
+        if (request.isEqualDistribution()) {
+            return createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
+        } else {
+            return createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
+        }
+    }
+
+    // 정산 생성 검증
+    private void validateSettlementCreation(Long payerId, CreateSettlementRequest request) {
+        if (payerId == null) {
+            throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
+        }
+
+        if (request.getSettlementAmount() == null || request.getSettlementAmount() <= 0) {
+            throw new CustomException(ErrorCode.INVALID_SETTLEMENT_AMOUNT);
+        }
+
+        if (request.getParticipantIds() == null || request.getParticipantIds().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_PARTICIPANT_COUNT);
+        }
+
+        // 수동 분배 시 추가 검증
+        if (!request.isEqualDistribution() &&
+                (request.getManualShares() == null || request.getManualShares().isEmpty())) {
+            throw new CustomException(ErrorCode.INVALID_MANUAL_DISTRIBUTION);
+        }
+    }
+
+    private void validateParticipants(Set<Long> participantIds) {
+        for (Long participantId : participantIds) {
+            if (!memberRepository.existsById(participantId)) {
+                throw new CustomException(ErrorCode.PARTICIPANT_NOT_FOUND);
+            }
+        }
     }
 
     // 균등 분배 참여자 생성 메서드
@@ -286,11 +323,32 @@ public class SettlementService {
     }
 
     /**
+     * OCR 처리를 위한 임시 이미지 업로드
+     */
+    public FileUploadResponse extractAmountFromTempReceipt(MultipartFile file) {
+        try {
+            s3Service.validateImageFile(file);
+
+            OcrResult ocrResult = processOCR(file);
+
+            return FileUploadResponse.builder()
+                    .settlementAmount(ocrResult.getAmount())
+                    .ocrSuccess(ocrResult.isSuccess())
+                    .build();
+        } catch (Exception e) {
+            return FileUploadResponse.builder()
+                    .settlementAmount(null)
+                    .ocrSuccess(false)
+                    .build();
+        }
+    }
+
+    /**
      * 영수증 이미지 업로드/업데이트
      * - 기존 이미지 존재하지 않을 시 새 이미지 업로드
      * - 기존 이미지 존재 시 기존 이미지 삭제 후 업로드
      */
-    public FileUploadResponse uploadReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
+    public FileUploadResponse updateReceiptImage(Long memberId, MultipartFile file, Long groupId, Long settlementId) throws IOException {
         Settlement settlement = findSettlementOrThrow(settlementId);
         Member member = findMemberOrThrow(memberId);
 
@@ -308,10 +366,12 @@ public class SettlementService {
         String dirName = String.format("groups/%d/settlements/%d/receipt", groupId, settlementId);
         String imageUrl = s3Service.uploadFile(file, dirName);
 
-        settlement.setImageUrl(imageUrl);
-        settlementRepository.save(settlement);
-
-        OcrResult ocrResult = processOCR(file, settlement);
+        OcrResult ocrResult = processOCR(file);
+        if (ocrResult.isSuccess()) {
+            settlement.setSettlementAmount(ocrResult.getAmount());
+            settlement.setImageUrl(imageUrl);
+            settlementRepository.save(settlement);
+        }
 
         FileUploadResponse response = FileUploadResponse.builder()
                 .imageUrl(settlement.getImageUrl())
@@ -322,19 +382,16 @@ public class SettlementService {
         return response;
     }
 
-    private OcrResult processOCR(MultipartFile file, Settlement settlement) {
+    private OcrResult processOCR(MultipartFile file) {
         try {
             Long amount = tesseractOcrService.extractAmountFromReceipt(file);
-
-            // OCR로 금액을 성공적으로 추출했을 때만 금액 업데이트
             if (amount != null) {
-                settlement.setSettlementAmount(amount);
                 return new OcrResult(amount, true);
             }
         } catch (Exception e) {
             log.warn("OCR failed: {}", e.getMessage());
         }
-        return new OcrResult(settlement.getSettlementAmount(), false);
+        return new OcrResult(null, false);
     }
 
     /**

@@ -2,10 +2,7 @@ package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
-import com.zero.cohousesever.member.dto.auth.JwtTokenResponseDto;
-import com.zero.cohousesever.member.dto.auth.LoginRequestDto;
-import com.zero.cohousesever.member.dto.auth.RefreshRequestDto;
-import com.zero.cohousesever.member.dto.auth.SignupRequestDto;
+import com.zero.cohousesever.member.dto.auth.*;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
@@ -102,5 +99,15 @@ public class AuthService {
         // 로그아웃 시 액세스 토큰은 프론트에서 폐기
         // 백엔드는 리프레시 토큰만 폐기
         refreshTokenService.deleteRefreshToken(memberId);
+    }
+
+    public MyInfoDto getEmailAndName(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
+
+        return MyInfoDto.builder()
+                .email(member.getEmail())
+                .name(member.getName())
+                .build();
     }
 }

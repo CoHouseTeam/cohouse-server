@@ -6,6 +6,7 @@ import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
+import com.zero.cohousesever.group.dto.groupmember.IsLeaderDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.entity.Group;
@@ -42,6 +43,10 @@ public class GroupService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
 
+        if (groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(ALREADY_IN_GROUP);
+        }
+
         GroupMember leader = GroupMember.builder()
                 .member(member)
                 .nickname(member.getName()) // 이름을 기본 닉네임으로 사용
@@ -54,7 +59,6 @@ public class GroupService {
                 .name(groupNameDto.getGroupName())
                 .status(GroupStatus.ACTIVE)
                 .build();
-
 
         group.addMember(leader);
 
@@ -100,6 +104,26 @@ public class GroupService {
         Group saved = groupRepository.save(group);
 
         return GroupSummary.fromEntity(saved);
+    }
+
+    @Transactional
+    public void deleteGroup(Long memberId, Long groupId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(GROUP_NOT_FOUND));
+
+        if (groupMemberRepository.countByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE) > 1) {
+            throw new CustomException(GROUP_MEMBERS_LEFT_IN_GROUP);
+        }
+
+        GroupMember leader = groupMemberRepository.findByGroupIdAndStatusAndIsLeaderTrue(groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        if (!Objects.equals(memberId, leader.getMember().getId())) {
+            throw new CustomException(NOT_GROUP_LEADER);
+        }
+
+        group.removeMember(leader);
+        group.updateStatus(GroupStatus.INACTIVE);
     }
 
     public GroupInviteDto groupInvite(Long memberId, Long groupId) {
@@ -208,6 +232,15 @@ public class GroupService {
         return LeaderTransferResponseDto.builder()
                 .previousLeaderId(prevLeader.getId())
                 .newLeaderId(newLeader.getId())
+                .build();
+    }
+
+    public IsLeaderDto getIsLeader(Long memberId, Long groupId) {
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        return IsLeaderDto.builder()
+                .isLeader(groupMember.getIsLeader())
                 .build();
     }
 }

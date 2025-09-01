@@ -29,6 +29,9 @@ public enum ErrorCode {
     NOT_GROUP_MEMBER(HttpStatus.UNAUTHORIZED, "해당 그룹 소속이 아닙니다."),
     INVITE_CODE_INVALID(HttpStatus.BAD_REQUEST, "초대 코드가 잘못되었거나 만료되었습니다."),
     ALREADY_IN_GROUP(HttpStatus.BAD_REQUEST, "이미 소속된 그룹이 있습니다."),
+    UNSETTLED_SETTLEMENT_EXISTS(HttpStatus.CONFLICT, "아직 정산하지 않은 정산 내역이 남아있습니다."),
+    GROUP_LEADER_LEAVE_FORBIDDEN(HttpStatus.FORBIDDEN, "그룹장은 탈퇴 요청을 할 수 없습니다."),
+    GROUP_MEMBERS_LEFT_IN_GROUP(HttpStatus.CONFLICT, "그룹에 아직 그룹 멤버가 남아있습니다."),
 
     // 할일 관련 오류
     TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 템플릿을 찾을 수 없습니다."),
@@ -57,6 +60,8 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
     POST_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 게시글입니다."),
     UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "본인 게시글만 수정/삭제할 수 있습니다."),
+    UNAUTHORIZED_ANNOUNCEMENT(HttpStatus.FORBIDDEN, "공지 작성 권한이 없습니다. (그룹장 전용)"),
+
     // 정산 관련 오류
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 정산 정보를 찾을 수 없습니다."),
     SETTLEMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 정산 내역입니다."),
@@ -69,6 +74,7 @@ public enum ErrorCode {
     INVALID_MANUAL_DISTRIBUTION(HttpStatus.BAD_REQUEST, "직접 분배 금액 정보가 올바르지 않습니다."),
     EXCEED_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, "분배 금액 합이 총 정산 금액을 초과했습니다."),
     INVALID_PARTICIPANT_COUNT(HttpStatus.BAD_REQUEST, "참여자 수는 1명 이상이어야 합니다."),
+    PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 참여자가 현재 정산에 존재하지 않습니다."),
 
     // 송금 관련 오류
     PAYMENT_TRANSFER_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "송금 처리에 실패했습니다."),
@@ -89,6 +95,9 @@ public enum ErrorCode {
     FILE_SIZE_EXCEED(HttpStatus.BAD_REQUEST, "파일 크기는 1MB를 초과할 수 없습니다."),
     FILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 이미지 파일이 존재합니다. 삭제 후 재업로드 해주세요."),
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드 중 오류가 발생했습니다."),
+
+    // 접근 권한 관련 오류
+    AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
 
     // 서버 오류
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
