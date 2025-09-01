@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:$PATH"
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata
 
 WORKDIR /app
 
