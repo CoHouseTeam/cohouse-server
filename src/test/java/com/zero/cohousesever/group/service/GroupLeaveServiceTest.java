@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static com.zero.cohousesever.common.exception.ErrorCode.*;
@@ -184,5 +185,92 @@ class GroupLeaveServiceTest {
         verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE);
         verify(settlementRepository, never()).existsByIdAndStatus(any(), any());
         verify(groupLeaveRequestRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("그룹 탈퇴 요청 목록 조회 성공 테스트")
+    void getGroupLeaveList_Success() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+        ReflectionTestUtils.setField(testGroupMember, "isLeader", true);
+
+        // 추가 멤버 생성
+        Member member2 = Member.builder()
+                .name("테스트 사용자2")
+                .email("test2@example.com")
+                .password("password123")
+                .status(MemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(member2, "id", 2L);
+
+        Member member3 = Member.builder()
+                .name("테스트 사용자3")
+                .email("test3@example.com")
+                .password("password123")
+                .status(MemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(member3, "id", 3L);
+
+        // 탈퇴 요청 목록 생성
+        GroupLeaveRequest request1 = GroupLeaveRequest.builder()
+                .member(member2)
+                .group(testGroup)
+                .reason("개인 사정")
+                .status(LeaveRequestStatus.PENDING)
+                .requestedAt(LocalDateTime.now())
+                .build();
+        ReflectionTestUtils.setField(request1, "id", 1L);
+
+        GroupLeaveRequest request2 = GroupLeaveRequest.builder()
+                .member(member3)
+                .group(testGroup)
+                .reason("이사로 인한 탈퇴")
+                .status(LeaveRequestStatus.PENDING)
+                .requestedAt(LocalDateTime.now())
+                .build();
+        ReflectionTestUtils.setField(request2, "id", 2L);
+
+        List<GroupLeaveRequest> leaveRequests = List.of(request1, request2);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(memberId, groupId))
+                .thenReturn(true);
+        when(groupLeaveRequestRepository.findByGroupIdAndStatus(groupId, LeaveRequestStatus.PENDING))
+                .thenReturn(leaveRequests);
+
+        // when
+        List<LeaveRequestSummary> result = groupLeaveService.getGroupLeaveList(memberId, groupId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getMemberId()).isEqualTo(2L);
+        assertThat(result.get(0).getReason()).isEqualTo("개인 사정");
+        assertThat(result.get(0).getStatus()).isEqualTo(LeaveRequestStatus.PENDING);
+        assertThat(result.get(1).getMemberId()).isEqualTo(3L);
+        assertThat(result.get(1).getReason()).isEqualTo("이사로 인한 탈퇴");
+        assertThat(result.get(1).getStatus()).isEqualTo(LeaveRequestStatus.PENDING);
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(memberId, groupId);
+        verify(groupLeaveRequestRepository).findByGroupIdAndStatus(groupId, LeaveRequestStatus.PENDING);
+    }
+
+    @Test
+    @DisplayName("탈퇴 요청 목록 조회 시 그룹장이 아닌 경우 예외 발생 테스트")
+    void getGroupLeaveList_ThrowsException_WhenNotLeader() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(memberId, groupId))
+                .thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> groupLeaveService.getGroupLeaveList(memberId, groupId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(NOT_GROUP_LEADER.getMessage());
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(memberId, groupId);
+        verify(groupLeaveRequestRepository, never()).findByGroupIdAndStatus(any(), any());
     }
 }
