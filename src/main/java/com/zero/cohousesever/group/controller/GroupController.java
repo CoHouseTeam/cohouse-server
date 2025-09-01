@@ -5,6 +5,7 @@ import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
+import com.zero.cohousesever.group.dto.groupmember.IsLeaderDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestReasonDto;
@@ -206,5 +207,15 @@ public class GroupController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{groupId}/me/role")
+    public ResponseEntity<IsLeaderDto> getIsLeader(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId
+    ) {
+        Long memberId = userDetails.getId();
 
+        IsLeaderDto responseDto = groupService.getIsLeader(memberId, groupId);
+
+        return ResponseEntity.ok(responseDto);
+    }
 }
