@@ -27,6 +27,8 @@ public class AssignmentOverrideService {
   private final AssignmentOverrideRepository overrideRepository;
   private final TaskAssignmentRepository assignmentRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final AssignmentOverrideHistoryService overrideHistoryService;
+
 
   @Value("${board.api.url:}")
   private String boardApiUrl;
@@ -173,6 +175,9 @@ public class AssignmentOverrideService {
         overrideRepository.bulkUpdateStatusByAssignmentId(first.getId(),  OverrideStatus.REQUESTED, OverrideStatus.REJECTED, actor);
         overrideRepository.bulkUpdateStatusByAssignmentId(second.getId(), OverrideStatus.REQUESTED, OverrideStatus.REJECTED, actor);
 
+        // 히스토리 기록 추가
+        overrideHistoryService.record(r, r.getTargetId(), actor, 0L);
+
         return AssignmentOverrideResponse.from(r);
       }
 
@@ -189,6 +194,10 @@ public class AssignmentOverrideService {
       overrideRepository.bulkUpdateStatusByAssignmentId(
           a.getId(), OverrideStatus.REQUESTED, OverrideStatus.REJECTED, actor
       );
+
+      // 히스토리 기록 추가
+      overrideHistoryService.record(r, r.getTargetId(), actor, 0L);
+
       return AssignmentOverrideResponse.from(r);
     }
 
@@ -204,7 +213,6 @@ public class AssignmentOverrideService {
     List<AssignmentOverride> remainRequested =
         overrideRepository.findAllByAssignment_IdAndStatus(a.getId(), OverrideStatus.REQUESTED);
     if (remainRequested.isEmpty()) {
-      // TODO: 모두 거절된 케이스 후속 처리(게시판 알림, 히스토리 기록 등) 필요 시 여기서 수행
     }
 
     return AssignmentOverrideResponse.from(r);

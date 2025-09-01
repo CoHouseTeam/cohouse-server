@@ -39,6 +39,7 @@ class TaskAssignmentServiceTest {
   @Mock GroupMemberRepository groupMemberRepo;
 
   @InjectMocks TaskAssignmentService service;
+  @Mock TaskAssignmentHistoryService taskAssignmentHistoryService;
 
   private TaskTemplate tpl(long tid, long gid, String cat) {
     TaskTemplate t = TaskTemplate.builder()
