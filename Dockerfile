@@ -9,6 +9,7 @@ RUN apt-get update && \
     openjdk-21-jdk \
     tesseract-ocr tesseract-ocr-kor libtesseract-dev libleptonica-dev \
     libpng16-16 libjpeg-turbo8 libtiff-dev libgomp1 libarchive13 wget curl && \
+    ln -s /usr/lib/x86_64-linux-gnu/libtiff.so.5 /usr/lib/x86_64-linux-gnu/libtiff.so.6 || true && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
