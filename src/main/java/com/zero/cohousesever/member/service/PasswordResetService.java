@@ -86,14 +86,20 @@ public class PasswordResetService {
 
         String resetUrl = frontendUrl + "/reset-password?token=" + token;
         String messageBody = String.format(
-                "안녕하세요 %s님,\n\n" +
-                        "비밀번호 재설정을 요청하셨습니다.\n" +
-                        "아래 링크를 클릭하여 비밀번호를 재설정해 주세요.\n\n" +
-                        "%s\n\n" +
-                        "이 링크는 30분 후에 만료됩니다.\n" +
-                        "본인이 요청하지 않았다면 이 이메일을 무시해 주세요.\n\n" +
-                        "감사합니다.\n" +
-                        "CoHouse 팀",
+                """
+                        안녕하세요 %s님,
+                        
+                        비밀번호 재설정을 요청하셨습니다.
+                        아래 링크를 클릭하여 비밀번호를 재설정해 주세요.
+                        
+                        %s
+                        
+                        이 링크는 30분 후에 만료됩니다.
+                        본인이 요청하지 않았다면 이 이메일을 무시해 주세요.
+                        
+                        감사합니다.
+                        CoHouse 팀
+                        """,
                 name, resetUrl
         );
         message.setText(messageBody);
