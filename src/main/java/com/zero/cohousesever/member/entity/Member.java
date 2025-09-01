@@ -54,6 +54,10 @@ public class Member extends BaseEntity {
         this.alertTime = alertTime;
     }
 
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
     public void withdraw() {
         this.status = MemberStatus.INACTIVE;
     }

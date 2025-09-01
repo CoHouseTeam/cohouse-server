@@ -1,10 +1,15 @@
 package com.zero.cohousesever.tasks.service;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
+import com.zero.cohousesever.tasks.dto.assignment.UncompletedByMemberResponse;
 import com.zero.cohousesever.tasks.entity.RepeatDay;
 import com.zero.cohousesever.tasks.entity.TaskAssignment;
 import com.zero.cohousesever.tasks.entity.TaskTemplate;
@@ -21,6 +26,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import java.util.stream.Collectors.*;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +41,7 @@ public class TaskAssignmentService {
   private final TaskTemplateRepository taskTemplateRepository;
   private final RepeatDayRepository repeatDayRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final TaskAssignmentHistoryService taskAssignmentHistoryService;
 
   /**
    * 후보 중 '과거 배정 전무' 멤버를 1순위로,
@@ -121,7 +128,7 @@ public class TaskAssignmentService {
         .findByTemplate_IdAndDateBetween(req.getTemplateId(), weekFrom, weekTo)
         .stream()
         .map(TaskAssignment::getDate)
-        .collect(Collectors.toSet());
+        .collect(toSet());
 
     // 5) 담당자 결정
     Long pickedMemberId;
@@ -198,8 +205,83 @@ public class TaskAssignmentService {
     a.setStatus(status);
     TaskAssignment saved = taskAssignmentRepository.save(a);
 
+    // 히스토리 기록 추가
+    taskAssignmentHistoryService.recordStatusChange(saved);
+
     String repeatType = repeatDayRepository.existsByTaskTemplate_Id(saved.getTemplate().getId()) ? "WEEKLY" : "NONE";
     return TaskAssignmentResponse.from(saved, repeatType);
+  }
+
+  /**
+   * 이번 주 미이행 목록: 전체 or 특정 멤버
+   */
+
+  private static LocalDate[] computeThisWeekRange() {
+    LocalDate sun = LocalDate.now(KST).with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+    return new LocalDate[]{sun, sun.plusDays(6)};
+  }
+
+  public List<TaskAssignmentResponse> getUncompletedThisWeek(Long groupId, Long memberId) {
+    if (groupId == null) throw new CustomException(ErrorCode.GROUP_ID_REQUIRED);
+
+    LocalDate[] range = computeThisWeekRange();
+    LocalDate start = range[0], end = range[1];
+
+    List<TaskAssignment> list = (memberId == null)
+        ? taskAssignmentRepository.findByTemplate_GroupIdAndDateBetweenAndStatusNot(
+        groupId, start, end, AssignmentStatus.COMPLETED)
+        : taskAssignmentRepository.findByTemplate_GroupIdAndGroupMemberIdAndDateBetweenAndStatusNot(
+            groupId, memberId, start, end, AssignmentStatus.COMPLETED);
+
+    Set<Long> templateIds = list.stream().map(a -> a.getTemplate().getId()).collect(toSet());
+    Set<Long> weeklyTemplateIds = templateIds.isEmpty()
+        ? Collections.emptySet()
+        : repeatDayRepository.findTemplateIdsHavingRepeat(templateIds);
+
+    return list.stream()
+        .sorted(Comparator
+            .comparing((TaskAssignment a) -> a.getDate().getDayOfWeek().getValue() % 7)
+            .thenComparing(TaskAssignment::getDate)
+            .thenComparing(TaskAssignment::getId))
+        .map(a -> TaskAssignmentResponse.from(
+            a, weeklyTemplateIds.contains(a.getTemplate().getId()) ? "WEEKLY" : "NONE"))
+        .collect(toList());
+  }
+
+  // 이번 주 미이행을 '담당자별'로 묶어서 반환
+  public List<UncompletedByMemberResponse> getUncompletedThisWeekByMember(Long groupId) {
+    if (groupId == null) throw new CustomException(ErrorCode.GROUP_ID_REQUIRED);
+
+    LocalDate[] range = computeThisWeekRange();
+    LocalDate start = range[0], end = range[1];
+
+    List<TaskAssignment> list =
+        taskAssignmentRepository.findByTemplate_GroupIdAndDateBetweenAndStatusNot(
+            groupId, start, end, AssignmentStatus.COMPLETED);
+
+    Set<Long> templateIds = list.stream().map(a -> a.getTemplate().getId()).collect(toSet());
+    Set<Long> weeklyTemplateIds = templateIds.isEmpty()
+        ? Collections.emptySet()
+        : repeatDayRepository.findTemplateIdsHavingRepeat(templateIds);
+
+    Map<Long, List<TaskAssignmentResponse>> grouped = list.stream()
+        .sorted(Comparator
+            .comparing((TaskAssignment a) -> a.getDate().getDayOfWeek().getValue() % 7)
+            .thenComparing(TaskAssignment::getDate)
+            .thenComparing(TaskAssignment::getId))
+        .map(a -> TaskAssignmentResponse.from(
+            a, weeklyTemplateIds.contains(a.getTemplate().getId()) ? "WEEKLY" : "NONE"))
+        .collect(groupingBy(TaskAssignmentResponse::getGroupMemberId, LinkedHashMap::new, toList()));
+
+    return grouped.entrySet().stream()
+        .map(e -> UncompletedByMemberResponse.builder()
+            .groupMemberId(e.getKey())
+            .count(e.getValue().size())
+            .assignments(e.getValue())
+            .build())
+        .sorted(Comparator.comparingInt(UncompletedByMemberResponse::getCount).reversed()
+            .thenComparing(UncompletedByMemberResponse::getGroupMemberId))
+        .collect(toList());
   }
 
   /**
@@ -219,7 +301,7 @@ public class TaskAssignmentService {
         ? taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(groupId, start, end)
         : taskAssignmentRepository.findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(groupId, memberId, start, end);
 
-    Set<Long> templateIds = list.stream().map(a -> a.getTemplate().getId()).collect(Collectors.toSet());
+    Set<Long> templateIds = list.stream().map(a -> a.getTemplate().getId()).collect(toSet());
     Set<Long> weeklyTemplateIds = templateIds.isEmpty()
         ? Collections.emptySet()
         : repeatDayRepository.findTemplateIdsHavingRepeat(templateIds);
@@ -233,6 +315,6 @@ public class TaskAssignmentService {
           String repeatType = weeklyTemplateIds.contains(a.getTemplate().getId()) ? "WEEKLY" : "NONE";
           return TaskAssignmentResponse.from(a, repeatType);
         })
-        .collect(Collectors.toList());
+        .collect(toList());
   }
 }
