@@ -84,6 +84,24 @@ public class TaskController {
     }
   }
 
+  // MemberId, GroupMemberId 오류로 인한 정규화
+  private Long normalizeToMemberId(Long groupId, Long maybeMemberOrGroupMemberId) {
+    // 이미 memberId인지 빠른 체크
+    if (groupMemberRepository.existsByGroupIdAndMemberId(groupId, maybeMemberOrGroupMemberId)) {
+      return maybeMemberOrGroupMemberId; // memberId
+    }
+    // group_member.id로 역조회 → memberId 추출
+    return groupMemberRepository.findById(maybeMemberOrGroupMemberId)
+        .filter(gm -> gm.getGroup().getId().equals(groupId))
+        .map(gm -> gm.getMember().getId())
+        .orElseThrow(() -> new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND));
+  }
+
+  private List<Long> normalizeToMemberIds(Long groupId, List<Long> ids) {
+    if (ids == null) return List.of();
+    return ids.stream().map(id -> normalizeToMemberId(groupId, id)).toList();
+  }
+
   // 1. 템플릿 관련
 
   // 조회
@@ -226,20 +244,20 @@ public class TaskController {
 
     ensureLeader(user.getId(), request.getGroupId());
 
-    // 후보 멤버 전원 검증
+    // 후보와 고정 배정자만 memberId로 정규화
     if (request.getGroupMemberId() != null) {
-      for (Long mid : request.getGroupMemberId()) {
-        if (!groupMemberRepository.existsByGroupIdAndMemberId(request.getGroupId(), mid)) {
-          throw new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
-        }
-      }
+      request.setGroupMemberId(
+          normalizeToMemberIds(request.getGroupId(), request.getGroupMemberId()));
+    }
+    if (request.getFixedAssigneeId() != null) {
+      request.setFixedAssigneeId(
+          normalizeToMemberId(request.getGroupId(), request.getFixedAssigneeId()));
     }
 
     var created = taskAssignmentService.assignTaskManuallyOrRandomly(request);
     if (created == null || created.isEmpty()) return ResponseEntity.noContent().build();
     return ResponseEntity.ok(created.get(0));
   }
-
 
   // 할 일 상태 변경
   @PutMapping("/assignments/{assignmentId}")
@@ -306,6 +324,14 @@ public class TaskController {
 
     request.setRequesterId(user.getId());
 
+    // 대상자 단일/다중 정규화 (있으면)
+    if (request.getTargetId() != null) {
+      request.setTargetId(normalizeToMemberId(groupId, request.getTargetId()));
+    }
+    if (request.getTargetIds() != null && !request.getTargetIds().isEmpty()) {
+      request.setTargetIds(normalizeToMemberIds(groupId, request.getTargetIds()));
+    }
+
     var created = assignmentOverrideService.createOverrideRequests(assignmentId, request);
     return ResponseEntity.ok(created);
   }
@@ -323,7 +349,8 @@ public class TaskController {
 
     ensureMember(user.getId(), groupId);
 
-    request.setGroupMemberId(user.getId());
+    Long normalizedActorId = normalizeToMemberId(groupId, request.getActorMemberId());
+    request.setActorMemberId(normalizedActorId);
 
     var updated = assignmentOverrideService.respondToOverrideRequest(requestId, request);
     return ResponseEntity.ok(updated);

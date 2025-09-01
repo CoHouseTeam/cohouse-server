@@ -70,7 +70,7 @@ class AssignmentOverrideServiceHistoryTest {
         .thenReturn(2);
 
     AssignmentOverrideStatusUpdateRequest accept = new AssignmentOverrideStatusUpdateRequest();
-    accept.setGroupMemberId(202L);
+    accept.setActorMemberId(202L);
     accept.setStatus(OverrideStatus.ACCEPTED);
 
     var res = service.respondToOverrideRequest(55L, accept);
@@ -131,7 +131,7 @@ class AssignmentOverrideServiceHistoryTest {
 
     // 3) 202가 수락
     AssignmentOverrideStatusUpdateRequest accept = new AssignmentOverrideStatusUpdateRequest();
-    accept.setGroupMemberId(202L);
+    accept.setActorMemberId(202L);
     accept.setStatus(OverrideStatus.ACCEPTED);
 
     var res = service.respondToOverrideRequest(rowIdFor202, accept);
