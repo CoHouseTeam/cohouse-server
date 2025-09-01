@@ -9,7 +9,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
@@ -18,6 +21,9 @@ import lombok.Setter;
     uniqueConstraints = @UniqueConstraint(name="uk_assignment_date", columnNames = {"assignment_id","date"})
 )
 @Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TaskAssignmentHistory extends BaseEntity {
 
   @Column(name="assignment_id", nullable=false)

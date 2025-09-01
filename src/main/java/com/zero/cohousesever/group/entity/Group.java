@@ -42,5 +42,9 @@ public class Group extends BaseEntity {
     public void updateName(String newName) {
         this.name = newName;
     }
+
+    public void updateStatus(GroupStatus newStatus) {
+        this.status = newStatus;
+    }
 }
 

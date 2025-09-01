@@ -19,6 +19,7 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
     /**
      * 특정 게시글-회원 조합의 좋아요 레코드 삭제 (해제)
      */
+
     void deleteByPostIdAndMemberId(Long postId, Long memberId);
 
     /**
@@ -29,31 +30,18 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
     /**
      * PostLike ↔ Member 조인 후 바로 PostLikerDto로 매핑 (최신 생성순)
      */
-    //FIXME 변경 필요 @박홍준
-//    @Query("""
-//            select new com.zero.cohousesever.post.dto.postLike.PostLikerDto(
-//                     m.id,
-//                     m.name,
-//                     m.profileImageUrl
-//                   )
-//            from PostLike pl
-//              join com.zero.cohousesever.member.entity.Member m
-//                on m.id = pl.memberId
-//            where pl.postId = :postId
-//            order by pl.createdAt desc
-//            """)
-//    List<PostLikerDto> findLikerDtosByPostIdOrderByCreatedDesc(@Param("postId") Long postId);
     @Query("""
-        select new com.zero.cohousesever.post.dto.postLike.PostLikerDto(
-                 m.id,
-                 m.name,
-                 m.profileImageUrl
-               )
-        from PostLike pl
-          join pl.member m
-        where pl.post.id = :postId
-        order by pl.createdAt desc
-        """)
+            select new com.zero.cohousesever.post.dto.postLike.PostLikerDto(
+                     m.id,
+                     m.name,
+                     m.profileImageUrl
+                   )
+            from PostLike pl
+              join com.zero.cohousesever.member.entity.Member m
+                on m.id = pl.memberId
+            where pl.postId = :postId
+            order by pl.createdAt desc
+            """)
     List<PostLikerDto> findLikerDtosByPostIdOrderByCreatedDesc(@Param("postId") Long postId);
 
 }
