@@ -74,6 +74,7 @@ public enum ErrorCode {
     INVALID_MANUAL_DISTRIBUTION(HttpStatus.BAD_REQUEST, "직접 분배 금액 정보가 올바르지 않습니다."),
     EXCEED_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, "분배 금액 합이 총 정산 금액을 초과했습니다."),
     INVALID_PARTICIPANT_COUNT(HttpStatus.BAD_REQUEST, "참여자 수는 1명 이상이어야 합니다."),
+    PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 참여자가 현재 정산에 존재하지 않습니다."),
 
     // 송금 관련 오류
     PAYMENT_TRANSFER_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "송금 처리에 실패했습니다."),
@@ -94,6 +95,9 @@ public enum ErrorCode {
     FILE_SIZE_EXCEED(HttpStatus.BAD_REQUEST, "파일 크기는 1MB를 초과할 수 없습니다."),
     FILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 이미지 파일이 존재합니다. 삭제 후 재업로드 해주세요."),
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드 중 오류가 발생했습니다."),
+
+    // 접근 권한 관련 오류
+    AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
 
     // 서버 오류
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
