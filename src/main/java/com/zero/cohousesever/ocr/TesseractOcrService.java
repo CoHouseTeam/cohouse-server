@@ -19,7 +19,7 @@ public class TesseractOcrService {
         this.tesseract = new Tesseract();
         // local 테스트 경로
 //        tesseract.setDatapath("/opt/homebrew/Cellar/tesseract/5.5.1/share/tessdata/");
-        tesseract.setDatapath("/usr/share/tesseract-ocr/5/tessdata/");
+        tesseract.setDatapath("/usr/share/tesseract-ocr/4.00/tessdata/");
         tesseract.setLanguage("kor");
     }
 
