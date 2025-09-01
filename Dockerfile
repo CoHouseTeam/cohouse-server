@@ -1,7 +1,8 @@
 FROM amazoncorretto:21
 
 # Tesseract 및 의존 라이브러리 설치
-RUN yum install -y epel-release && \
+RUN amazon-linux-extras enable epel && \
+    yum clean metadata && \
     yum install -y tesseract tesseract-langpack-kor \
     leptonica libtiff libpng libjpeg gomp libarchive
 
