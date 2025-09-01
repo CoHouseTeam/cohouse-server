@@ -1,4 +1,4 @@
-FROM ubuntu:22.10
+FROM ubuntu:23.04
 
 RUN apt-get update && apt-get install -y software-properties-common && \
     add-apt-repository ppa:alex-p/tesseract-ocr-devel -y && \
