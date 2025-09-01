@@ -25,7 +25,7 @@ public class NaverOAuth2Provider implements OAuth2ProviderService {
 
     @Value("${oauth2.naver.client-id}")
     private String clientId;
-    @Value("${oauth2.naver.cilent-secret}")
+    @Value("${oauth2.naver.client-secret}")
     private String clientSecret;
 
     @Override
