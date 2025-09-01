@@ -11,6 +11,7 @@ import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentStatusUpdateRequest;
+import com.zero.cohousesever.tasks.dto.assignment.UncompletedByMemberResponse;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideRequest;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideResponse;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideStatusUpdateRequest;
@@ -263,6 +264,30 @@ public class TaskController {
     return ResponseEntity.ok(body);
   }
 
+  // 할 일 미이행 리스트
+  @GetMapping("/assignments/uncompleted")
+  public ResponseEntity<List<TaskAssignmentResponse>> getUncompletedThisWeek(
+      @AuthenticationPrincipal CustomUserDetails user,
+      @RequestParam Long groupId,
+      @RequestParam(required = false) Long memberId
+  ) {
+    ensureMember(user.getId(), groupId);
+    if (memberId != null &&
+        !groupMemberRepository.existsByGroupIdAndMemberId(groupId, memberId)) {
+      throw new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
+    }
+    return ResponseEntity.ok(taskAssignmentService.getUncompletedThisWeek(groupId, memberId));
+  }
+
+  @GetMapping("/assignments/uncompleted/by-member")
+  public ResponseEntity<List<UncompletedByMemberResponse>> getUncompletedThisWeekByMember(
+      @AuthenticationPrincipal CustomUserDetails user,
+      @RequestParam Long groupId
+  ) {
+    ensureMember(user.getId(), groupId);
+    return ResponseEntity.ok(taskAssignmentService.getUncompletedThisWeekByMember(groupId));
+  }
+
 
   // 4. 담당자 변경 요청 관련
 
@@ -307,17 +332,31 @@ public class TaskController {
   // 할일 이행 히스토리 조회
   @GetMapping("/assignments/{assignmentId}/histories")
   public ResponseEntity<List<TaskAssignmentResponse>> getTaskAssignmentHistories(
+      @AuthenticationPrincipal CustomUserDetails user,
       @PathVariable Long assignmentId
   ) {
-    return ResponseEntity.ok(Collections.emptyList()); // TODO
+    var a = taskAssignmentRepository.findById(assignmentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
+
+    Long groupId = a.getTemplate().getGroupId();
+    ensureMember(user.getId(), groupId);
+
+    return ResponseEntity.ok(taskAssignmentHistoryService.getAssignmentHistories(assignmentId));
   }
 
   // 담당자 변경 요청 히스토리 조회
   @GetMapping("/override-requests/{requestId}/histories")
   public ResponseEntity<List<AssignmentOverrideResponse>> getAssignmentOverrideHistories(
-
+      @AuthenticationPrincipal CustomUserDetails user,
+      @PathVariable Long requestId
   ) {
-    return ResponseEntity.ok(Collections.emptyList()); // TODO
+    var r = assignmentOverrideRepository.findById(requestId)
+        .orElseThrow(() -> new CustomException(ErrorCode.OVERRIDE_REQUEST_NOT_FOUND));
+
+    Long groupId = r.getAssignment().getTemplate().getGroupId();
+    ensureMember(user.getId(), groupId);
+
+    return ResponseEntity.ok(assignmentOverrideHistoryService.getOverrideHistories(requestId));
   }
 
 

@@ -28,6 +28,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
@@ -113,7 +114,7 @@ class SettlementServiceTest {
 
     @Test
     @DisplayName("정산 생성 성공 - 균등 분배")
-    void createSettlement_Success_EqualDistribution() {
+    void createSettlement_Success_EqualDistribution() throws IOException {
         // Given
         Long payerId = 1L;
         CreateSettlementRequest request = CreateSettlementRequest.builder()
@@ -139,7 +140,7 @@ class SettlementServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        SettlementResponse responseDto = settlementService.createSettlement(payerId, request);
+        SettlementResponse responseDto = settlementService.createSettlement(payerId, request, null);
 
         // Then
         assertAll("정산 생성 결과 검증",
