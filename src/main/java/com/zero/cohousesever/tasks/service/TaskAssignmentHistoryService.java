@@ -21,12 +21,11 @@ public class TaskAssignmentHistoryService {
   public void recordStatusChange(TaskAssignment a) {
     TaskAssignmentHistory h = historyRepository
         .findByAssignmentIdAndDate(a.getId(), a.getDate())
-        .orElseGet(TaskAssignmentHistory::new);
+        .orElseGet(() -> TaskAssignmentHistory.builder()
+            .assignmentId(a.getId())
+            .date(a.getDate())
+            .build());
 
-    if (h.getId() == null) {
-      h.setAssignmentId(a.getId());
-      h.setDate(a.getDate());
-    }
     h.setGroupMemberId(a.getGroupMemberId());
     h.setCategory(a.getTemplate().getCategory());
     h.setStatus(a.getStatus());
