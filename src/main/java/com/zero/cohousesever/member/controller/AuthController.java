@@ -111,4 +111,15 @@ public class AuthController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<MyInfoDto> getEmailAndName(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        MyInfoDto responseDto = authService.getEmailAndName(memberId);
+
+        return ResponseEntity.ok(responseDto);
+    }
 }
