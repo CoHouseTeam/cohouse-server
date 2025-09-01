@@ -6,6 +6,7 @@ import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
+import com.zero.cohousesever.group.dto.groupmember.IsLeaderDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.entity.Group;
@@ -228,6 +229,15 @@ public class GroupService {
         return LeaderTransferResponseDto.builder()
                 .previousLeaderId(prevLeader.getId())
                 .newLeaderId(newLeader.getId())
+                .build();
+    }
+
+    public IsLeaderDto getIsLeader(Long memberId, Long groupId) {
+        GroupMember groupMember = groupMemberRepository.findByMemberIdAndGroupIdAndStatus(memberId, groupId, GroupMemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(GROUP_MEMBER_NOT_FOUND));
+
+        return IsLeaderDto.builder()
+                .isLeader(groupMember.getIsLeader())
                 .build();
     }
 }
