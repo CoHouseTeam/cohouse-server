@@ -11,6 +11,7 @@ import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentStatusUpdateRequest;
+import com.zero.cohousesever.tasks.dto.assignment.UncompletedByMemberResponse;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideRequest;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideResponse;
 import com.zero.cohousesever.tasks.dto.override.AssignmentOverrideStatusUpdateRequest;
@@ -261,6 +262,30 @@ public class TaskController {
 
     var body = taskAssignmentService.updateAssignmentStatus(assignmentId, request.getStatus());
     return ResponseEntity.ok(body);
+  }
+
+  // 할 일 미이행 리스트
+  @GetMapping("/assignments/uncompleted")
+  public ResponseEntity<List<TaskAssignmentResponse>> getUncompletedThisWeek(
+      @AuthenticationPrincipal CustomUserDetails user,
+      @RequestParam Long groupId,
+      @RequestParam(required = false) Long memberId
+  ) {
+    ensureMember(user.getId(), groupId);
+    if (memberId != null &&
+        !groupMemberRepository.existsByGroupIdAndMemberId(groupId, memberId)) {
+      throw new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
+    }
+    return ResponseEntity.ok(taskAssignmentService.getUncompletedThisWeek(groupId, memberId));
+  }
+
+  @GetMapping("/assignments/uncompleted/by-member")
+  public ResponseEntity<List<UncompletedByMemberResponse>> getUncompletedThisWeekByMember(
+      @AuthenticationPrincipal CustomUserDetails user,
+      @RequestParam Long groupId
+  ) {
+    ensureMember(user.getId(), groupId);
+    return ResponseEntity.ok(taskAssignmentService.getUncompletedThisWeekByMember(groupId));
   }
 
 
