@@ -2,6 +2,7 @@ package com.zero.cohousesever.tasks.dto.assignment;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.zero.cohousesever.tasks.entity.TaskAssignment;
+import com.zero.cohousesever.tasks.entity.TaskAssignmentHistory;
 import com.zero.cohousesever.tasks.entity.enums.AssignmentStatus;
 import java.util.Collection;
 import java.util.List;
@@ -55,6 +56,20 @@ public class TaskAssignmentResponse {
 
   public static List<TaskAssignmentResponse> fromAll(Collection<TaskAssignment> list) {
     return list.stream().map(TaskAssignmentResponse::from).collect(Collectors.toList());
+  }
+
+
+  // 히스토리 응답 변환
+  public static TaskAssignmentResponse fromHistory(TaskAssignmentHistory h) {
+    return TaskAssignmentResponse.builder()
+        .historyId(h.getId())
+        .groupMemberId(h.getGroupMemberId())
+        .date(h.getDate().toString())
+        .status(h.getStatus())
+        .category(h.getCategory())
+        .createdAt(h.getCreatedAt() == null ? null : h.getCreatedAt().toString())
+        .updatedAt(h.getUpdatedAt() == null ? null : h.getUpdatedAt().toString())
+        .build();
   }
 
 }
