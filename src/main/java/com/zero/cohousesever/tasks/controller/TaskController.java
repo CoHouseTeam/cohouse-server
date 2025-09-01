@@ -30,7 +30,6 @@ import com.zero.cohousesever.tasks.service.TaskAssignmentHistoryService;
 import com.zero.cohousesever.tasks.service.TaskAssignmentService;
 import com.zero.cohousesever.tasks.service.TaskTemplateService;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -98,7 +97,9 @@ public class TaskController {
   }
 
   private List<Long> normalizeToMemberIds(Long groupId, List<Long> ids) {
-    if (ids == null) return List.of();
+    if (ids == null) {
+      return List.of();
+    }
     return ids.stream().map(id -> normalizeToMemberId(groupId, id)).toList();
   }
 
@@ -126,7 +127,8 @@ public class TaskController {
     ensureLeader(user.getId(), request.getGroupId());
 
     TaskTemplate saved = taskTemplateService.createTemplate(
-        request.getGroupId(), request.getCategory(), request.getRepeatDays(), request.getRandomEnabled());
+        request.getGroupId(), request.getCategory(), request.getRepeatDays(),
+        request.getRandomEnabled());
     return ResponseEntity.ok(TaskTemplateResponse.from(saved));
   }
 
@@ -158,7 +160,6 @@ public class TaskController {
     taskTemplateService.deleteTemplate(templateId);
     return ResponseEntity.noContent().build();
   }
-
 
   // 2. 반복 요일 관련
 
@@ -253,9 +254,10 @@ public class TaskController {
       request.setFixedAssigneeId(
           normalizeToMemberId(request.getGroupId(), request.getFixedAssigneeId()));
     }
-
     var created = taskAssignmentService.assignTaskManuallyOrRandomly(request);
-    if (created == null || created.isEmpty()) return ResponseEntity.noContent().build();
+    if (created == null || created.isEmpty()) {
+      return ResponseEntity.noContent().build();
+    }
     return ResponseEntity.ok(created.get(0));
   }
 
@@ -305,7 +307,6 @@ public class TaskController {
     ensureMember(user.getId(), groupId);
     return ResponseEntity.ok(taskAssignmentService.getUncompletedThisWeekByMember(groupId));
   }
-
 
   // 4. 담당자 변경 요청 관련
 
