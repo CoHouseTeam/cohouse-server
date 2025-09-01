@@ -11,6 +11,14 @@ spring:
     max-file-size: 1MB
     max-request-size: 1MB
 
+oauth2:
+  google:
+    client-id: ${OAUTH2_GOOGLE_CLIENT_ID}
+    cilent-secret: ${OAUTH2_GOOGLE_CLIENT_SECRET}
+  naver:
+    client-id: ${OAUTH2_NAVER_CLIENT_ID}
+    cilent-secret: ${OAUTH2_NAVER_CLIENT_SECRET}
+
 jwt:
   secret: ${JWT_SECRET}
   issuer: cohouse

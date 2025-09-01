@@ -49,15 +49,6 @@ public class AuthController {
         return ResponseEntity.ok(responseDto);
     }
 
-    // 소셜 로그인 요청
-    @GetMapping("/oauth2/{provider}")
-    public ResponseEntity<JwtTokenResponseDto> oauth2Login(
-            @PathVariable String provider
-    ) {
-
-        return ResponseEntity.ok().build();
-    }
-
     // 로그아웃
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
