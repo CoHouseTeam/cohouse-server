@@ -14,7 +14,6 @@ ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
 WORKDIR /app
 
 COPY build/libs/*.jar app.jar
-COPY temp /app/temp
 
 EXPOSE 8080
 

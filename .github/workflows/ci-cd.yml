@@ -61,7 +61,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 10m
           script: |
-            set -e  # 오류 발생 시 스크립트 종료
+            set -e
             sudo docker-compose stop nginx app
             sudo docker-compose rm -f nginx app
             sudo docker-compose pull nginx app
