@@ -7,6 +7,7 @@ import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.enums.Gender;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -67,7 +68,7 @@ public class MemberService {
         member.updateProfile(
                 requestDto.getName(),
                 requestDto.getBirthDate(),
-                MemberProfileSummary.genderBooleanFromString(requestDto.getGender())
+                Gender.fromName(requestDto.getGender())
         );
 
         Member saved = memberRepository.save(member);
