@@ -116,4 +116,17 @@ public class AuthController {
 
         return ResponseEntity.ok(responseDto);
     }
+
+    @GetMapping("/me/id")
+    public ResponseEntity<MemberIdDto> getMemberId(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        MemberIdDto responseDto = MemberIdDto.builder()
+                .memberId(memberId)
+                .build();
+
+        return ResponseEntity.ok(responseDto);
+    }
 }
