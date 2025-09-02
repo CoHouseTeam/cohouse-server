@@ -5,6 +5,7 @@ import com.zero.cohousesever.member.dto.auth.*;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.member.service.AuthService;
 import com.zero.cohousesever.member.service.MemberService;
+import com.zero.cohousesever.member.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +18,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final MemberService memberService;
+    private final PasswordResetService passwordResetService;
 
     // 이메일 회원 가입
     @PostMapping("/signup")
@@ -66,6 +68,7 @@ public class AuthController {
     public ResponseEntity<MessageDto> sendPasswordResetEmail(
             @RequestBody PasswordForgotRequestDto requestDto
     ) {
+        passwordResetService.sendPasswordResetMail(requestDto);
 
         return ResponseEntity.ok().build();
     }
@@ -75,6 +78,7 @@ public class AuthController {
     public ResponseEntity<MessageDto> resetPassword(
             @RequestBody PasswordResetRequestDto requestDto
     ) {
+        passwordResetService.setNewPassword(requestDto);
 
         return ResponseEntity.ok().build();
     }
@@ -95,7 +99,6 @@ public class AuthController {
     public ResponseEntity<MessageDto> withdraw(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         Long memberId = userDetails.getId();
 
         memberService.deleteMember(memberId);
