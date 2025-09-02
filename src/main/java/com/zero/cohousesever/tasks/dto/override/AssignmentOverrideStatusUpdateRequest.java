@@ -13,6 +13,13 @@ import lombok.Setter;
 public class AssignmentOverrideStatusUpdateRequest {
   private OverrideStatus status; // ACCEPTED, REJECTED, PENDING
 
-  @JsonAlias("actorId")
-  private Long groupMemberId;
+  private Long actorMemberId;
+
+  // 정규화 전
+  @JsonAlias({"groupMemberId", "actorId"})
+  private Long _compatActorId;
+  public Long getActorMemberId() {
+    return actorMemberId != null ? actorMemberId : _compatActorId;
+  }
+
 }

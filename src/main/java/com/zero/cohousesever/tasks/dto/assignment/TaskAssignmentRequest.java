@@ -1,5 +1,6 @@
 package com.zero.cohousesever.tasks.dto.assignment;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,10 +16,24 @@ public class TaskAssignmentRequest {
   private Long templateId;
   private List<Long> groupMemberId;
 
-
-  // 랜덤 유지용 null이면 템플릿 randomEnabled를 따라감
   private Boolean randomEnabled;
+  private Long fixedAssigneeId;       // MANUAL 고정 배정자
 
-  // 수동 지정용 값이 오면 무조건 이 멤버로 배정 (그룹장만 사용)
-  private Long fixedAssigneeId;
+  // 구버전 키 수용
+  @JsonAlias("assigneeId")
+  private Long _compatAssigneeId;
+
+  @JsonAlias("candidateIds")
+  private List<Long> _compatCandidateIds;
+
+  @JsonAlias("assignType")
+  private String _compatAssignType; // 서버에선 안 써도 됨
+
+  // 게터에서 통합
+  public Long getFixedAssigneeId() {
+    return fixedAssigneeId != null ? fixedAssigneeId : _compatAssigneeId;
+  }
+  public List<Long> getGroupMemberId() {
+    return groupMemberId != null ? groupMemberId : _compatCandidateIds;
+  }
 }
