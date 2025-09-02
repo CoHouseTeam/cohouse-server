@@ -5,11 +5,13 @@ import com.zero.cohousesever.group.dto.group.GroupJoinDto;
 import com.zero.cohousesever.group.dto.group.GroupNameDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
+import com.zero.cohousesever.group.dto.groupmember.IsLeaderDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferResponseDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestReasonDto;
-import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestRespondDto;
+import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestStatusDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestSummary;
+import com.zero.cohousesever.group.service.GroupLeaveService;
 import com.zero.cohousesever.group.service.GroupService;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +23,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/groups")
+@RequestMapping("/api/groups")
 @RequiredArgsConstructor
 public class GroupController {
 
     private final GroupService groupService;
+    private final GroupLeaveService groupLeaveService;
 
     // 그룹 생성
     @PostMapping
@@ -43,7 +46,7 @@ public class GroupController {
     // 그룹 정보 상세 조회
     @GetMapping("/{groupId}")
     public ResponseEntity<GroupSummary> getGroup(
-            @PathVariable("groupId") Long groupId
+            @PathVariable Long groupId
     ) {
         GroupSummary responseDto = groupService.getGroup(groupId);
 
@@ -54,7 +57,7 @@ public class GroupController {
     @PutMapping("/{groupId}")
     public ResponseEntity<GroupSummary> updateGroup(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable("groupId") Long groupId,
+            @PathVariable Long groupId,
             @RequestBody GroupSummary requestDto
     ) {
         Long memberId = userDetails.getId();
@@ -67,17 +70,21 @@ public class GroupController {
     // 그룹 해체
     @DeleteMapping("/{groupId}")
     public ResponseEntity<Void> deleteGroup(
-            @PathVariable("groupId") Long groupId
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        groupService.deleteGroup(memberId, groupId);
+
+        return ResponseEntity.noContent().build();
     }
 
     // 그룹 초대 코드 발급
     @PostMapping("/{groupId}/invitations")
     public ResponseEntity<GroupInviteDto> createGroupInviteCode(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable("groupId") Long groupId
+            @PathVariable Long groupId
     ) {
         Long memberId = userDetails.getId();
 
@@ -89,10 +96,14 @@ public class GroupController {
     // 초대 코드로 그룹 가입
     @PostMapping("/join")
     public ResponseEntity<GroupMemberSummary> joinGroup(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody GroupJoinDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupMemberSummary responseDto = groupService.joinGroup(memberId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 내 그룹 정보 조회
@@ -110,71 +121,109 @@ public class GroupController {
     // 그룹 멤버 목록 조회
     @GetMapping("/{groupId}/members")
     public ResponseEntity<List<GroupMemberSummary>> getGroupMemberList(
-            @PathVariable("groupId") Long groupId
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        List<GroupMemberSummary> responseDto = groupService.getGroupMembers(memberId, groupId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 멤버 상세 조회
     @GetMapping("/{groupId}/members/{groupMemberId}")
     public ResponseEntity<GroupMemberSummary> getGroupMember(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long groupId,
-            @PathVariable("groupMemberId") Long groupMemberId
+            @PathVariable Long groupMemberId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupMemberSummary responseDto = groupService.getGroupMember(memberId, groupId, groupMemberId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 본인의 그룹 멤버 정보 수정
     @PutMapping("/{groupId}/members/me")
     public ResponseEntity<GroupMemberSummary> updateGroupMember(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long groupId,
             @RequestBody GroupMemberSummary requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        GroupMemberSummary responseDto = groupService.updateGroupMember(memberId, groupId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹장 권한 위임
     @PutMapping("/{groupId}/leader-transfer")
     public ResponseEntity<LeaderTransferResponseDto> changeGroupLeader(
-            @PathVariable("groupId") Long groupId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId,
             @RequestBody LeaderTransferRequestDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        LeaderTransferResponseDto responseDto = groupService.transferLeader(memberId, groupId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
-    // 그룹 탈퇴 요청
+    // 그룹 탈퇴 요청 조회
     @GetMapping("/{groupId}/leave-requests")
     public ResponseEntity<List<LeaveRequestSummary>> getGroupLeaveRequests(
-            @PathVariable("groupId") Long groupId
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        List<LeaveRequestSummary> responseDto = groupLeaveService.getGroupLeaveList(memberId, groupId);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 그룹 탈퇴 요청
     @PostMapping("/{groupId}/leave-requests")
     public ResponseEntity<LeaveRequestSummary> createGroupLeaveRequests(
-            @PathVariable("groupId") Long groupId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId,
             @RequestBody LeaveRequestReasonDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        LeaveRequestSummary responseDto = groupLeaveService.requestGroupLeave(memberId, groupId, requestDto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     // 그룹 탈퇴 승인(그룹장)
     @PostMapping("/{groupId}/leave-requests/{leaveRequestId}")
     public ResponseEntity<LeaveRequestSummary> approveGroupLeaveRequest(
-            @PathVariable("groupId") Long groupId,
-            @PathVariable("leaveRequestId") Long leaveRequestId,
-            @RequestBody LeaveRequestRespondDto requestDto
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId,
+            @PathVariable Long leaveRequestId,
+            @RequestBody LeaveRequestStatusDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        LeaveRequestSummary responseDto = groupLeaveService.respondGroupLeave(groupId, memberId, leaveRequestId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
+    @GetMapping("/{groupId}/me/role")
+    public ResponseEntity<IsLeaderDto> getIsLeader(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long groupId
+    ) {
+        Long memberId = userDetails.getId();
 
+        IsLeaderDto responseDto = groupService.getIsLeader(memberId, groupId);
+
+        return ResponseEntity.ok(responseDto);
+    }
 }

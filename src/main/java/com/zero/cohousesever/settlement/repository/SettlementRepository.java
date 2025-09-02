@@ -3,6 +3,7 @@ package com.zero.cohousesever.settlement.repository;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.settlement.entity.Settlement;
+import com.zero.cohousesever.settlement.entity.SettlementStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,4 +19,5 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
     Page<Settlement> findAllByGroup(Group group, Pageable pageable);
 
+    boolean existsByIdAndStatus(Long memberId, SettlementStatus settlementStatus);
 }

@@ -34,4 +34,9 @@ public class GroupLeaveRequest extends BaseEntity {
     private LocalDateTime requestedAt;
 
     private LocalDateTime respondedAt;
+
+    public void respond(LeaveRequestStatus status) {
+        this.status = status;
+        this.respondedAt = LocalDateTime.now();
+    }
 }

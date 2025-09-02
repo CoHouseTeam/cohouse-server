@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.4'
+    id 'org.springframework.boot' version '3.1.12'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -28,6 +28,21 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    implementation ('software.amazon.awssdk:s3:2.20.0') {
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
+
+    // Tesseract Java 래퍼 라이브러리
+    implementation ('net.sourceforge.tess4j:tess4j:5.13.0') {
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
+    // 이미지 전처리 등 OpenCV 자바포함 라이브러리
+    implementation 'org.bytedeco:javacv-platform:1.5.10'
+
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+
     implementation 'software.amazon.awssdk:s3:2.20.0'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation "org.springframework.boot:spring-boot-starter-quartz"
@@ -48,4 +63,8 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+test {
+    systemProperty "jna.library.path", "/opt/homebrew/opt/tesseract/lib"
 }

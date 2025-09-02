@@ -19,6 +19,7 @@ public class PostLikeService {
     /**
      * 좋아요 상태 업데이트 (isLiked=true: 추가 / false: 취소)
      */
+    @Transactional
     public PostLikeToggleResponse updateLikeStatus(Long postId, Long memberId) {
 
         if (postLikeRepository.existsByPostIdAndMemberId(postId, memberId)) {

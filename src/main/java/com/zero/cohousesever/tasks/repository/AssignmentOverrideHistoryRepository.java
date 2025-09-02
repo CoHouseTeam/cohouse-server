@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AssignmentOverrideHistoryRepository extends JpaRepository<AssignmentOverrideHistory, Long> {
 
-  // TODO: memberId 예정
   List<AssignmentOverrideHistory> findAllByOrderByRequestedAtDescIdDesc();
+
+  List<AssignmentOverrideHistory> findByRequest_IdOrderByRespondedAtDescIdDesc(Long requestId);
+
 }

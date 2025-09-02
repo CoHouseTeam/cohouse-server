@@ -32,33 +32,50 @@ public class ProfileController {
     // 회원 프로필 수정
     @PutMapping("/profile")
     public ResponseEntity<MemberProfileSummary> updateProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody MemberProfileSummary requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        MemberProfileSummary responseDto = memberService.updateMemberProfile(memberId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 알림 발송 설정 시간 변경
     @PutMapping("/profile/alert-time")
     public ResponseEntity<MemberProfileSummary> updateAlertTime(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody MemberProfileSummary requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        MemberProfileSummary responseDto = memberService.updateMemberAlertTime(memberId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 회원 프로필 이미지 수정
     @PutMapping("/profile/profile-image")
     public ResponseEntity<MemberProfileImageResponseDto> updateProfileImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestPart("image") MultipartFile imageFile
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        MemberProfileImageResponseDto responseDto = memberService.updateProfileImage(memberId, imageFile);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 회원 프로필 이미지 삭제
     @DeleteMapping("/profile/profile-image")
-    public ResponseEntity<Void> deleteProfileImage() {
+    public ResponseEntity<Void> deleteProfileImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        memberService.deleteMemberProfileImage(memberId);
 
         return ResponseEntity.noContent().build();
     }
