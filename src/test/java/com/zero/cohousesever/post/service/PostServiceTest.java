@@ -2,24 +2,32 @@ package com.zero.cohousesever.post.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.notification.dto.NotificationCreateRequest;
+import com.zero.cohousesever.notification.scheduler.post.PostScheduler;
+import com.zero.cohousesever.notification.scheduler.support.AppPresenceChecker;
+import com.zero.cohousesever.notification.scheduler.support.PreferredTimeProvider;
+import com.zero.cohousesever.notification.service.NotificationService;
+import com.zero.cohousesever.notification.type.NotificationType;
 import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.repository.PostRepository;
 import com.zero.cohousesever.post.type.PostColor;
 import com.zero.cohousesever.post.type.PostStatus;
 import com.zero.cohousesever.post.type.PostType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.quality.Strictness;
 import org.springframework.data.domain.*;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = Strictness.LENIENT) // 불필요 스텁 경고 완화
@@ -35,8 +44,25 @@ class PostServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
+    @Mock
+    private PostScheduler postScheduler;
+
+    @Mock
+    private AppPresenceChecker appPresenceChecker;
+
+    @Mock
+    private PreferredTimeProvider preferredTimeProvider;
+
     @InjectMocks
     private PostService postService;
+
+    @BeforeEach
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     @DisplayName("게시글 작성 - 성공 시 PostResponse 반환(작성자는 currentMemberId)")
@@ -299,9 +325,9 @@ class PostServiceTest {
                 .status(PostStatus.ACTIVE)
                 .color(PostColor.GRAY)
                 .build();
-        ReflectionTestUtils.setField(post, "id", 100L);
-        ReflectionTestUtils.setField(post, "createdAt", LocalDateTime.now().minusDays(1));
-        ReflectionTestUtils.setField(post, "updatedAt", LocalDateTime.now().minusHours(1));
+        setField(post, "id", 100L);
+        setField(post, "createdAt", LocalDateTime.now().minusDays(1));
+        setField(post, "updatedAt", LocalDateTime.now().minusHours(1));
 
         when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(post));
         when(postRepository.findById(eq(100L))).thenReturn(Optional.of(post));
@@ -340,7 +366,7 @@ class PostServiceTest {
                 .status(PostStatus.ACTIVE)
                 .color(PostColor.GRAY)
                 .build();
-        ReflectionTestUtils.setField(post, "id", 100L);
+        setField(post, "id", 100L);
 
         when(postRepository.findByIdAndStatus(eq(100L), any(PostStatus.class))).thenReturn(Optional.of(post));
         when(postRepository.findById(eq(100L))).thenReturn(Optional.of(post));
@@ -348,6 +374,98 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.deletePost(100L, otherId))
                 .isInstanceOf(CustomException.class)
                 .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED_ACCESS));
+    }
+
+    @Test
+    @DisplayName("앱 접속중 사용자 → 즉시 알림 발송")
+    void testImmediateNotificationWhenOnline() {
+        // given
+        PostRequest request = PostRequest.builder()
+                .groupId(1L)
+                .type(PostType.ANNOUNCEMENT)
+                .title("공지사항")
+                .content("테스트 공지")
+                .build();
+
+        Post saved = Post.builder()
+                .groupId(1L)
+                .memberId(10L)
+                .type(PostType.ANNOUNCEMENT)
+                .title("공지사항")
+                .content("테스트 공지")
+                .status(PostStatus.ACTIVE)
+                .build();
+
+        // save() 동작 시 id 강제 주입
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
+            Post p = invocation.getArgument(0);
+            setField(p, "id", 100L);
+            return p;
+        });
+        when(appPresenceChecker.isOnline(anyLong())).thenReturn(true);
+
+        // when
+        postService.createPost(request, 10L);
+
+        // then
+        verify(notificationService, times(1))
+                .create(eq(10L), any(NotificationCreateRequest.class), eq(true));
+        verify(postScheduler, never()).scheduleAnnouncementOnce(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("앱 미접속 사용자 → Quartz 예약 발송")
+    void testScheduledNotificationWhenOffline() throws Exception {
+        // given
+        PostRequest request = PostRequest.builder()
+                .groupId(1L)
+                .type(PostType.ANNOUNCEMENT)
+                .title("공지사항")
+                .content("테스트 공지")
+                .build();
+
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
+            Post p = invocation.getArgument(0);
+            setField(p, "id", 200L);
+            return p;
+        });
+        when(appPresenceChecker.isOnline(anyLong())).thenReturn(false);
+        when(preferredTimeProvider.getPreferredTime(anyLong(), any(NotificationType.class)))
+                .thenReturn(Optional.of(LocalTime.of(21, 0))); // 사용자 지정시각 21:00
+
+        // when
+        postService.createPost(request, 20L);
+
+        // then
+        verify(notificationService, never()).create(anyLong(), any(), anyBoolean());
+        verify(postScheduler, times(1)).scheduleAnnouncementOnce(eq(20L), eq(200L));
+    }
+
+    @Test
+    @DisplayName("사용자 설정 없음 → 기본 22:00 예약 발송")
+    void testDefaultTimeWhenNoPreference() throws Exception {
+        // given
+        PostRequest request = PostRequest.builder()
+                .groupId(1L)
+                .type(PostType.ANNOUNCEMENT)
+                .title("공지사항")
+                .content("테스트 공지")
+                .build();
+
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
+            Post p = invocation.getArgument(0);
+            setField(p, "id", 300L);
+            return p;
+        });
+        when(appPresenceChecker.isOnline(anyLong())).thenReturn(false);
+        when(preferredTimeProvider.getPreferredTime(anyLong(), any(NotificationType.class)))
+                .thenReturn(Optional.empty()); // 사용자 지정 없음
+
+        // when
+        postService.createPost(request, 30L);
+
+        // then
+        verify(postScheduler, times(1)).scheduleAnnouncementOnce(eq(30L), eq(300L));
     }
 
     // ------------------------------------------------------
@@ -381,9 +499,9 @@ class PostServiceTest {
                 .status(status != null ? status : PostStatus.ACTIVE)
                 .color(color != null ? color : PostColor.GRAY)
                 .build();
-        ReflectionTestUtils.setField(post, "id", id);
-        ReflectionTestUtils.setField(post, "createdAt", createdAt);
-        ReflectionTestUtils.setField(post, "updatedAt", updatedAt);
+        setField(post, "id", id);
+        setField(post, "createdAt", createdAt);
+        setField(post, "updatedAt", updatedAt);
         return post;
     }
 }

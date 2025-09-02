@@ -18,6 +18,7 @@ public enum ErrorCode {
     ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
     REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 만료되었습니다."),
+    PASSWORD_RESET_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "비밀번호 재설정 토큰이 잘못되었거나 만료되었습니다."),
     MEMBER_STILL_IN_GROUP(HttpStatus.CONFLICT, "아직 그룹에 소속된 회원입니다."),
     OAUTH2_PROVIDER_UNSUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 OAuth2 공급자입니다."),
     OAUTH2_GET_TOKEN_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "OAuth2 액세스 토큰을 가져오는 데 실패했습니다."),
@@ -90,7 +91,15 @@ public enum ErrorCode {
     NOT_THE_SETTLEMENT_PAYER(HttpStatus.FORBIDDEN, "정산 결제자가 아닙니다."),
 
     // 알림 관련 오류
+    SCHEDULER_REGISTER_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "알림 스케줄 등록에 실패했습니다."),
+    SCHEDULER_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"스케줄 내부 오류가 발생했습니다."),
+    SCHEDULER_CANCEL_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "알림 스케줄 취소에 실패했습니다."),
+    NOTIFICATION_SETTING_DISABLED(HttpStatus.OK, "사용자가 해당 알림을 비활성화했습니다."),
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림이 존재하지 않거나 접근할 수 없습니다."),
+
+    FCM_INIT_FAIL(HttpStatus.INTERNAL_SERVER_ERROR,"FCM 초기화 실패"),
+    FCM_SEND_FAIL(HttpStatus.BAD_GATEWAY,"FCM 발송 실패"),
+    FCM_TOKEN_MISSING(HttpStatus.BAD_REQUEST,"FCM 토큰 없음"),
 
     // 파일 업로드 관련 오류
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "파일이 존재하지 않습니다."),
