@@ -19,6 +19,7 @@ public class QuartzConfig {
         .build();
   }
 
+  // 할 일 자동 배정
   @Bean
   public Trigger generateNextWeekTrigger(JobDetail generateNextWeekJobDetail) {
     CronScheduleBuilder cron = CronScheduleBuilder
