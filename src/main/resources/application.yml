@@ -43,6 +43,9 @@ cloud:
     region:
       static: ap-northeast-2
 
+firebase:
+  project-id: cohouse-6ba91
+
 app:
   frontend:
     url: ${FRONTEND_URL}

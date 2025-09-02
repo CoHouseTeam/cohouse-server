@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * 알림 응답 DTO
@@ -16,29 +15,24 @@ import java.util.Map;
 @Getter
 @Builder
 public class NotificationResponse {
-        Long id;
-        NotificationType type;
-        String title;
-        String content;
+    private Long id;
+    private NotificationType type;
+    private String title;
+    private String content;
 
-        Long settlementId;
-        Long taskId;
-        Long groupId;
+    private boolean read;
+    private LocalDateTime readAt;
+    private LocalDateTime createdAt;
 
-        boolean read;
-        LocalDateTime readAt;
-        LocalDateTime createdAt;
-
-    /** 엔티티 -> DTO 변환 */
+    /**
+     * 엔티티 -> DTO 변환
+     */
     public static NotificationResponse from(Notification n) {
         return NotificationResponse.builder()
                 .id(n.getId())
                 .type(n.getType())
                 .title(n.getTitle())
                 .content(n.getContent())
-                .settlementId(n.getSettlementId())
-                .taskId(n.getTaskId())
-                .groupId(n.getGroupId())
                 .read(n.isRead())
                 .readAt(n.getReadAt())
                 .createdAt(n.getCreatedAt())
