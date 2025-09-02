@@ -1,6 +1,6 @@
 package com.zero.cohousesever.common.config;
 
-import com.zero.cohousesever.tasks.scheduler.GenerateNextWeekJob;
+import com.zero.cohousesever.task.scheduler.GenerateNextWeekJob;
 import org.quartz.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
