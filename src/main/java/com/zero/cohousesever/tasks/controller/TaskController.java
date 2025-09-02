@@ -2,8 +2,10 @@ package com.zero.cohousesever.tasks.controller;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.group.repository.GroupRepository;
+import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.tasks.dto.assignment.TaskAssignmentRequest;
@@ -28,6 +30,7 @@ import com.zero.cohousesever.tasks.service.TaskAssignmentHistoryService;
 import com.zero.cohousesever.tasks.service.TaskAssignmentService;
 import com.zero.cohousesever.tasks.service.TaskTemplateService;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -57,7 +60,29 @@ public class TaskController {
   private final AssignmentOverrideRepository assignmentOverrideRepository;
   private final TaskAssignmentHistoryService taskAssignmentHistoryService;
   private final AssignmentOverrideHistoryService assignmentOverrideHistoryService;
+
+  private final MemberRepository memberRepository;
+  private final GroupRepository groupRepository;
   private final GroupMemberRepository groupMemberRepository;
+
+  // 그룹장 여부
+  private void ensureLeader(Long memberId, Long groupId) {
+    Member member = memberRepository.findById(memberId)
+        .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
+
+    if (!groupMemberRepository.existsByGroupAndMemberAndIsLeaderTrue(group, member)) {
+      throw new CustomException(ErrorCode.NOT_GROUP_LEADER);
+    }
+  }
+
+  //그룹원 확인
+  private void ensureMember(Long memberId, Long groupId) {
+    if (!groupMemberRepository.existsByGroupIdAndMemberId(groupId, memberId)) {
+      throw new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
+    }
+  }
 
   // 1. 템플릿 관련
 
@@ -67,7 +92,7 @@ public class TaskController {
       @AuthenticationPrincipal CustomUserDetails user,
       @RequestParam Long groupId
   ) {
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
     List<TaskTemplateResponse> body = taskTemplateService.getAllTemplates(groupId).stream()
         .map(TaskTemplateResponse::from)
         .toList();
@@ -80,14 +105,10 @@ public class TaskController {
       @AuthenticationPrincipal CustomUserDetails user,
       @RequestBody TaskTemplateRequest request) {
 
-    if (user == null) {
-      throw new CustomException(ErrorCode.ACCESS_TOKEN_INVALID);
-    }
-    taskAssignmentService.ensureLeader(user.getId(), request.getGroupId());
+    ensureLeader(user.getId(), request.getGroupId());
 
-    var saved = taskTemplateService.createTemplate(
-        request.getGroupId(), request.getCategory(), request.getRepeatDays(),
-        request.getRandomEnabled());
+    TaskTemplate saved = taskTemplateService.createTemplate(
+        request.getGroupId(), request.getCategory(), request.getRepeatDays(), request.getRandomEnabled());
     return ResponseEntity.ok(TaskTemplateResponse.from(saved));
   }
 
@@ -101,7 +122,7 @@ public class TaskController {
 
     // 템플릿 -> groupId 먼저 알아와서 체크
     TaskTemplate t = taskTemplateService.getById(templateId); // 없으면 내부에서 예외
-    taskAssignmentService.ensureLeader(user.getId(), t.getGroupId());
+    ensureLeader(user.getId(), t.getGroupId());
 
     TaskTemplate updated = taskTemplateService.updateTemplate(templateId, request.getCategory());
     return ResponseEntity.ok(TaskTemplateResponse.from(updated));
@@ -114,11 +135,12 @@ public class TaskController {
       @PathVariable Long templateId) {
 
     TaskTemplate t = taskTemplateService.getById(templateId);
-    taskAssignmentService.ensureLeader(user.getId(), t.getGroupId());
+    ensureLeader(user.getId(), t.getGroupId());
 
     taskTemplateService.deleteTemplate(templateId);
     return ResponseEntity.noContent().build();
   }
+
 
   // 2. 반복 요일 관련
 
@@ -129,7 +151,7 @@ public class TaskController {
       @PathVariable Long templateId
   ) {
     Long groupId = taskTemplateService.getGroupIdByTemplateId(templateId);
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
     return ResponseEntity.ok(repeatDayService.getRepeatDaysByTemplateId(templateId));
   }
 
@@ -141,7 +163,7 @@ public class TaskController {
       @RequestBody RepeatDayRequest request) {
 
     TaskTemplate t = taskTemplateService.getById(templateId);
-    taskAssignmentService.ensureLeader(user.getId(), t.getGroupId());
+    ensureLeader(user.getId(), t.getGroupId());
 
     return ResponseEntity.ok(repeatDayService.addRepeatDay(templateId, request));
   }
@@ -155,7 +177,7 @@ public class TaskController {
       @RequestBody RepeatDayRequest request
   ) {
     TaskTemplate t = taskTemplateService.getById(templateId);
-    taskAssignmentService.ensureLeader(user.getId(), t.getGroupId());
+    ensureLeader(user.getId(), t.getGroupId());
 
     RepeatDayResponse updated = repeatDayService.updateRepeatDay(templateId, repeatDayId, request);
     return ResponseEntity.ok(updated);
@@ -170,7 +192,7 @@ public class TaskController {
       @PathVariable Long repeatDayId) {
 
     TaskTemplate t = taskTemplateService.getById(templateId);
-    taskAssignmentService.ensureLeader(user.getId(), t.getGroupId());
+    ensureLeader(user.getId(), t.getGroupId());
 
     repeatDayService.deleteRepeatDay(templateId, repeatDayId);
     return ResponseEntity.noContent().build();
@@ -187,7 +209,7 @@ public class TaskController {
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
       @RequestParam(required = false) Long memberId
   ) {
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
 
     if (memberId != null &&
         !groupMemberRepository.existsByGroupIdAndMemberId(groupId, memberId)) {
@@ -202,24 +224,22 @@ public class TaskController {
       @AuthenticationPrincipal CustomUserDetails user,
       @RequestBody TaskAssignmentRequest request) {
 
-    taskAssignmentService.ensureLeader(user.getId(), request.getGroupId());
+    ensureLeader(user.getId(), request.getGroupId());
 
-    // 후보와 고정 배정자만 memberId로 정규화
+    // 후보 멤버 전원 검증
     if (request.getGroupMemberId() != null) {
-      request.setGroupMemberId(
-          taskAssignmentService.toMemberIds(request.getGroupId(), request.getGroupMemberId()));
-    }
-    if (request.getFixedAssigneeId() != null) {
-      request.setFixedAssigneeId(
-          taskAssignmentService.toMemberId(request.getGroupId(), request.getFixedAssigneeId()));
+      for (Long mid : request.getGroupMemberId()) {
+        if (!groupMemberRepository.existsByGroupIdAndMemberId(request.getGroupId(), mid)) {
+          throw new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
+        }
+      }
     }
 
     var created = taskAssignmentService.assignTaskManuallyOrRandomly(request);
-    if (created == null || created.isEmpty()) {
-      return ResponseEntity.noContent().build();
-    }
+    if (created == null || created.isEmpty()) return ResponseEntity.noContent().build();
     return ResponseEntity.ok(created.get(0));
   }
+
 
   // 할 일 상태 변경
   @PutMapping("/assignments/{assignmentId}")
@@ -234,7 +254,7 @@ public class TaskController {
     Long groupId = a.getTemplate().getGroupId();
     Long assigneeId = a.getGroupMemberId();
 
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
 
     if (!user.getId().equals(assigneeId)) {
       throw new CustomException(ErrorCode.INVALID_REQUEST);
@@ -251,7 +271,7 @@ public class TaskController {
       @RequestParam Long groupId,
       @RequestParam(required = false) Long memberId
   ) {
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
     if (memberId != null &&
         !groupMemberRepository.existsByGroupIdAndMemberId(groupId, memberId)) {
       throw new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
@@ -264,9 +284,10 @@ public class TaskController {
       @AuthenticationPrincipal CustomUserDetails user,
       @RequestParam Long groupId
   ) {
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
     return ResponseEntity.ok(taskAssignmentService.getUncompletedThisWeekByMember(groupId));
   }
+
 
   // 4. 담당자 변경 요청 관련
 
@@ -281,17 +302,9 @@ public class TaskController {
         .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
     Long groupId = a.getTemplate().getGroupId();
 
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
 
     request.setRequesterId(user.getId());
-
-    // 대상자 단일/다중 정규화 (있으면)
-    if (request.getTargetId() != null) {
-      request.setTargetId(taskAssignmentService.toMemberId(groupId, request.getTargetId()));
-    }
-    if (request.getTargetIds() != null && !request.getTargetIds().isEmpty()) {
-      request.setTargetIds(taskAssignmentService.toMemberIds(groupId, request.getTargetIds()));
-    }
 
     var created = assignmentOverrideService.createOverrideRequests(assignmentId, request);
     return ResponseEntity.ok(created);
@@ -308,13 +321,9 @@ public class TaskController {
         .orElseThrow(() -> new CustomException(ErrorCode.OVERRIDE_REQUEST_NOT_FOUND));
     Long groupId = r.getAssignment().getTemplate().getGroupId();
 
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
 
-    Long actor = request.getActorMemberId();
-    if (actor == null) {
-      actor = user.getId();
-    }
-    request.setActorMemberId(taskAssignmentService.toMemberId(groupId, actor));
+    request.setGroupMemberId(user.getId());
 
     var updated = assignmentOverrideService.respondToOverrideRequest(requestId, request);
     return ResponseEntity.ok(updated);
@@ -330,7 +339,7 @@ public class TaskController {
         .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
 
     Long groupId = a.getTemplate().getGroupId();
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
 
     return ResponseEntity.ok(taskAssignmentHistoryService.getAssignmentHistories(assignmentId));
   }
@@ -345,7 +354,7 @@ public class TaskController {
         .orElseThrow(() -> new CustomException(ErrorCode.OVERRIDE_REQUEST_NOT_FOUND));
 
     Long groupId = r.getAssignment().getTemplate().getGroupId();
-    taskAssignmentService.ensureMember(user.getId(), groupId);
+    ensureMember(user.getId(), groupId);
 
     return ResponseEntity.ok(assignmentOverrideHistoryService.getOverrideHistories(requestId));
   }

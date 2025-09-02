@@ -130,7 +130,7 @@ public class AssignmentOverrideService {
   // ========== 응답(수락/거절) ==========
   @Transactional
   public AssignmentOverrideResponse respondToOverrideRequest(Long requestId, AssignmentOverrideStatusUpdateRequest req) {
-    if (req.getActorMemberId() == null || req.getStatus() == null)
+    if (req.getGroupMemberId() == null || req.getStatus() == null)
       throw new CustomException(ErrorCode.INVALID_REQUEST);
 
     AssignmentOverride r = overrideRepository.findById(requestId)
@@ -142,7 +142,7 @@ public class AssignmentOverrideService {
     assertTodayOrFuture(a.getDate());
     assertRequested(r);
 
-    final Long actor = req.getActorMemberId();
+    final Long actor = req.getGroupMemberId();
     assertInSameGroup(a, actor);
 
     // ----- ACCEPT -----

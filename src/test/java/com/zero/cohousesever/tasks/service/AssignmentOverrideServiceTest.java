@@ -144,7 +144,7 @@ class AssignmentOverrideServiceTest {
         .thenReturn(2);
 
     AssignmentOverrideStatusUpdateRequest req = new AssignmentOverrideStatusUpdateRequest();
-    req.setActorMemberId(actor);
+    req.setGroupMemberId(actor);
     req.setStatus(OverrideStatus.ACCEPTED);
 
     AssignmentOverrideResponse res = service.respondToOverrideRequest(55L, req);
@@ -171,7 +171,7 @@ class AssignmentOverrideServiceTest {
         .thenReturn(2);
 
     AssignmentOverrideStatusUpdateRequest req = new AssignmentOverrideStatusUpdateRequest();
-    req.setActorMemberId(202L);
+    req.setGroupMemberId(202L);
     req.setStatus(OverrideStatus.ACCEPTED);
 
     AssignmentOverrideResponse res = service.respondToOverrideRequest(77L, req);
@@ -195,7 +195,7 @@ class AssignmentOverrideServiceTest {
     when(groupMemberRepo.existsByGroupIdAndMemberId(gid, actor)).thenReturn(true);
 
     AssignmentOverrideStatusUpdateRequest req = new AssignmentOverrideStatusUpdateRequest();
-    req.setActorMemberId(actor);
+    req.setGroupMemberId(actor);
     req.setStatus(OverrideStatus.REJECTED);
 
     CustomException ex = assertThrows(CustomException.class,
@@ -218,7 +218,7 @@ class AssignmentOverrideServiceTest {
         .thenReturn(List.of());
 
     AssignmentOverrideStatusUpdateRequest req = new AssignmentOverrideStatusUpdateRequest();
-    req.setActorMemberId(target);
+    req.setGroupMemberId(target);
     req.setStatus(OverrideStatus.REJECTED);
 
     AssignmentOverrideResponse res = service.respondToOverrideRequest(55L, req);
