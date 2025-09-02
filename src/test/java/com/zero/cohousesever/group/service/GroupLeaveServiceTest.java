@@ -2,6 +2,7 @@ package com.zero.cohousesever.group.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestReasonDto;
+import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestStatusDto;
 import com.zero.cohousesever.group.dto.leaverequest.LeaveRequestSummary;
 import com.zero.cohousesever.group.entity.Group;
 import com.zero.cohousesever.group.entity.GroupLeaveRequest;
@@ -11,6 +12,7 @@ import com.zero.cohousesever.group.enums.GroupStatus;
 import com.zero.cohousesever.group.enums.LeaveRequestStatus;
 import com.zero.cohousesever.group.repository.GroupLeaveRequestRepository;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.settlement.entity.SettlementStatus;
@@ -42,6 +44,9 @@ class GroupLeaveServiceTest {
 
     @Mock
     private GroupMemberRepository groupMemberRepository;
+
+    @Mock
+    private GroupRepository groupRepository;
 
     @Mock
     private SettlementRepository settlementRepository;
@@ -272,5 +277,190 @@ class GroupLeaveServiceTest {
 
         verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(memberId, groupId);
         verify(groupLeaveRequestRepository, never()).findByGroupIdAndStatus(any(), any());
+    }
+
+    @Test
+    @DisplayName("그룹 탈퇴 요청 승인 성공 테스트")
+    void respondGroupLeave_Success_WithAccepted() {
+        // given
+        Long leaderId = 1L;
+        Long groupId = 1L;
+        Long leaveRequestId = 1L;
+
+        LeaveRequestStatusDto statusDto = new LeaveRequestStatusDto();
+        ReflectionTestUtils.setField(statusDto, "status", LeaveRequestStatus.ACCEPTED);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId))
+                .thenReturn(true);
+        when(groupLeaveRequestRepository.findById(leaveRequestId))
+                .thenReturn(Optional.of(testGroupLeaveRequest));
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), testGroup.getId(), GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+        when(settlementRepository.existsByIdAndStatus(leaderId, SettlementStatus.PENDING))
+                .thenReturn(false);
+        when(groupRepository.save(testGroup))
+                .thenReturn(testGroup);
+        when(groupMemberRepository.save(testGroupMember))
+                .thenReturn(testGroupMember);
+        when(groupLeaveRequestRepository.save(testGroupLeaveRequest))
+                .thenReturn(testGroupLeaveRequest);
+
+        // when
+        LeaveRequestSummary result = groupLeaveService.respondGroupLeave(leaderId, groupId, leaveRequestId, statusDto);
+
+        // then
+        assertThat(result).isNotNull();
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId);
+        verify(groupLeaveRequestRepository).findById(leaveRequestId);
+        verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(testMember.getId(), testGroup.getId(), GroupMemberStatus.ACTIVE);
+        verify(settlementRepository).existsByIdAndStatus(leaderId, SettlementStatus.PENDING);
+        verify(groupRepository).save(testGroup);
+        verify(groupMemberRepository).save(testGroupMember);
+        verify(groupLeaveRequestRepository).save(testGroupLeaveRequest);
+    }
+
+    @Test
+    @DisplayName("그룹 탈퇴 요청 거절 성공 테스트")
+    void respondGroupLeave_Success_WithRejected() {
+        // given
+        Long leaderId = 1L;
+        Long groupId = 1L;
+        Long leaveRequestId = 1L;
+
+        LeaveRequestStatusDto statusDto = new LeaveRequestStatusDto();
+        ReflectionTestUtils.setField(statusDto, "status", LeaveRequestStatus.REJECTED);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId))
+                .thenReturn(true);
+        when(groupLeaveRequestRepository.findById(leaveRequestId))
+                .thenReturn(Optional.of(testGroupLeaveRequest));
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), testGroup.getId(), GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+        when(groupLeaveRequestRepository.save(testGroupLeaveRequest))
+                .thenReturn(testGroupLeaveRequest);
+
+        // when
+        LeaveRequestSummary result = groupLeaveService.respondGroupLeave(leaderId, groupId, leaveRequestId, statusDto);
+
+        // then
+        assertThat(result).isNotNull();
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId);
+        verify(groupLeaveRequestRepository).findById(leaveRequestId);
+        verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(testMember.getId(), testGroup.getId(), GroupMemberStatus.ACTIVE);
+        // 거절인 경우 그룹에서 제거하지 않으므로 정산 체크, 그룹 저장 등이 호출되지 않음
+        verify(settlementRepository, never()).existsByIdAndStatus(any(), any());
+        verify(groupRepository, never()).save(any());
+        verify(groupMemberRepository, never()).save(testGroupMember);
+        verify(groupLeaveRequestRepository).save(testGroupLeaveRequest);
+    }
+
+    @Test
+    @DisplayName("그룹장이 아닌 사용자가 탈퇴 요청 응답 시 예외 발생 테스트")
+    void respondGroupLeave_ThrowsException_WhenNotLeader() {
+        // given
+        Long memberId = 1L;
+        Long groupId = 1L;
+        Long leaveRequestId = 1L;
+
+        LeaveRequestStatusDto statusDto = new LeaveRequestStatusDto();
+        ReflectionTestUtils.setField(statusDto, "status", LeaveRequestStatus.ACCEPTED);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(memberId, groupId))
+                .thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> groupLeaveService.respondGroupLeave(memberId, groupId, leaveRequestId, statusDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(NOT_GROUP_LEADER.getMessage());
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(memberId, groupId);
+        verify(groupLeaveRequestRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 탈퇴 요청 응답 시 예외 발생 테스트")
+    void respondGroupLeave_ThrowsException_WhenLeaveRequestNotFound() {
+        // given
+        Long leaderId = 1L;
+        Long groupId = 1L;
+        Long leaveRequestId = 999L;
+
+        LeaveRequestStatusDto statusDto = new LeaveRequestStatusDto();
+        ReflectionTestUtils.setField(statusDto, "status", LeaveRequestStatus.ACCEPTED);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId))
+                .thenReturn(true);
+        when(groupLeaveRequestRepository.findById(leaveRequestId))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> groupLeaveService.respondGroupLeave(leaderId, groupId, leaveRequestId, statusDto))
+                .isInstanceOf(RuntimeException.class); // orElseThrow()가 발생시키는 예외
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId);
+        verify(groupLeaveRequestRepository).findById(leaveRequestId);
+    }
+
+    @Test
+    @DisplayName("이미 탈퇴한 멤버의 요청 응답 시 예외 발생 테스트")
+    void respondGroupLeave_ThrowsException_WhenGroupMemberAlreadyInactive() {
+        // given
+        Long leaderId = 1L;
+        Long groupId = 1L;
+        Long leaveRequestId = 1L;
+
+        LeaveRequestStatusDto statusDto = new LeaveRequestStatusDto();
+        ReflectionTestUtils.setField(statusDto, "status", LeaveRequestStatus.ACCEPTED);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId))
+                .thenReturn(true);
+        when(groupLeaveRequestRepository.findById(leaveRequestId))
+                .thenReturn(Optional.of(testGroupLeaveRequest));
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), testGroup.getId(), GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> groupLeaveService.respondGroupLeave(leaderId, groupId, leaveRequestId, statusDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(GROUP_MEMBER_ALREADY_INACTIVE.getMessage());
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId);
+        verify(groupLeaveRequestRepository).findById(leaveRequestId);
+        verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(testMember.getId(), testGroup.getId(), GroupMemberStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("승인 시 미결제 정산이 있는 경우 예외 발생 테스트")
+    void respondGroupLeave_ThrowsException_WhenUnsettledSettlementExistsOnAccept() {
+        // given
+        Long leaderId = 1L;
+        Long groupId = 1L;
+        Long leaveRequestId = 1L;
+
+        LeaveRequestStatusDto statusDto = new LeaveRequestStatusDto();
+        ReflectionTestUtils.setField(statusDto, "status", LeaveRequestStatus.ACCEPTED);
+
+        when(groupMemberRepository.existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId))
+                .thenReturn(true);
+        when(groupLeaveRequestRepository.findById(leaveRequestId))
+                .thenReturn(Optional.of(testGroupLeaveRequest));
+        when(groupMemberRepository.findByMemberIdAndGroupIdAndStatus(testMember.getId(), testGroup.getId(), GroupMemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testGroupMember));
+        when(settlementRepository.existsByIdAndStatus(leaderId, SettlementStatus.PENDING))
+                .thenReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> groupLeaveService.respondGroupLeave(leaderId, groupId, leaveRequestId, statusDto))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(UNSETTLED_SETTLEMENT_EXISTS.getMessage());
+
+        verify(groupMemberRepository).existsByMemberIdAndGroupIdAndIsLeaderTrue(leaderId, groupId);
+        verify(groupLeaveRequestRepository).findById(leaveRequestId);
+        verify(groupMemberRepository).findByMemberIdAndGroupIdAndStatus(testMember.getId(), testGroup.getId(), GroupMemberStatus.ACTIVE);
+        verify(settlementRepository).existsByIdAndStatus(leaderId, SettlementStatus.PENDING);
+        verify(groupRepository, never()).save(any());
+        verify(groupMemberRepository, never()).save(testGroupMember);
     }
 }

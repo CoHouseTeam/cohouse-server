@@ -203,12 +203,16 @@ public class GroupController {
     // 그룹 탈퇴 승인(그룹장)
     @PostMapping("/{groupId}/leave-requests/{leaveRequestId}")
     public ResponseEntity<LeaveRequestSummary> approveGroupLeaveRequest(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long groupId,
             @PathVariable Long leaveRequestId,
             @RequestBody LeaveRequestStatusDto requestDto
     ) {
+        Long memberId = userDetails.getId();
 
-        return ResponseEntity.ok().build();
+        LeaveRequestSummary responseDto = groupLeaveService.respondGroupLeave(groupId, memberId, leaveRequestId, requestDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping("/{groupId}/me/role")
