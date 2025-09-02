@@ -1,11 +1,9 @@
 package com.zero.cohousesever.member.entity;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
+import com.zero.cohousesever.member.enums.Gender;
 import com.zero.cohousesever.member.enums.MemberStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -37,10 +35,11 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private MemberStatus status;
 
+    @Convert(converter = GenderConverter.class)
     @Column(columnDefinition = "TINYINT")
-    private Boolean gender; // 0: Male, 1: Female
+    private Gender gender; // 0: Male, 1: Female
 
-    public void updateProfile(String name, LocalDate birthDate, Boolean gender) {
+    public void updateProfile(String name, LocalDate birthDate, Gender gender) {
         this.name = name;
         this.birthDate = birthDate;
         this.gender = gender;
