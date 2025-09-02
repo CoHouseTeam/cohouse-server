@@ -1,12 +1,6 @@
 package com.zero.cohousesever.notification.push.adapter;
 
-import com.google.firebase.messaging.AndroidConfig;
-import com.google.firebase.messaging.ApnsConfig;
-import com.google.firebase.messaging.Aps;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
-import com.google.firebase.messaging.Message;
-import com.google.firebase.messaging.Notification;
+import com.google.firebase.messaging.*;
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.notification.push.port.PushCommand;
@@ -61,11 +55,22 @@ public class FirebasePushSender implements PushSender {
             String messageId = FirebaseMessaging.getInstance().send(builder.build());
             log.info("[FCM] sent: memberId={}, messageId={}", cmd.getMemberId(), messageId);
 
+        } catch (FirebaseMessagingException fme) {
+            MessagingErrorCode mcode = fme.getMessagingErrorCode();
+            String codeForLog = (mcode != null) ? mcode.name() : "UNKNOWN";
+
+            log.warn("[FCM] send fail(memberId={}, code={}): {}", cmd.getMemberId(), codeForLog, fme.getMessage());
+
+            // 무효/만료 토큰 → 비활성화 처리(중복 재시도 방지)
+            if (mcode == MessagingErrorCode.UNREGISTERED || mcode == MessagingErrorCode.INVALID_ARGUMENT) {
+                tokenAdminService.deactivate(cmd.getToken());
+            }
+
+            throw new CustomException(ErrorCode.FCM_SEND_FAIL);
+
         } catch (CustomException e) {
             throw e;
-        } catch (FirebaseMessagingException e) {
-            log.error("[FCM] send fail (firebase): {}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.FCM_SEND_FAIL);
+
         } catch (Exception e) {
             log.error("[FCM] send fail: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.FCM_SEND_FAIL);
