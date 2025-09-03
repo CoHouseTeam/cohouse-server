@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -154,6 +155,7 @@ public class PostService {
      * - ACTIVE 상태만
      * - 작성자 본인만
      */
+    @Transactional
     public void deletePost(Long id, Long currentUserId) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
@@ -170,5 +172,4 @@ public class PostService {
         post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
     }
-
 }
