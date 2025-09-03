@@ -64,7 +64,7 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
     POST_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 게시글입니다."),
     UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "본인 게시글만 수정/삭제할 수 있습니다."),
-    UNAUTHORIZED_ANNOUNCEMENT(HttpStatus.FORBIDDEN, "공지 작성 권한이 없습니다. (그룹장 전용)"),
+    UNAUTHORIZED_ANNOUNCEMENT(HttpStatus.FORBIDDEN, "그룹장만 공지를 작성/수정/삭제할 수 있습니다."),
     POST_CREATE_FAILED(HttpStatus.NOT_FOUND, "게시글을 작성할 수 없습니다."),
 
     // 정산 관련 오류

@@ -6,6 +6,7 @@ import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.event.PostAnnouncementCreatedEvent;
+import com.zero.cohousesever.post.repository.PostLikeRepository;
 import com.zero.cohousesever.post.repository.PostRepository;
 import com.zero.cohousesever.post.type.PostColor;
 import com.zero.cohousesever.post.type.PostStatus;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
     private final GroupMemberRepository groupMemberRepository;
 
     private final ApplicationEventPublisher eventPublisher;
@@ -162,6 +164,8 @@ public class PostService {
         if (!post.getMemberId().equals(currentUserId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
+
+        postLikeRepository.deleteByPostId(id);
 
         post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
