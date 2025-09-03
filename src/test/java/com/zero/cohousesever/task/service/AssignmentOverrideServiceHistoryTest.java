@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.post.service.PostService;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideRequest;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideResponse;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideStatusUpdateRequest;
@@ -30,7 +31,7 @@ class AssignmentOverrideServiceHistoryTest {
   @Mock TaskAssignmentRepository assignmentRepo;
   @Mock GroupMemberRepository groupMemberRepo;
   @Mock AssignmentOverrideHistoryService historyService;
-
+  @Mock PostService postService;
   @InjectMocks AssignmentOverrideService service;
 
   private TaskTemplate tpl(long tid, long gid) {
@@ -49,12 +50,6 @@ class AssignmentOverrideServiceHistoryTest {
         .assignment(a).requesterId(requester).targetId(target).status(OverrideStatus.REQUESTED).build();
     ReflectionTestUtils.setField(r, "id", id);
     return r;
-  }
-
-  @BeforeEach
-  void init() {
-    // 외부 게시판 알림 NO-OP
-    ReflectionTestUtils.setField(service, "boardApiUrl", "");
   }
 
   @Test

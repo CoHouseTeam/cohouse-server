@@ -40,4 +40,8 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
 
   List<TaskAssignment> findByTemplate_GroupIdAndGroupMemberIdAndDateBetweenAndStatusNot(
       Long groupId, Long groupMemberId, LocalDate start, LocalDate end, AssignmentStatus status);
+
+  List<TaskAssignment> findByGroupMemberIdAndDate(Long memberId, LocalDate date);
+
+  boolean existsByGroupMemberIdAndDateAndStatusNot(Long memberId, LocalDate date, AssignmentStatus status);
 }

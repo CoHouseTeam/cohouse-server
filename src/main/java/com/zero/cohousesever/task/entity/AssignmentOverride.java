@@ -59,6 +59,9 @@ public class AssignmentOverride extends BaseEntity {
   @Column(nullable = false)
   private OverrideStatus status;
 
+  @Column(name = "post_id")
+  private Long postId;
+
   private LocalDateTime requestedAt;
   private LocalDateTime respondedAt;
 
