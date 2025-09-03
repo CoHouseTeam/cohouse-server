@@ -48,7 +48,6 @@ public class PaymentService {
             throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
         }
 
-        System.out.println("1");
         PaymentHistory paymentHistory = PaymentHistory.builder()
                 .settlement(settlement)
                 .sender(member)
@@ -57,29 +56,25 @@ public class PaymentService {
                 .transferDate(LocalDateTime.now())
                 .status(PaymentStatus.PAID)
                 .build();
-        System.out.println("2");
 
         try {
             boolean paymentSuccess = true; // 송금 성공
 //        boolean paymentSuccess = false; // 송금 실패 가정
-            System.out.println("3");
             if (paymentSuccess) {
                 sender.setStatus(PaymentStatus.PAID);
                 settlementParticipantRepository.save(sender);
-                System.out.println("4");
                 // 모든 참여자 상태가 PAID인지 검사
                 boolean allPaid = settlement.getSettlementParticipants()
                         .stream()
                         .allMatch(p -> p.getStatus() == PaymentStatus.PAID);
-                System.out.println("5");
                 if (allPaid) {
                     settlement.setStatus(SettlementStatus.COMPLETED);
                     SettlementHistory completionHistory = SettlementHistory.builder()
                             .settlement(settlement)
+                            .title(settlement.getTitle())
                             .status(SettlementStatus.COMPLETED)
                             .changedAt(LocalDateTime.now())
                             .build();
-                    System.out.println("6");
                     settlementHistoryRepository.save(completionHistory);
                     settlementRepository.save(settlement);
                 }

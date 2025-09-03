@@ -691,3 +691,11 @@ jakarta.persistence.TransactionRequiredException: No EntityManager with actual t
 [2025-09-04 03:25:55:4394][main] INFO  c.z.c.CohouseSeverApplication - Started CohouseSeverApplication in 4.328 seconds (process running for 4.657)
 [2025-09-04 03:25:55:4597][main] INFO  c.z.c.c.c.c.RedisConnectionChecker - ✅ Redis 연결 성공!
 [2025-09-04 03:25:55:4606][main] INFO  c.z.c.c.c.c.DatabaseConnectionChecker - ✅ MySQL 연결 성공!
+[2025-09-04 03:35:40:589472][SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+[2025-09-04 03:35:40:589495][SpringApplicationShutdownHook] INFO  o.s.s.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
+[2025-09-04 03:35:40:589495][SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+[2025-09-04 03:35:40:589495][SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+[2025-09-04 03:35:40:589495][SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+[2025-09-04 03:35:40:589616][SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+[2025-09-04 03:35:40:589618][SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+[2025-09-04 03:35:40:589623][SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
