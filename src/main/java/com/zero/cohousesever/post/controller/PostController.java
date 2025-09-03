@@ -25,7 +25,7 @@ public class PostController {
      * - 페이지네이션: page/size
      * - 상태(status) 반영
      */
-    @GetMapping("/{groupId}")
+    @GetMapping("/groups/{groupId}")
     public ResponseEntity<PostListResponse<PostSummaryResponse>> getPostListByGroup(
             @PathVariable Long groupId,
             @RequestParam(required = false) Integer page,
