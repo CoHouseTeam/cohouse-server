@@ -395,4 +395,19 @@ public class TaskAssignmentService {
         })
         .collect(toList());
   }
+
+  /** 오늘(로컬 KST 기준) 해당 멤버의 할일 목록 */
+  public List<TaskAssignment> getTodayAssignments(Long memberId) {
+    if (memberId == null) throw new CustomException(ErrorCode.INVALID_REQUEST);
+    return taskAssignmentRepository.findByGroupMemberIdAndDate(memberId, LocalDate.now(KST));
+  }
+
+  /** 오늘(로컬 KST 기준) 해당 멤버의 미완료 존재 여부 */
+  public boolean hasIncompleteToday(Long memberId) {
+    if (memberId == null) throw new CustomException(ErrorCode.INVALID_REQUEST);
+    return taskAssignmentRepository.existsByGroupMemberIdAndDateAndStatusNot(
+        memberId, LocalDate.now(KST), AssignmentStatus.COMPLETED
+    );
+  }
+
 }

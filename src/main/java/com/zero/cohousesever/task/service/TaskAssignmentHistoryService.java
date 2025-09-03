@@ -4,6 +4,7 @@ import com.zero.cohousesever.task.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.task.entity.TaskAssignment;
 import com.zero.cohousesever.task.entity.TaskAssignmentHistory;
 import com.zero.cohousesever.task.repository.TaskAssignmentHistoryRepository;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,4 +37,13 @@ public class TaskAssignmentHistoryService {
         .map(TaskAssignmentResponse::fromHistory)
         .toList();
   }
+
+  //  사용자별 전체 이행 히스토리
+  public List<TaskAssignmentResponse> getMemberHistories(
+      Long groupId, Long memberId, LocalDate from, LocalDate to
+  ) {
+    return historyRepository.searchByGroupMemberAndDateRange(groupId, memberId, from, to)
+        .stream().map(TaskAssignmentResponse::fromHistory).toList();
+  }
+
 }
