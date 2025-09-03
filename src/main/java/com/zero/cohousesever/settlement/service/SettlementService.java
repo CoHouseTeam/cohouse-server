@@ -15,12 +15,14 @@ import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.ocr.TesseractOcrService;
 import com.zero.cohousesever.settlement.dto.*;
 import com.zero.cohousesever.settlement.entity.*;
+import com.zero.cohousesever.settlement.event.SettlementCreatedEvent;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,6 +48,8 @@ public class SettlementService {
 
     private final TesseractOcrService tesseractOcrService;
     private final S3Service s3Service;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 정산 등록
@@ -86,6 +90,12 @@ public class SettlementService {
                 .changedAt(LocalDateTime.now())
                 .build();
         settlementHistoryRepository.save(history);
+
+        eventPublisher.publishEvent(new SettlementCreatedEvent(
+                savedSettlement.getId(),
+                group.getId(),
+                participants
+        ));
 
         return SettlementResponse.fromEntity(savedSettlement);
     }
