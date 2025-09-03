@@ -170,5 +170,4 @@ public class PostService {
         post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
     }
-
 }
