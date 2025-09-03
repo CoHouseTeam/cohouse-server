@@ -55,12 +55,10 @@ public class FirebaseConfig {
 
     private InputStream resolveCredentialStream() {
         String b64 = System.getenv("FIREBASE_CREDENTIALS_B64");
-        System.out.println(b64);
         if (b64 != null && !b64.isBlank()) {
             byte[] decoded = Base64.getDecoder().decode(b64);
             return new ByteArrayInputStream(decoded);
         }
-        // 자격증명이 전혀 없으면 공통 예외
         throw new CustomException(ErrorCode.FCM_INIT_FAIL);
     }
 }
