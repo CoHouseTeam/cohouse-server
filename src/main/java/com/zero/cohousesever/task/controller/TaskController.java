@@ -333,6 +333,31 @@ public class TaskController {
     return ResponseEntity.ok(taskAssignmentHistoryService.getAssignmentHistories(assignmentId));
   }
 
+  // 그룹 내 사용자별 전체 이행 히스토리
+  @GetMapping("/assignments/histories")
+  public ResponseEntity<List<TaskAssignmentResponse>> getMemberAssignmentHistories(
+      @AuthenticationPrincipal CustomUserDetails user,
+      @RequestParam Long groupId,
+      @RequestParam(required = false) Long memberId, // 없으면 본인
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+  ) {
+    // 1) 그룹 접근 권한
+    taskAssignmentService.ensureMember(user.getId(), groupId);
+
+    // 2) 조회 대상 멤버 확정
+    Long target = (memberId == null) ? user.getId() : memberId;
+
+    // 3) 대상이 해당 그룹 소속인지 검증
+    if (!groupMemberRepository.existsByGroupIdAndMemberId(groupId, target)) {
+      throw new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
+    }
+
+    // 4) 조회 + 변환
+    var body = taskAssignmentHistoryService.getMemberHistories(groupId, target, from, to);
+    return ResponseEntity.ok(body);
+  }
+
   // 담당자 변경 요청 히스토리 조회
   @GetMapping("/override-requests/{requestId}/histories")
   public ResponseEntity<List<AssignmentOverrideResponse>> getAssignmentOverrideHistories(

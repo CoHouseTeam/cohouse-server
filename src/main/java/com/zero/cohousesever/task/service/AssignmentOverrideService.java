@@ -4,6 +4,10 @@ import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.post.dto.post.PostRequest;
+import com.zero.cohousesever.post.dto.post.PostResponse;
+import com.zero.cohousesever.post.service.PostService;
+import com.zero.cohousesever.post.type.PostType;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideRequest;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideResponse;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideStatusUpdateRequest;
@@ -13,12 +17,15 @@ import com.zero.cohousesever.task.entity.enums.OverrideStatus;
 import com.zero.cohousesever.task.repository.AssignmentOverrideRepository;
 import com.zero.cohousesever.task.repository.TaskAssignmentRepository;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -28,15 +35,16 @@ public class AssignmentOverrideService {
   private final TaskAssignmentRepository assignmentRepository;
   private final GroupMemberRepository groupMemberRepository;
   private final AssignmentOverrideHistoryService overrideHistoryService;
+  private final PostService postService;
 
-
-  @Value("${board.api.url:}")
-  private String boardApiUrl;
 
   // ========== 생성 (브로드캐스트 → 멤버별 요청 row 생성) ==========
   @Transactional
-  public List<AssignmentOverrideResponse> createOverrideRequests(Long assignmentId, AssignmentOverrideRequest req) {
-    if (req.getRequesterId() == null) throw new CustomException(ErrorCode.REQUESTER_ID_REQUIRED);
+  public List<AssignmentOverrideResponse> createOverrideRequests(Long assignmentId,
+      AssignmentOverrideRequest req) {
+    if (req.getRequesterId() == null) {
+      throw new CustomException(ErrorCode.REQUESTER_ID_REQUIRED);
+    }
 
     TaskAssignment a = assignmentRepository.findByIdForUpdate(assignmentId)
         .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
@@ -56,7 +64,8 @@ public class AssignmentOverrideService {
       assertInSameGroup(a, targetId);
 
       // 이미 대상자에게 대기중이면 중복 생성 안 함
-      if (overrideRepository.existsByAssignment_IdAndTargetIdAndStatus(a.getId(), targetId, OverrideStatus.REQUESTED)) {
+      if (overrideRepository.existsByAssignment_IdAndTargetIdAndStatus(a.getId(), targetId,
+          OverrideStatus.REQUESTED)) {
         notifyBoard(a, req.getRequesterId(), Set.of(targetId), true);
         return List.of();
       }
@@ -80,8 +89,11 @@ public class AssignmentOverrideService {
 
     // 대상 미지정 → 그룹 ACTIVE 멤버 전체(요청자 제외)
     if (targets.isEmpty()) {
-      List<Long> members = groupMemberRepository.findMemberIdsByGroupIdAndStatus(groupId, GroupMemberStatus.ACTIVE);
-      if (members == null || members.isEmpty()) return List.of();
+      List<Long> members = groupMemberRepository.findMemberIdsByGroupIdAndStatus(groupId,
+          GroupMemberStatus.ACTIVE);
+      if (members == null || members.isEmpty()) {
+        return List.of();
+      }
 
       // 요청자 제외
       members.removeIf(m -> Objects.equals(m, req.getRequesterId()));
@@ -91,7 +103,8 @@ public class AssignmentOverrideService {
         // 같은 그룹 멤버만 허용
         assertInSameGroup(a, m);
         // 중복 대기요청은 스킵
-        if (overrideRepository.existsByAssignment_IdAndTargetIdAndStatus(a.getId(), m, OverrideStatus.REQUESTED)) {
+        if (overrideRepository.existsByAssignment_IdAndTargetIdAndStatus(a.getId(), m,
+            OverrideStatus.REQUESTED)) {
           continue;
         }
         created.add(overrideRepository.save(
@@ -111,7 +124,8 @@ public class AssignmentOverrideService {
     List<AssignmentOverride> created = new ArrayList<>();
     for (Long t : targets) {
       assertInSameGroup(a, t);
-      if (overrideRepository.existsByAssignment_IdAndTargetIdAndStatus(a.getId(), t, OverrideStatus.REQUESTED)) {
+      if (overrideRepository.existsByAssignment_IdAndTargetIdAndStatus(a.getId(), t,
+          OverrideStatus.REQUESTED)) {
         continue;
       }
       created.add(overrideRepository.save(
@@ -129,9 +143,11 @@ public class AssignmentOverrideService {
 
   // ========== 응답(수락/거절) ==========
   @Transactional
-  public AssignmentOverrideResponse respondToOverrideRequest(Long requestId, AssignmentOverrideStatusUpdateRequest req) {
-    if (req.getActorMemberId() == null || req.getStatus() == null)
+  public AssignmentOverrideResponse respondToOverrideRequest(Long requestId,
+      AssignmentOverrideStatusUpdateRequest req) {
+    if (req.getActorMemberId() == null || req.getStatus() == null) {
       throw new CustomException(ErrorCode.INVALID_REQUEST);
+    }
 
     AssignmentOverride r = overrideRepository.findById(requestId)
         .orElseThrow(() -> new CustomException(ErrorCode.OVERRIDE_REQUEST_NOT_FOUND));
@@ -152,7 +168,7 @@ public class AssignmentOverrideService {
         // 교착방지: ID 오름차순으로 락
         Long id1 = Math.min(a.getId(), r.getSwapAssignmentId());
         Long id2 = Math.max(a.getId(), r.getSwapAssignmentId());
-        TaskAssignment first  = assignmentRepository.findByIdForUpdate(id1)
+        TaskAssignment first = assignmentRepository.findByIdForUpdate(id1)
             .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
         TaskAssignment second = assignmentRepository.findByIdForUpdate(id2)
             .orElseThrow(() -> new CustomException(ErrorCode.TASK_ASSIGNMENT_NOT_FOUND));
@@ -161,8 +177,9 @@ public class AssignmentOverrideService {
         assertTodayOrFuture(second.getDate());
         assertSameGroup(first, second);
 
-        if (!Objects.equals(r.getTargetId(), actor))
+        if (!Objects.equals(r.getTargetId(), actor)) {
           throw new CustomException(ErrorCode.OVERRIDE_ACCEPTOR_MUST_BE_TARGET);
+        }
 
         Long tmp = first.getGroupMemberId();
         first.setGroupMemberId(second.getGroupMemberId());
@@ -172,8 +189,10 @@ public class AssignmentOverrideService {
         r.setModifierId(actor);
 
         // 두 배정의 남은 대기요청 일괄 거절
-        overrideRepository.bulkUpdateStatusByAssignmentId(first.getId(),  OverrideStatus.REQUESTED, OverrideStatus.REJECTED, actor);
-        overrideRepository.bulkUpdateStatusByAssignmentId(second.getId(), OverrideStatus.REQUESTED, OverrideStatus.REJECTED, actor);
+        overrideRepository.bulkUpdateStatusByAssignmentId(first.getId(), OverrideStatus.REQUESTED,
+            OverrideStatus.REJECTED, actor);
+        overrideRepository.bulkUpdateStatusByAssignmentId(second.getId(), OverrideStatus.REQUESTED,
+            OverrideStatus.REJECTED, actor);
 
         // 히스토리 기록 추가
         overrideHistoryService.record(r, r.getTargetId(), actor, 0L);
@@ -182,8 +201,9 @@ public class AssignmentOverrideService {
       }
 
       // 일반(브로드캐스트 분해된) 지정요청: 대상자만 수락 가능
-      if (!Objects.equals(r.getTargetId(), actor))
+      if (!Objects.equals(r.getTargetId(), actor)) {
         throw new CustomException(ErrorCode.OVERRIDE_ACCEPTOR_MUST_BE_TARGET);
+      }
 
       // 담당자 변경
       a.setGroupMemberId(actor);
@@ -203,8 +223,9 @@ public class AssignmentOverrideService {
 
     // ----- REJECT -----
     // 대상자만 거절 가능
-    if (!Objects.equals(r.getTargetId(), actor))
+    if (!Objects.equals(r.getTargetId(), actor)) {
       throw new CustomException(ErrorCode.OVERRIDE_ACCEPTOR_MUST_BE_TARGET);
+    }
 
     r.setStatus(OverrideStatus.REJECTED);
     r.setModifierId(actor);
@@ -220,51 +241,76 @@ public class AssignmentOverrideService {
 
   // ===== Helpers =====
   private void assertTodayOrFuture(LocalDate date) {
-    if (date.isBefore(LocalDate.now()))
+    if (date.isBefore(LocalDate.now())) {
       throw new CustomException(ErrorCode.OVERRIDE_PAST_DATE_FORBIDDEN);
+    }
   }
 
   private void assertCurrentAssignee(TaskAssignment a, Long requesterId) {
-    if (!Objects.equals(a.getGroupMemberId(), requesterId))
+    if (!Objects.equals(a.getGroupMemberId(), requesterId)) {
       throw new CustomException(ErrorCode.OVERRIDE_REQUESTER_MUST_BE_ASSIGNEE);
+    }
   }
 
   private void assertRequested(AssignmentOverride r) {
-    if (r.getStatus() != OverrideStatus.REQUESTED)
+    if (r.getStatus() != OverrideStatus.REQUESTED) {
       throw new CustomException(ErrorCode.OVERRIDE_ALREADY_PROCESSED);
+    }
   }
 
   private Set<Long> collectTargets(AssignmentOverrideRequest req) {
     Set<Long> targets = new LinkedHashSet<>();
-    if (req.getTargetId() != null) targets.add(req.getTargetId());
-    if (req.getTargetIds() != null && !req.getTargetIds().isEmpty()) targets.addAll(req.getTargetIds());
+    if (req.getTargetId() != null) {
+      targets.add(req.getTargetId());
+    }
+    if (req.getTargetIds() != null && !req.getTargetIds().isEmpty()) {
+      targets.addAll(req.getTargetIds());
+    }
     return targets;
   }
 
-  private void notifyBoard(TaskAssignment a, Long requesterId, Set<Long> targets, boolean swap) {
-    if (boardApiUrl == null || boardApiUrl.isBlank()) return;
+  // 게시글 알림 작성
+  private Long notifyBoard(TaskAssignment a, Long requesterId, Set<Long> targets, boolean swap) {
     try {
       Long groupId = a.getTemplate().getGroupId();
-      String title = (swap ? "[서로 변경 요청] " : "[대신 해줄 사람 찾기] ") + a.getDate() + " 담당 교체 요청";
-      String content = "assignmentId=" + a.getId() + ", requester=" + requesterId + ", targets=" + targets;
-      Map<String, Object> payload = new HashMap<>();
-      payload.put("groupId", groupId);
-      payload.put("title", title);
-      payload.put("content", content);
-      new RestTemplate().postForObject(boardApiUrl + "/posts/auto", payload, Void.class);
-    } catch (Exception ignore) { }
+      String title = (swap ? "[서로 변경 요청] " : "[대신 해줄 사람 찾기] ")
+          + a.getDate() + " 담당 교체 요청";
+      String content = "assignmentId=" + a.getId()
+          + ", requester=" + requesterId
+          + ", targets=" + targets;
+
+      PostRequest req = PostRequest.builder()
+          .groupId(groupId)
+          .memberId(requesterId)
+          .type(PostType.FREE)
+          .title(title)
+          .content(content)
+          .build();
+
+      // PostService 내부 호출
+      PostResponse created = postService.createPost(req, requesterId);
+      return (created != null) ? created.getId() : null;
+
+    } catch (Exception e) {
+
+      throw new CustomException(ErrorCode.POST_CREATE_FAILED);
+    }
   }
+
 
   private void assertInSameGroup(TaskAssignment a, Long groupMemberId) {
     Long gid = a.getTemplate().getGroupId();
     boolean ok = groupMemberRepository.existsByGroupIdAndMemberId(gid, groupMemberId);
-    if (!ok) throw new CustomException(ErrorCode.OVERRIDE_NOT_SAME_GROUP);
+    if (!ok) {
+      throw new CustomException(ErrorCode.OVERRIDE_NOT_SAME_GROUP);
+    }
   }
 
   private void assertSameGroup(TaskAssignment a1, TaskAssignment a2) {
     Long g1 = a1.getTemplate().getGroupId();
     Long g2 = a2.getTemplate().getGroupId();
-    if (!Objects.equals(g1, g2))
+    if (!Objects.equals(g1, g2)) {
       throw new CustomException(ErrorCode.OVERRIDE_SWAP_DIFFERENT_GROUP);
+    }
   }
 }
