@@ -16,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 
 @Service
@@ -33,7 +32,7 @@ public class PaymentService {
      * 참여자가 송금 버튼을 눌러 송금 처리
      */
     @Transactional
-    public PaymentHistory processPayment(Long memberId, Long settlementId) throws AccessDeniedException {
+    public PaymentHistory processPayment(Long memberId, Long settlementId) {
         Member member = findMemberOrThrow(memberId);
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
@@ -49,6 +48,7 @@ public class PaymentService {
             throw new CustomException(ErrorCode.NOT_THE_SETTLEMENT_PAYER);
         }
 
+        System.out.println("1");
         PaymentHistory paymentHistory = PaymentHistory.builder()
                 .settlement(settlement)
                 .sender(member)
@@ -57,19 +57,21 @@ public class PaymentService {
                 .transferDate(LocalDateTime.now())
                 .status(PaymentStatus.PAID)
                 .build();
+        System.out.println("2");
 
         try {
             boolean paymentSuccess = true; // 송금 성공
 //        boolean paymentSuccess = false; // 송금 실패 가정
+            System.out.println("3");
             if (paymentSuccess) {
                 sender.setStatus(PaymentStatus.PAID);
                 settlementParticipantRepository.save(sender);
-
+                System.out.println("4");
                 // 모든 참여자 상태가 PAID인지 검사
                 boolean allPaid = settlement.getSettlementParticipants()
                         .stream()
                         .allMatch(p -> p.getStatus() == PaymentStatus.PAID);
-
+                System.out.println("5");
                 if (allPaid) {
                     settlement.setStatus(SettlementStatus.COMPLETED);
                     SettlementHistory completionHistory = SettlementHistory.builder()
@@ -77,7 +79,7 @@ public class PaymentService {
                             .status(SettlementStatus.COMPLETED)
                             .changedAt(LocalDateTime.now())
                             .build();
-
+                    System.out.println("6");
                     settlementHistoryRepository.save(completionHistory);
                     settlementRepository.save(settlement);
                 }
@@ -88,6 +90,7 @@ public class PaymentService {
             }
         } catch (Exception e) {
             paymentHistory.setStatus(PaymentStatus.FAILED);
+            throw e;
         }
 
         paymentHistoryRepository.save(paymentHistory);
