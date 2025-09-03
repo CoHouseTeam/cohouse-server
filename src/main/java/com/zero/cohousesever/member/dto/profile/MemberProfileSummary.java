@@ -31,20 +31,12 @@ public class MemberProfileSummary {
                 .id(member.getId())
                 .email(member.getEmail())
                 .name(member.getName())
-                .gender(genderBooleanToString(member.getGender()))
+                .gender(member.getGender() != null ? member.getGender().getDescription() : null)
                 .birthDate(member.getBirthDate())
                 .profileImageUrl(member.getProfileImageUrl())
                 .alertTime(member.getAlertTime())
                 .createdAt(member.getCreatedAt())
                 .updatedAt(member.getUpdatedAt())
                 .build();
-    }
-
-    public static String genderBooleanToString(Boolean gender) {
-        return gender ? "여자" : "남자";
-    }
-
-    public static Boolean genderBooleanFromString(String gender) {
-        return gender.equals("여자"); // 비정상 값에 대해 남자(false)를 기본값으로 사용
     }
 }

@@ -7,6 +7,7 @@ import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.enums.Gender;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +56,7 @@ class MemberServiceTest {
                 .name("테스트유저")
                 .email("test@example.com")
                 .password("encodedPassword")
-                .gender(false) // male
+                .gender(Gender.MALE)
                 .birthDate(LocalDate.of(2000, 1, 1))
                 .alertTime(LocalTime.of(12, 0, 0))
                 .profileImageUrl("www.test.com/123")
@@ -125,7 +126,7 @@ class MemberServiceTest {
         assertThat(result.getId()).isEqualTo(testMember.getId());
         assertThat(result.getName()).isEqualTo(testMember.getName());
         assertThat(result.getEmail()).isEqualTo(testMember.getEmail());
-        assertThat(result.getGender()).isEqualTo(testMember.getGender() ? "여자" : "남자");
+        assertThat(result.getGender()).isEqualTo(testMember.getGender().getDescription());
         assertThat(result.getBirthDate()).isEqualTo(testMember.getBirthDate());
         assertThat(result.getAlertTime()).isEqualTo(testMember.getAlertTime());
         assertThat(result.getProfileImageUrl()).isEqualTo(testMember.getProfileImageUrl());
@@ -373,7 +374,7 @@ class MemberServiceTest {
                 .name("테스트유저2")
                 .email("test2@example.com")
                 .password("encodedPassword")
-                .gender(true) // female
+                .gender(Gender.FEMALE)
                 .birthDate(LocalDate.of(2000, 1, 1))
                 .alertTime(LocalTime.of(12, 0, 0))
                 .profileImageUrl(null)
@@ -571,7 +572,7 @@ class MemberServiceTest {
                 .name("테스트유저2")
                 .email("test2@example.com")
                 .password("encodedPassword")
-                .gender(true) // female
+                .gender(Gender.FEMALE)
                 .birthDate(LocalDate.of(2000, 1, 1))
                 .alertTime(LocalTime.of(12, 0, 0))
                 .profileImageUrl(null)
