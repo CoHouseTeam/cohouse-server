@@ -23,6 +23,11 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
     void deleteByPostIdAndMemberId(Long postId, Long memberId);
 
     /**
+     * 특정 게시글의 좋아요 삭제
+     */
+    void deleteByPostId(Long postId);
+
+    /**
      * 특정 게시글의 좋아요 개수
      */
     long countByPostId(Long postId);

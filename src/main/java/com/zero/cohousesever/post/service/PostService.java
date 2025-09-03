@@ -6,6 +6,7 @@ import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.post.dto.post.*;
 import com.zero.cohousesever.post.entity.Post;
 import com.zero.cohousesever.post.event.PostAnnouncementCreatedEvent;
+import com.zero.cohousesever.post.repository.PostLikeRepository;
 import com.zero.cohousesever.post.repository.PostRepository;
 import com.zero.cohousesever.post.type.PostColor;
 import com.zero.cohousesever.post.type.PostStatus;
@@ -17,12 +18,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
     private final GroupMemberRepository groupMemberRepository;
 
     private final ApplicationEventPublisher eventPublisher;
@@ -152,6 +155,7 @@ public class PostService {
      * - ACTIVE 상태만
      * - 작성자 본인만
      */
+    @Transactional
     public void deletePost(Long id, Long currentUserId) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
@@ -163,8 +167,9 @@ public class PostService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 
+        postLikeRepository.deleteByPostId(id);
+
         post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
     }
-
 }
