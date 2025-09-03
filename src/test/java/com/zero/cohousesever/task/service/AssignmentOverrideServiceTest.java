@@ -7,6 +7,9 @@ import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.post.dto.post.PostRequest;
+import com.zero.cohousesever.post.dto.post.PostResponse;
+import com.zero.cohousesever.post.service.PostService;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideRequest;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideResponse;
 import com.zero.cohousesever.task.dto.override.AssignmentOverrideStatusUpdateRequest;
@@ -16,12 +19,10 @@ import com.zero.cohousesever.task.entity.TaskTemplate;
 import com.zero.cohousesever.task.entity.enums.OverrideStatus;
 import com.zero.cohousesever.task.repository.AssignmentOverrideRepository;
 import com.zero.cohousesever.task.repository.TaskAssignmentRepository;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,9 +36,11 @@ class AssignmentOverrideServiceTest {
   @Mock AssignmentOverrideRepository overrideRepo;
   @Mock TaskAssignmentRepository assignmentRepo;
   @Mock GroupMemberRepository groupMemberRepo;
+  @Mock PostService postService;
+
+  @Mock AssignmentOverrideHistoryService overrideHistoryService;
 
   @InjectMocks AssignmentOverrideService service;
-  @Mock AssignmentOverrideHistoryService overrideHistoryService;
 
   private TaskTemplate tpl(long tid, long gid) {
     TaskTemplate t = TaskTemplate.builder().groupId(gid).build();
@@ -66,12 +69,6 @@ class AssignmentOverrideServiceTest {
     return r;
   }
 
-  @BeforeEach
-  void init() {
-    // 외부 게시판 알림 비활성(NO-OP)
-    ReflectionTestUtils.setField(service, "boardApiUrl", "");
-  }
-
   // ===== 생성: 대상 미지정 → 멤버별 요청 row 생성 =====
   @Test
   void create_noTarget_createsRequests_perActiveMembers_exceptRequester() {
@@ -84,7 +81,7 @@ class AssignmentOverrideServiceTest {
     when(groupMemberRepo.findMemberIdsByGroupIdAndStatus(gid, GroupMemberStatus.ACTIVE))
         .thenReturn(new java.util.ArrayList<>(List.of(101L, 201L, 202L, 203L)));
 
-    // ★ 소속 검증 스텁 추가: 요청자를 제외한 대상자 모두 true
+    // 소속 검증: 요청자/대상자 모두 true (실제 사용되는 대상자만 중요)
     when(groupMemberRepo.existsByGroupIdAndMemberId(eq(gid), anyLong())).thenAnswer(inv -> {
       Long memberId = inv.getArgument(1, Long.class);
       return Set.of(101L, 201L, 202L, 203L).contains(memberId);
@@ -109,7 +106,9 @@ class AssignmentOverrideServiceTest {
     // 요청자 제외 3명에게 생성
     assertEquals(3, out.size());
     assertTrue(out.stream().allMatch(r -> Set.of(201L, 202L, 203L).contains(r.getTargetId())));
-    verify(overrideRepo, atLeast(3)).save(any(AssignmentOverride.class));
+
+    // 게시판 글은 1번 생성 (브로드캐스트 전체에 대해 단일 알림글)
+    verify(postService, times(1)).createPost(any(PostRequest.class), eq(requester));
   }
 
   // ===== 생성: 지정 대상이 그룹 소속 아님 → 예외 =====
@@ -128,6 +127,9 @@ class AssignmentOverrideServiceTest {
     CustomException ex = assertThrows(CustomException.class,
         () -> service.createOverrideRequests(assignmentId, req));
     assertEquals(ErrorCode.OVERRIDE_NOT_SAME_GROUP, ex.getErrorCode());
+
+    // 실패 경로에서는 게시판 호출 없어야 함
+    verify(postService, never()).createPost(any(), anyLong());
   }
 
   // ===== 응답: 지정요청 ACCEPT → 담당자 교체 + 나머지 일괄 REJECT =====
@@ -152,6 +154,9 @@ class AssignmentOverrideServiceTest {
     assertEquals(actor, a.getGroupMemberId());
     assertEquals(OverrideStatus.ACCEPTED, res.getStatus());
     verify(overrideRepo).bulkUpdateStatusByAssignmentId(assignmentId, OverrideStatus.REQUESTED, OverrideStatus.REJECTED, actor);
+
+    // 응답(수락) 로직에서 게시판을 따로 건드리지 않는다면 호출 없음
+    verifyNoInteractions(postService);
   }
 
   // ===== 응답: 스왑 ACCEPT → 두 배정 담당자 맞교환 + 양쪽 일괄 REJECT =====
@@ -181,6 +186,9 @@ class AssignmentOverrideServiceTest {
     assertEquals(101L, second.getGroupMemberId());
     verify(overrideRepo).bulkUpdateStatusByAssignmentId(1L, OverrideStatus.REQUESTED, OverrideStatus.REJECTED, 202L);
     verify(overrideRepo).bulkUpdateStatusByAssignmentId(2L, OverrideStatus.REQUESTED, OverrideStatus.REJECTED, 202L);
+
+    // 응답 단계에서 게시판 미사용 가정
+    verifyNoInteractions(postService);
   }
 
   // ===== 응답: 지정요청 REJECT - 대상자 아님 → 금지 =====
@@ -201,6 +209,8 @@ class AssignmentOverrideServiceTest {
     CustomException ex = assertThrows(CustomException.class,
         () -> service.respondToOverrideRequest(55L, req));
     assertEquals(ErrorCode.OVERRIDE_ACCEPTOR_MUST_BE_TARGET, ex.getErrorCode());
+
+    verifyNoInteractions(postService);
   }
 
   // ===== 응답: 지정요청 REJECT - 대상자 본인 → 성공, 남은 REQUESTED 없으면 '모두 거절' 상태 =====
@@ -213,7 +223,7 @@ class AssignmentOverrideServiceTest {
     when(overrideRepo.findById(55L)).thenReturn(Optional.of(r));
     when(assignmentRepo.findByIdForUpdate(assignmentId)).thenReturn(Optional.of(a));
     when(groupMemberRepo.existsByGroupIdAndMemberId(gid, target)).thenReturn(true);
-    // 남은 REQUESTED 없음  모두 거절 케이스
+    // 남은 REQUESTED 없음  → 모두 거절 케이스 도달
     when(overrideRepo.findAllByAssignment_IdAndStatus(assignmentId, OverrideStatus.REQUESTED))
         .thenReturn(List.of());
 
@@ -225,7 +235,8 @@ class AssignmentOverrideServiceTest {
 
     assertEquals(OverrideStatus.REJECTED, res.getStatus());
     assertEquals(target, res.getModifierId());
-    // 남은 요청 조회 수행됨(모두 거절 판단 지점 도달)
     verify(overrideRepo).findAllByAssignment_IdAndStatus(assignmentId, OverrideStatus.REQUESTED);
+
+    verifyNoInteractions(postService);
   }
 }
