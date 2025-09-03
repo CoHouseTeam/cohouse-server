@@ -1,13 +1,13 @@
 package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
-import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.file.service.S3Service;
-import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.enums.Gender;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
 
+import static com.zero.cohousesever.common.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,7 +56,7 @@ class MemberServiceTest {
                 .name("테스트유저")
                 .email("test@example.com")
                 .password("encodedPassword")
-                .gender(false) // male
+                .gender(Gender.MALE)
                 .birthDate(LocalDate.of(2000, 1, 1))
                 .alertTime(LocalTime.of(12, 0, 0))
                 .profileImageUrl("www.test.com/123")
@@ -125,7 +126,7 @@ class MemberServiceTest {
         assertThat(result.getId()).isEqualTo(testMember.getId());
         assertThat(result.getName()).isEqualTo(testMember.getName());
         assertThat(result.getEmail()).isEqualTo(testMember.getEmail());
-        assertThat(result.getGender()).isEqualTo(testMember.getGender() ? "여자" : "남자");
+        assertThat(result.getGender()).isEqualTo(testMember.getGender().getDescription());
         assertThat(result.getBirthDate()).isEqualTo(testMember.getBirthDate());
         assertThat(result.getAlertTime()).isEqualTo(testMember.getAlertTime());
         assertThat(result.getProfileImageUrl()).isEqualTo(testMember.getProfileImageUrl());
@@ -145,7 +146,7 @@ class MemberServiceTest {
         // when & then
         assertThatThrownBy(() -> memberService.getMemberProfile(memberId))
                 .isInstanceOf(CustomException.class)
-                .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
+                .hasMessage(MEMBER_INACTIVE.getMessage());
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
     }
@@ -199,7 +200,7 @@ class MemberServiceTest {
         // when & then
         assertThatThrownBy(() -> memberService.updateMemberProfile(memberId, requestDto))
                 .isInstanceOf(CustomException.class)
-                .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
+                .hasMessage(MEMBER_INACTIVE.getMessage());
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
     }
@@ -247,7 +248,7 @@ class MemberServiceTest {
         // when & then
         assertThatThrownBy(() -> memberService.updateMemberAlertTime(memberId, requestDto))
                 .isInstanceOf(CustomException.class)
-                .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
+                .hasMessage(MEMBER_INACTIVE.getMessage());
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
     }
@@ -373,7 +374,7 @@ class MemberServiceTest {
                 .name("테스트유저2")
                 .email("test2@example.com")
                 .password("encodedPassword")
-                .gender(true) // female
+                .gender(Gender.FEMALE)
                 .birthDate(LocalDate.of(2000, 1, 1))
                 .alertTime(LocalTime.of(12, 0, 0))
                 .profileImageUrl(null)
@@ -424,7 +425,7 @@ class MemberServiceTest {
 
         when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE))
                 .thenReturn(Optional.of(testMember));
-        doThrow(new CustomException(ErrorCode.INTERNAL_SERVER_ERROR))
+        doThrow(new CustomException(INTERNAL_SERVER_ERROR))
                 .when(s3Service).validateImageFile(mockFile);
 
         // when & then
@@ -459,7 +460,7 @@ class MemberServiceTest {
         // when & then
         assertThatThrownBy(() -> memberService.updateProfileImage(memberId, mockFile))
                 .isInstanceOf(CustomException.class)
-                .hasMessage(ErrorCode.MEMBER_INACTIVE.getMessage());
+                .hasMessage(MEMBER_INACTIVE.getMessage());
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
         verify(s3Service, never()).validateImageFile(any());
@@ -490,7 +491,7 @@ class MemberServiceTest {
         // when & then
         assertThatThrownBy(() -> memberService.updateProfileImage(memberId, mockFile))
                 .isInstanceOf(CustomException.class)
-                .hasMessage(ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
+                .hasMessage(INTERNAL_SERVER_ERROR.getMessage());
 
         verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
         verify(s3Service).validateImageFile(mockFile);
@@ -538,5 +539,98 @@ class MemberServiceTest {
         verify(s3Service).uploadFile(mockFile, "members/1");
         verify(memberRepository).save(testMember);
         verify(s3Service).deleteFile("old-image-path");
+    }
+
+    @Test
+    @DisplayName("회원 프로필 이미지 삭제 성공")
+    void deleteProfileImage_Success() {
+        // given
+        Long memberId = 1L;
+        String profileImageUrl = testMember.getProfileImageUrl();
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testMember));
+        when(s3Service.extractFilePath(profileImageUrl))
+                .thenReturn("old-image-path");
+        doNothing().when(s3Service).deleteFile("old-image-path");
+
+        // when
+        memberService.deleteMemberProfileImage(memberId);
+
+        // then
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+        verify(s3Service).extractFilePath(profileImageUrl);
+        verify(s3Service).deleteFile("old-image-path");
+    }
+
+    @Test
+    @DisplayName("회원 프로필 이미지 삭제 성공 - 기존 이미지가 없는 경우")
+    void deleteMemberProfileImage_Success_WithoutImage() {
+        // given
+        Long memberId = 2L;
+        Member testMemberWithoutProfileImage = Member.builder()
+                .name("테스트유저2")
+                .email("test2@example.com")
+                .password("encodedPassword")
+                .gender(Gender.FEMALE)
+                .birthDate(LocalDate.of(2000, 1, 1))
+                .alertTime(LocalTime.of(12, 0, 0))
+                .profileImageUrl(null)
+                .status(MemberStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(testMemberWithoutProfileImage, "id", 2L);
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testMemberWithoutProfileImage));
+
+        // when
+        memberService.deleteMemberProfileImage(memberId);
+
+        // then
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+        verify(s3Service, never()).extractFilePath(anyString());
+        verify(s3Service, never()).deleteFile(anyString());
+    }
+
+    @Test
+    @DisplayName("회원 프로필 이미지 삭제 실패 - 존재하지 않는 회원")
+    void deleteMemberProfileImage_ThrowsException_WhenMemberNotFound() {
+        // given
+        Long memberId = 999L;
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> memberService.deleteMemberProfileImage(memberId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(MEMBER_INACTIVE.getMessage());
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+        verify(s3Service, never()).extractFilePath(anyString());
+        verify(s3Service, never()).deleteFile(anyString());
+    }
+
+    @Test
+    @DisplayName("회원 프로필 이미지 삭제 실패 - S3 파일 삭제 중 예외 발생")
+    void deleteMemberProfileImage_ThrowsException_WhenS3DeleteFails() {
+        // given
+        Long memberId = 1L;
+        String profileImageUrl = testMember.getProfileImageUrl();
+        String fileName = "old-image-path";
+
+        when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE))
+                .thenReturn(Optional.of(testMember));
+        when(s3Service.extractFilePath(profileImageUrl))
+                .thenReturn(fileName);
+        doThrow(new RuntimeException("S3 삭제 실패"))
+                .when(s3Service).deleteFile(fileName);
+
+        // when & then
+        memberService.deleteMemberProfileImage(memberId);
+
+        verify(memberRepository).findByIdAndStatus(memberId, MemberStatus.ACTIVE);
+        verify(s3Service).extractFilePath(profileImageUrl);
+        verify(s3Service).deleteFile(fileName);
     }
 }

@@ -34,6 +34,29 @@ services:
     depends_on:
       - mysql
       - redis
+    volumes:
+      - /lib/x86_64-linux-gnu/libtesseract.so:/lib/x86_64-linux-gnu/libtesseract.so:ro
+      - /lib/x86_64-linux-gnu/libtesseract.so.5:/lib/x86_64-linux-gnu/libtesseract.so.5:ro
+      - /usr/share/tesseract-ocr/5/tessdata:/usr/share/tesseract-ocr/5/tessdata:ro
+    environment:
+      - LD_LIBRARY_PATH=/lib/x86_64-linux-gnu
+      - TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata
+    networks:
+      - cohouse-network
+
+  nginx:
+    image: nginx:1.21
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/certs:/etc/nginx/certs
+      - ./nginx/logs:/var/log/nginx
+      - ./nginx/static:/usr/share/nginx/html/static
+    depends_on:
+      - app
     networks:
       - cohouse-network
 

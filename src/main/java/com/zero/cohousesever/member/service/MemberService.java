@@ -7,6 +7,7 @@ import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.enums.Gender;
 import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,23 @@ public class MemberService {
         return memberRepository.save(newMember);
     }
 
+    public void deleteMember(Long memberId) {
+        // 소속된 그룹이 존재하는 경우
+        if (groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)) {
+            throw new CustomException(MEMBER_STILL_IN_GROUP);
+        }
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
+
+        if (!member.getStatus().equals(MemberStatus.ACTIVE)) {
+            throw new CustomException(MEMBER_INACTIVE);
+        }
+
+        member.withdraw();
+        memberRepository.save(member);
+    }
+
     public MemberProfileSummary getMemberProfile(Long memberId) {
         Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
                 .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
@@ -50,7 +68,7 @@ public class MemberService {
         member.updateProfile(
                 requestDto.getName(),
                 requestDto.getBirthDate(),
-                MemberProfileSummary.genderBooleanFromString(requestDto.getGender())
+                Gender.fromName(requestDto.getGender())
         );
 
         Member saved = memberRepository.save(member);
@@ -68,8 +86,8 @@ public class MemberService {
 
         return MemberProfileSummary.fromEntity(saved);
     }
-
     // soft delete 구현
+
     public MemberProfileImageResponseDto updateProfileImage(Long memberId, MultipartFile profileImage) {
         Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
                 .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
@@ -109,20 +127,23 @@ public class MemberService {
                 .build();
     }
 
-    public void deleteMember(Long memberId) {
-        // 소속된 그룹이 존재하는 경우
-        if (groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)) {
-            throw new CustomException(MEMBER_STILL_IN_GROUP);
+    public void deleteMemberProfileImage(Long memberId) {
+        Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
+
+        if (member.getProfileImageUrl() == null) {
+            return;
         }
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
-
-        if (!member.getStatus().equals(MemberStatus.ACTIVE)) {
-            throw new CustomException(MEMBER_INACTIVE);
+        String fileName = s3Service.extractFilePath(member.getProfileImageUrl());
+        try {
+            s3Service.deleteFile(fileName);
+        } catch (Exception e) {
+            // 기존 이미지 삭제 실패는 로그만 남기고 진행
+            log.error("프로필 이미지 파일 삭제 실패: {} - {}", fileName, e.getMessage());
         }
 
-        member.withdraw();
+        member.updateProfileImageUrl(null);
         memberRepository.save(member);
     }
 }

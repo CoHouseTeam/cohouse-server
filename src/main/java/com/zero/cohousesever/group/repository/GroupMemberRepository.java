@@ -20,11 +20,15 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
 
     Optional<GroupMember> findByMemberIdAndGroupIdAndStatus(Long memberId, Long groupId, GroupMemberStatus status);
 
+    Optional<GroupMember> findByGroupIdAndStatusAndIsLeaderTrue(Long groupId, GroupMemberStatus groupMemberStatus);
+
     List<GroupMember> findAllByGroupIdAndStatus(Long groupId, GroupMemberStatus status);
 
     boolean existsByMemberIdAndStatus(Long memberId, GroupMemberStatus status);
 
     boolean existsByMemberIdAndGroupIdAndStatus(Long memberId, Long groupId, GroupMemberStatus status);
+
+    boolean existsByMemberIdAndGroupIdAndIsLeaderTrue(Long memberId, Long groupId);
 
     // 그룹장 여부 확인
     boolean existsByGroupAndMemberAndIsLeaderTrue(Group group, Member member);
@@ -32,6 +36,8 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
 
     // 그룹원 여부 확인
     boolean existsByGroupIdAndMemberId(Long groupId, Long memberId);
+
+    int countByGroupIdAndStatus(Long groupId, GroupMemberStatus status);
 
     // 할 일 스케줄러용:그룹 멤버 조회
     @Query("""

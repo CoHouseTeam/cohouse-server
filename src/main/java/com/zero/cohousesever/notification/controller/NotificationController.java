@@ -1,46 +1,61 @@
 package com.zero.cohousesever.notification.controller;
 
 import com.zero.cohousesever.member.security.CustomUserDetails;
+import com.zero.cohousesever.notification.dto.NotificationCreateRequest;
 import com.zero.cohousesever.notification.dto.NotificationResponse;
 import com.zero.cohousesever.notification.dto.UnreadCountResponse;
 import com.zero.cohousesever.notification.service.NotificationService;
-import com.zero.cohousesever.notification.type.NotificationType;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
+@Validated
 public class NotificationController {
 
     private final NotificationService notificationService;
 
     /**
-     * 로그인 사용자의 알림 목록을 조회
-     * 요청 파라미터:
-     * - type: 알림 타입 필터 (예: TASK, SETTLEMENT, ANNOUNCEMENT). 없으면 전체 조회
-     * - read: 읽음 여부 필터. 없으면 전체 조회
-     * 반환:
-     * - 30일 이내 ACTIVE 상태의 알림 리스트 (최신순)
+     * 알림 생성
+     * - @Valid 로 요청값 검증
+     * - 201 Created + Location 헤더(/api/notifications/{id})
      */
-    @GetMapping
-    public ResponseEntity<List<NotificationResponse>> getNotifications(
+    @PostMapping
+    public ResponseEntity<NotificationResponse> create(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestParam(required = false) NotificationType type,
-            @RequestParam(required = false) Boolean read
+            @RequestHeader(defaultValue = "false") boolean isAppActive,
+            @Valid @RequestBody NotificationCreateRequest request
     ) {
+        NotificationResponse created = notificationService.create(
+                principal.getId(), request, isAppActive);
 
-        return ResponseEntity.ok(notificationService.getNotifications(principal.getId(), type, read));
+        return ResponseEntity.created(URI.create("/api/notifications/" + created.getId()))
+                .body(created);
     }
 
     /**
-     * 로그인 사용자의 모든 알림을 소프트 딜리트
+     * 알림 목록 조회
+     * - 최근 30일, ACTIVE 상태, 최신순
+     */
+    @GetMapping
+    public ResponseEntity<List<NotificationResponse>> list(
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        return ResponseEntity.ok(notificationService.list(principal.getId()));
+    }
+
+    /**
+     * 사용자 알림 전체 삭제 (소프트 딜리트)
      * - ACTIVE 상태의 알림을 DELETED로 전환
-     * - deletedAt 시각 기록
+     * - 204 No Content
      */
     @DeleteMapping("/all")
     public ResponseEntity<Void> deleteAll(
@@ -50,12 +65,10 @@ public class NotificationController {
         return ResponseEntity.noContent().build();
     }
 
-
     /**
      * 알림 읽음 처리
-     * - 대상 알림이 ACTIVE이고 미읽음이면 읽음 처리합
-     * - 이미 읽은 알림인 경우에도 성공으로 응답
-     * - 대상이 없거나 권한이 없으면 예외를 반환
+     * - 성공/이미 읽음: 204 No Content
+     * - 대상 없음/권한 없음: 예외를 반환
      */
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<Void> read(

@@ -5,6 +5,7 @@ import com.zero.cohousesever.member.dto.auth.*;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.member.service.AuthService;
 import com.zero.cohousesever.member.service.MemberService;
+import com.zero.cohousesever.member.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +18,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final MemberService memberService;
+    private final PasswordResetService passwordResetService;
 
     // 이메일 회원 가입
     @PostMapping("/signup")
@@ -49,15 +51,6 @@ public class AuthController {
         return ResponseEntity.ok(responseDto);
     }
 
-    // 소셜 로그인 요청
-    @GetMapping("/oauth2/{provider}")
-    public ResponseEntity<JwtTokenResponseDto> oauth2Login(
-            @PathVariable String provider
-    ) {
-
-        return ResponseEntity.ok().build();
-    }
-
     // 로그아웃
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
@@ -75,6 +68,7 @@ public class AuthController {
     public ResponseEntity<MessageDto> sendPasswordResetEmail(
             @RequestBody PasswordForgotRequestDto requestDto
     ) {
+        passwordResetService.sendPasswordResetMail(requestDto);
 
         return ResponseEntity.ok().build();
     }
@@ -84,6 +78,7 @@ public class AuthController {
     public ResponseEntity<MessageDto> resetPassword(
             @RequestBody PasswordResetRequestDto requestDto
     ) {
+        passwordResetService.setNewPassword(requestDto);
 
         return ResponseEntity.ok().build();
     }
@@ -104,11 +99,34 @@ public class AuthController {
     public ResponseEntity<MessageDto> withdraw(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         Long memberId = userDetails.getId();
 
         memberService.deleteMember(memberId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<MyInfoDto> getEmailAndName(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        MyInfoDto responseDto = authService.getEmailAndName(memberId);
+
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @GetMapping("/me/id")
+    public ResponseEntity<MemberIdDto> getMemberId(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        MemberIdDto responseDto = MemberIdDto.builder()
+                .memberId(memberId)
+                .build();
+
+        return ResponseEntity.ok(responseDto);
     }
 }

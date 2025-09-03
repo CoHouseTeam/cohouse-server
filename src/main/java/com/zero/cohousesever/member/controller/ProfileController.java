@@ -70,7 +70,12 @@ public class ProfileController {
 
     // 회원 프로필 이미지 삭제
     @DeleteMapping("/profile/profile-image")
-    public ResponseEntity<Void> deleteProfileImage() {
+    public ResponseEntity<Void> deleteProfileImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        memberService.deleteMemberProfileImage(memberId);
 
         return ResponseEntity.noContent().build();
     }
