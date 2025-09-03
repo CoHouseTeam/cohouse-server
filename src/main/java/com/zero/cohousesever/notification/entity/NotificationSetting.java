@@ -33,8 +33,8 @@ public class NotificationSetting extends BaseEntity {
     /**
      * 알림 선호 시각
      */
-    private LocalTime announcementTime; // null이면 기본 22:00
     private LocalTime taskTime; // null이면 기본 08:00
+    private LocalTime announcementTime; // null이면 기본 22:00
     private LocalTime settlementTime; // null이면 기본 22:00
 
     /**
