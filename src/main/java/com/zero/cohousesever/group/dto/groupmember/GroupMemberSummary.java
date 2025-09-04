@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 public class GroupMemberSummary {
 
+    private static final String DEFAULT_PROFILE_URL = "https://cohouse-bucket.s3.ap-northeast-2.amazonaws.com/members/default/PersonCircle.png";
+
     private Long id;
     private Long groupId;
     private Long memberId;
@@ -25,6 +27,7 @@ public class GroupMemberSummary {
 
     public static GroupMemberSummary fromEntity(GroupMember groupMember) {
         Member member = groupMember.getMember();
+        String profileImageUrl = member.getProfileImageUrl();
 
         return GroupMemberSummary.builder()
                 .id(groupMember.getId())
@@ -35,7 +38,7 @@ public class GroupMemberSummary {
                 .status(groupMember.getStatus())
                 .joinedAt(groupMember.getJoinedAt())
                 .leavedAt(groupMember.getLeavedAt())
-                .profileImageUrl(member.getProfileImageUrl())
+                .profileImageUrl(profileImageUrl != null ? profileImageUrl : DEFAULT_PROFILE_URL)
                 .build();
     }
 }
