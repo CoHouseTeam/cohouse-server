@@ -43,8 +43,7 @@ public class Member extends BaseEntity {
         this.password = password;
     }
 
-    public void updateProfile(String name, LocalDate birthDate, Gender gender) {
-        this.name = name;
+    public void updateProfile(LocalDate birthDate, Gender gender) {
         this.birthDate = birthDate;
         this.gender = gender;
     }

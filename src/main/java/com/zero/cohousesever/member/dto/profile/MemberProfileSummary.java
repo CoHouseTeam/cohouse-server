@@ -1,5 +1,6 @@
 package com.zero.cohousesever.member.dto.profile;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.zero.cohousesever.member.entity.Member;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,7 @@ public class MemberProfileSummary {
     private String gender;
     private LocalDate birthDate;
     private String profileImageUrl;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime alertTime;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
