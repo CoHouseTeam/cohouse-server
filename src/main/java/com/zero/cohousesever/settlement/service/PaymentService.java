@@ -31,7 +31,6 @@ public class PaymentService {
     /**
      * 참여자가 송금 버튼을 눌러 송금 처리
      */
-    @Transactional
     public PaymentHistory processPayment(Long memberId, Long settlementId) {
         Member member = findMemberOrThrow(memberId);
         Settlement settlement = settlementRepository.findById(settlementId)
