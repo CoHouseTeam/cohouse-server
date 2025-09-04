@@ -11,11 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
+import org.quartz.SchedulerException;
 import org.springframework.stereotype.Component;
 
 /**
  * 매일 22:00 "당일 미완료" 리마인드
- * - TODO: 실제로는 할일 도메인에 질의해서 미완료가 있을 때만 발송,
  * 없으면 자기 자신 해제 가능
  */
 @Component
@@ -34,10 +34,11 @@ public class TaskIncompleteReminderJob implements Job {
         boolean hasIncompleteToday = taskAssignmentService.hasIncompleteToday(memberId);
 
         if (!hasIncompleteToday) {
-            // 필요시 스스로 해제: context.getScheduler().deleteJob(context.getJobDetail().getKey());
+            try {
+                context.getScheduler().deleteJob(context.getJobDetail().getKey());
+            } catch (SchedulerException ignored) {}
             return;
         }
-
         String title = "할일 미완료 알림";
         String content = "오늘 맡은 할일 중 완료되지 않은 항목이 있습니다. 지금 확인해 주세요.";
 

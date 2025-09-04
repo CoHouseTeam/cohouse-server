@@ -33,19 +33,21 @@ public class TaskDailySummaryJob implements Job {
         Long memberId = m.getLong("memberId");
         String hhmm = m.getString("hhmm");
 
-        // 1) 오늘자 할일 조회
+        // 오늘자 할일 조회
         List<TaskAssignment> today = taskAssignmentService.getTodayAssignments(memberId);
 
-        String list = today.isEmpty()
-            ? "오늘 할일이 없습니다 🎉"
-            : today.stream()
-                .map(a -> "- " + a.getTemplate().getCategory())
-                .collect(Collectors.joining("\n"));
+        if (today == null || today.isEmpty()) {
+            return;
+        }
+
+        String list = today.stream()
+            .map(a -> "- " + a.getTemplate().getCategory())
+            .collect(java.util.stream.Collectors.joining("\n"));
 
         String title = "오늘의 할일 (" + hhmm + ")";
         String content = list;
 
-        // 2) 알림 저장
+        // 알림 저장
         NotificationCreateRequest req = NotificationCreateRequest.builder()
             .type(NotificationType.TASK)
             .title(title)
@@ -54,12 +56,12 @@ public class TaskDailySummaryJob implements Job {
 
         NotificationResponse saved = notificationService.create(memberId, req, false);
 
-        // 3) 푸시 즉시 발송 (토큰 없으면 내부에서 조용히 스킵)
+        // 4) 푸시 즉시 발송 (토큰 없으면 내부에서 스킵)
         pushBridge.sendNow(
             memberId,
             title,
             content,
-            Map.of( // 필요 시 딥링크 등 FE 라우팅용 데이터
+            Map.of(
                 "type", "TASK_SUMMARY",
                 "notificationId", String.valueOf(saved.getId())
             )
