@@ -44,8 +44,12 @@ public class Member extends BaseEntity {
     }
 
     public void updateProfile(LocalDate birthDate, Gender gender) {
-        this.birthDate = birthDate;
-        this.gender = gender;
+        if (birthDate != null) {
+            this.birthDate = birthDate;
+        }
+        if (gender != null) {
+            this.gender = gender;
+        }
     }
 
     public void updateAlertTime(LocalTime alertTime) {
