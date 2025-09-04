@@ -28,7 +28,8 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
   boolean existsByTemplate_GroupIdAndGroupMemberId(Long groupId, Long groupMemberId);
 
   // 기준일 이전의 가장 최근 배정 1건 (담당 그대로 유지용)
-  TaskAssignment findTopByTemplate_IdAndDateLessThanOrderByDateDesc(Long templateId, LocalDate date);
+  TaskAssignment findTopByTemplate_IdAndDateLessThanOrderByDateDesc(Long templateId,
+      LocalDate date);
 
   // 담당자 변경 시 동시성 제어
   @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -43,5 +44,8 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
 
   List<TaskAssignment> findByGroupMemberIdAndDate(Long memberId, LocalDate date);
 
-  boolean existsByGroupMemberIdAndDateAndStatusNot(Long memberId, LocalDate date, AssignmentStatus status);
+  boolean existsByGroupMemberIdAndDateAndStatusNot(Long memberId, LocalDate date,
+      AssignmentStatus status);
+
+  Optional<TaskAssignment> findByTemplate_IdAndDate(Long templateId, LocalDate date);
 }
