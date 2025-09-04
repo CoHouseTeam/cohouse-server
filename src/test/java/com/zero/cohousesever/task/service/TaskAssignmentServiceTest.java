@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.notification.scheduler.task.TaskScheduler;
 import com.zero.cohousesever.task.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.task.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.task.entity.RepeatDay;
@@ -37,7 +38,7 @@ class TaskAssignmentServiceTest {
   @Mock TaskTemplateRepository templateRepo;
   @Mock RepeatDayRepository repeatRepo;
   @Mock GroupMemberRepository groupMemberRepo;
-
+  @Mock TaskScheduler taskScheduler;
   @InjectMocks TaskAssignmentService service;
   @Mock TaskAssignmentHistoryService taskAssignmentHistoryService;
 

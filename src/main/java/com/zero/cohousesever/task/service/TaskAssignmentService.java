@@ -7,6 +7,7 @@ import static java.util.stream.Collectors.toSet;
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.notification.scheduler.task.TaskScheduler;
 import com.zero.cohousesever.task.dto.assignment.TaskAssignmentRequest;
 import com.zero.cohousesever.task.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.task.dto.assignment.UncompletedByMemberResponse;
@@ -46,6 +47,7 @@ public class TaskAssignmentService {
   private final RepeatDayRepository repeatDayRepository;
   private final GroupMemberRepository groupMemberRepository;
   private final TaskAssignmentHistoryService taskAssignmentHistoryService;
+  private final TaskScheduler taskScheduler;
 
   // 리더 확인
   public void ensureLeader(Long memberId, Long groupId) {
@@ -231,6 +233,22 @@ public class TaskAssignmentService {
     try {
       var saved = taskAssignmentRepository.saveAll(toSave);
       taskAssignmentHistoryService.recordCreatedAssignments(saved);
+
+      // 오늘 할 일 알림 배정
+      LocalDate today = LocalDate.now(KST);
+      boolean hasToday = saved.stream().anyMatch(a -> a.getDate().isEqual(today));
+      if (hasToday) {
+        Long memberIdForToday = saved.stream()
+            .filter(a -> a.getDate().isEqual(today))
+            .findFirst().get().getGroupMemberId();
+
+        // 1) 요약(지정시간 or 08:00) 단발 등록
+        taskScheduler.scheduleTodaySummaryIfNeeded(memberIdForToday);
+
+        // 2) 22:00 리마인드 단발 등록
+        taskScheduler.scheduleTonightIncompleteReminder(memberIdForToday);
+      }
+
       return saved.stream()
           .map(a -> TaskAssignmentResponse.from(a, "WEEKLY"))
           .toList();
@@ -287,6 +305,17 @@ public class TaskAssignmentService {
 
     // 히스토리 기록 추가
     taskAssignmentHistoryService.recordStatusChange(saved);
+
+    // 상태 저장/히스토리 기록 직후에 추가
+    Long memberId = saved.getGroupMemberId();
+    LocalDate today = LocalDate.now(KST);
+
+    boolean allDoneToday = !taskAssignmentRepository
+        .existsByGroupMemberIdAndDateAndStatusNot(memberId, today, AssignmentStatus.COMPLETED);
+
+    if (allDoneToday) {
+      taskScheduler.cancelTonightIncompleteReminder(memberId); // 오늘 리마인드 제거
+    }
 
     String repeatType =
         repeatDayRepository.existsByTaskTemplate_Id(saved.getTemplate().getId()) ? "WEEKLY"

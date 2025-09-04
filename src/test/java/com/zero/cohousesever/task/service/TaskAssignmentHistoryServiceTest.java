@@ -3,6 +3,7 @@ package com.zero.cohousesever.task.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.zero.cohousesever.notification.scheduler.task.TaskScheduler;
 import com.zero.cohousesever.task.entity.TaskAssignment;
 import com.zero.cohousesever.task.entity.TaskAssignmentHistory;
 import com.zero.cohousesever.task.entity.TaskTemplate;
@@ -23,6 +24,7 @@ class TaskAssignmentServiceUpdateStatusTest {
 
   @Mock TaskAssignmentRepository assignmentRepo;
   @Mock RepeatDayRepository repeatRepo;
+  @Mock TaskScheduler taskScheduler;
 
   @Mock TaskAssignmentHistoryService historyServiceMock;
 
