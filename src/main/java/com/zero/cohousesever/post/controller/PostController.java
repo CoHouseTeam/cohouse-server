@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -38,6 +39,17 @@ public class PostController {
         return ResponseEntity.ok(
                 postService.getPostList(groupId, page, size, type, status)
         );
+    }
+
+    /**
+     * 그룹별 공지사항 요약 목록 조회
+     * - 제목 + 작성일시만 반환
+     */
+    @GetMapping("/groups/{groupId}/announcements/summary")
+    public ResponseEntity<List<AnnouncementSummaryResponse>> getAnnouncementsByGroup(
+            @PathVariable Long groupId
+    ) {
+        return ResponseEntity.ok(postService.getAnnouncementsByGroup(groupId));
     }
 
     /**
