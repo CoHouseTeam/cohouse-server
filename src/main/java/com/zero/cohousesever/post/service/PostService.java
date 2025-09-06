@@ -20,6 +20,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -66,6 +68,23 @@ public class PostService {
                 pageResult.getTotalPages(),
                 pageResult.isLast()
         );
+    }
+
+    /**
+     * 그룹별 공지사항 요약(제목+날짜) 목록 조회
+     */
+    public List<AnnouncementSummaryResponse> getAnnouncementsByGroup(Long groupId) {
+        List<Post> posts = postRepository.findByGroupIdAndTypeAndStatusOrderByCreatedAtDesc(
+                groupId, PostType.ANNOUNCEMENT, PostStatus.ACTIVE);
+
+        return posts.stream()
+                .map(post -> AnnouncementSummaryResponse.builder()
+                        .id(post.getId())
+                        .title(post.getTitle())
+                        .date(post.getCreatedAt().toLocalDate())
+                        .build()
+                )
+                .toList();
     }
 
     /**
