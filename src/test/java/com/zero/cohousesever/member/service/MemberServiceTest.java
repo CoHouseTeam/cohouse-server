@@ -4,8 +4,10 @@ import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.member.dto.profile.AlertTimeUpdateDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
+import com.zero.cohousesever.member.dto.profile.ProfileUpdateDto;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.Gender;
 import com.zero.cohousesever.member.enums.MemberStatus;
@@ -156,12 +158,10 @@ class MemberServiceTest {
     void updateMemberProfile_Success() {
         // given
         Long memberId = 1L;
-        String name = "수정된 유저";
         LocalDate birthDate = LocalDate.of(2000, 12, 31);
         String gender = "여자";
 
-        MemberProfileSummary requestDto = MemberProfileSummary.fromEntity(testMember);
-        ReflectionTestUtils.setField(requestDto, "name", name);
+        ProfileUpdateDto requestDto = new ProfileUpdateDto();
         ReflectionTestUtils.setField(requestDto, "birthDate", birthDate);
         ReflectionTestUtils.setField(requestDto, "gender", gender);
 
@@ -175,7 +175,6 @@ class MemberServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(testMember.getId());
-        assertThat(result.getName()).isEqualTo(name);
         assertThat(result.getBirthDate()).isEqualTo(birthDate);
         assertThat(result.getGender()).isEqualTo(gender);
 
@@ -190,8 +189,7 @@ class MemberServiceTest {
         Long memberId = 1L;
         ReflectionTestUtils.setField(testMember, "status", MemberStatus.INACTIVE);
 
-        MemberProfileSummary requestDto = MemberProfileSummary.fromEntity(testMember);
-        ReflectionTestUtils.setField(requestDto, "name", "수정된 유저");
+        ProfileUpdateDto requestDto = new ProfileUpdateDto();
         ReflectionTestUtils.setField(requestDto, "birthDate", LocalDate.of(2000, 12, 31));
         ReflectionTestUtils.setField(requestDto, "gender", "여자");
 
@@ -212,7 +210,7 @@ class MemberServiceTest {
         Long memberId = 1L;
         LocalTime alertTime = LocalTime.of(18, 0, 0);
 
-        MemberProfileSummary requestDto = MemberProfileSummary.fromEntity(testMember);
+        AlertTimeUpdateDto requestDto = new AlertTimeUpdateDto();
         ReflectionTestUtils.setField(requestDto, "alertTime", alertTime);
 
         when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.of(testMember));
@@ -240,7 +238,7 @@ class MemberServiceTest {
 
         ReflectionTestUtils.setField(testMember, "status", MemberStatus.INACTIVE);
 
-        MemberProfileSummary requestDto = MemberProfileSummary.fromEntity(testMember);
+        AlertTimeUpdateDto requestDto = new AlertTimeUpdateDto();
         ReflectionTestUtils.setField(requestDto, "alertTime", alertTime);
 
         when(memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)).thenReturn(Optional.empty());

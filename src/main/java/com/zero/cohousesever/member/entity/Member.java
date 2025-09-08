@@ -43,10 +43,13 @@ public class Member extends BaseEntity {
         this.password = password;
     }
 
-    public void updateProfile(String name, LocalDate birthDate, Gender gender) {
-        this.name = name;
-        this.birthDate = birthDate;
-        this.gender = gender;
+    public void updateProfile(LocalDate birthDate, Gender gender) {
+        if (birthDate != null) {
+            this.birthDate = birthDate;
+        }
+        if (gender != null) {
+            this.gender = gender;
+        }
     }
 
     public void updateAlertTime(LocalTime alertTime) {

@@ -16,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 
 @Service
@@ -32,8 +31,7 @@ public class PaymentService {
     /**
      * 참여자가 송금 버튼을 눌러 송금 처리
      */
-    @Transactional
-    public PaymentHistory processPayment(Long memberId, Long settlementId) throws AccessDeniedException {
+    public PaymentHistory processPayment(Long memberId, Long settlementId) {
         Member member = findMemberOrThrow(memberId);
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
@@ -64,20 +62,18 @@ public class PaymentService {
             if (paymentSuccess) {
                 sender.setStatus(PaymentStatus.PAID);
                 settlementParticipantRepository.save(sender);
-
                 // 모든 참여자 상태가 PAID인지 검사
                 boolean allPaid = settlement.getSettlementParticipants()
                         .stream()
                         .allMatch(p -> p.getStatus() == PaymentStatus.PAID);
-
                 if (allPaid) {
                     settlement.setStatus(SettlementStatus.COMPLETED);
                     SettlementHistory completionHistory = SettlementHistory.builder()
                             .settlement(settlement)
+                            .title(settlement.getTitle())
                             .status(SettlementStatus.COMPLETED)
                             .changedAt(LocalDateTime.now())
                             .build();
-
                     settlementHistoryRepository.save(completionHistory);
                     settlementRepository.save(settlement);
                 }
@@ -88,6 +84,7 @@ public class PaymentService {
             }
         } catch (Exception e) {
             paymentHistory.setStatus(PaymentStatus.FAILED);
+            throw e;
         }
 
         paymentHistoryRepository.save(paymentHistory);

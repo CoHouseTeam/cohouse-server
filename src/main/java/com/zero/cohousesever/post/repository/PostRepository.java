@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
@@ -20,6 +21,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * 그룹의 타입(공지/자유 등) 페이징 조회 (목록)
      * - 목록 화면은 항상 탭(type) 선택이므로 type + status로만 조회
      */
-    Page<Post> findByGroupIdAndTypeAndStatus(Long groupId, PostType type, PostStatus status, Pageable pageable);
+    Page<Post> findByGroupIdAndTypeAndStatus(
+            Long groupId, PostType type, PostStatus status, Pageable pageable);
 
+    /**
+     * 그룹별 공지(ANNOUNCEMENT) 조회
+     */
+    List<Post> findByGroupIdAndTypeAndStatusOrderByCreatedAtDesc(
+            Long groupId, PostType type, PostStatus status);
 }

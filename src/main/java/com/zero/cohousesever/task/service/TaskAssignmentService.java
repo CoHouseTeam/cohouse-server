@@ -228,10 +228,22 @@ public class TaskAssignmentService {
     if (toSave.isEmpty()) {
       return List.of();
     }
-    var saved = taskAssignmentRepository.saveAll(toSave);
-    return saved.stream()
-        .map(a -> TaskAssignmentResponse.from(a, "WEEKLY"))
-        .toList();
+    try {
+      var saved = taskAssignmentRepository.saveAll(toSave);
+      taskAssignmentHistoryService.recordCreatedAssignments(saved);
+      return saved.stream()
+          .map(a -> TaskAssignmentResponse.from(a, "WEEKLY"))
+          .toList();
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      // 이미 들어간 경우 재조회해서 정상 응답
+      List<TaskAssignmentResponse> merged = new ArrayList<>();
+      for (RepeatDay rd : days) {
+        LocalDate d = sunday.plusDays(rd.getDayOfWeek().getValue() % 7);
+        taskAssignmentRepository.findByTemplate_IdAndDate(template.getId(), d)
+            .ifPresent(a -> merged.add(TaskAssignmentResponse.from(a, "WEEKLY")));
+      }
+      return merged;
+    }
   }
 
   /**
@@ -395,4 +407,27 @@ public class TaskAssignmentService {
         })
         .collect(toList());
   }
+
+  /**
+   * 오늘(로컬 KST 기준) 해당 멤버의 할일 목록
+   */
+  public List<TaskAssignment> getTodayAssignments(Long memberId) {
+    if (memberId == null) {
+      throw new CustomException(ErrorCode.INVALID_REQUEST);
+    }
+    return taskAssignmentRepository.findByGroupMemberIdAndDate(memberId, LocalDate.now(KST));
+  }
+
+  /**
+   * 오늘(로컬 KST 기준) 해당 멤버의 미완료 존재 여부
+   */
+  public boolean hasIncompleteToday(Long memberId) {
+    if (memberId == null) {
+      throw new CustomException(ErrorCode.INVALID_REQUEST);
+    }
+    return taskAssignmentRepository.existsByGroupMemberIdAndDateAndStatusNot(
+        memberId, LocalDate.now(KST), AssignmentStatus.COMPLETED
+    );
+  }
+
 }

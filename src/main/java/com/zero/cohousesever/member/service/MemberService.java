@@ -4,8 +4,10 @@ import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.group.enums.GroupMemberStatus;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
+import com.zero.cohousesever.member.dto.profile.AlertTimeUpdateDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
+import com.zero.cohousesever.member.dto.profile.ProfileUpdateDto;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.enums.Gender;
 import com.zero.cohousesever.member.enums.MemberStatus;
@@ -61,12 +63,11 @@ public class MemberService {
         return MemberProfileSummary.fromEntity(member);
     }
 
-    public MemberProfileSummary updateMemberProfile(Long memberId, MemberProfileSummary requestDto) {
+    public MemberProfileSummary updateMemberProfile(Long memberId, ProfileUpdateDto requestDto) {
         Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
                 .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
 
         member.updateProfile(
-                requestDto.getName(),
                 requestDto.getBirthDate(),
                 Gender.fromName(requestDto.getGender())
         );
@@ -76,7 +77,7 @@ public class MemberService {
         return MemberProfileSummary.fromEntity(saved);
     }
 
-    public MemberProfileSummary updateMemberAlertTime(Long memberId, MemberProfileSummary requestDto) {
+    public MemberProfileSummary updateMemberAlertTime(Long memberId, AlertTimeUpdateDto requestDto) {
         Member member = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
                 .orElseThrow(() -> new CustomException(MEMBER_INACTIVE));
 
