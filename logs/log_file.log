@@ -1656,3 +1656,4 @@ Caused by: java.net.ConnectException: Connection refused
 [2025-09-08 15:38:22:9482][http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
 [2025-09-08 15:38:22:9483][http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
 [2025-09-08 15:38:22:9484][http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+[2025-09-08 15:47:43:570628][HikariPool-1 housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Retrograde clock change detected (housekeeper delta=27s917ms), soft-evicting connections from pool.
