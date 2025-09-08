@@ -61,7 +61,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 10m
           script: |
+            # 실패 시 즉시 스크립트 실행 중단
             set -e
+            # 불필요한 모든 도커 리소스를 강제로 삭제
+            sudo docker system prune -af --volumes 
             sudo docker-compose stop nginx app
             sudo docker-compose rm -f nginx app
             sudo docker-compose pull nginx app
