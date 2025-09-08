@@ -247,19 +247,10 @@ public class SettlementService {
     }
 
     /**
-     * 나의 정산 간단 목록 조회
-     */
-    public Page<SettlementSimpleResponse> getMySimpleSettlements(Long memberId, Pageable pageable) {
-        Member member = findMemberOrThrow(memberId);
-        Page<Settlement> settlements = settlementRepository.findAllByParticipantMember(member, pageable);
-
-        return settlements.map(SettlementSimpleResponse::fromEntity);
-    }
-
-    /**
      * 나의 정산 목록 조회
      */
     public Page<SettlementResponse> getMySettlements(Long memberId, Pageable pageable) {
+        // 해당 멤버가 참여한 모든 정산 조회
         Member member = findMemberOrThrow(memberId);
         Page<Settlement> settlements = settlementRepository.findAllByParticipantMember(member, pageable);
 
