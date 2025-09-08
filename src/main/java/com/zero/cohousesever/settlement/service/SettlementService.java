@@ -249,11 +249,13 @@ public class SettlementService {
     /**
      * 나의 정산 간단 목록 조회
      */
-    public Page<SettlementSimpleResponse> getMySimpleSettlements(Long memberId, Pageable pageable) {
+    public List<SettlementSimpleResponse> getMySimpleSettlements(Long memberId) {
         Member member = findMemberOrThrow(memberId);
-        Page<Settlement> settlements = settlementRepository.findAllByParticipantMember(member, pageable);
+        List<Settlement> settlements = settlementRepository.findAllByParticipantMember(member);
 
-        return settlements.map(SettlementSimpleResponse::fromEntity);
+        return settlements.stream()
+                .map(SettlementSimpleResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**

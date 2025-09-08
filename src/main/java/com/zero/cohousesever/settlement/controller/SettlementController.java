@@ -58,9 +58,9 @@ public class SettlementController {
      * 나의 간단 정산 목록 조회 - 메인페이지 전용
      */
     @GetMapping("/my/simple")
-    public ResponseEntity<Page<SettlementSimpleResponse>> getMySimpleSettlements(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                                     Pageable pageable) {
-        Page<SettlementSimpleResponse> settlements = settlementService.getMySimpleSettlements(userDetails.getId(), pageable);
+    public ResponseEntity<List<SettlementSimpleResponse>> getMySimpleSettlements(@AuthenticationPrincipal CustomUserDetails userDetails
+                                                                     ) {
+        List<SettlementSimpleResponse> settlements = settlementService.getMySimpleSettlements(userDetails.getId());
         return ResponseEntity.ok(settlements);
     }
 
