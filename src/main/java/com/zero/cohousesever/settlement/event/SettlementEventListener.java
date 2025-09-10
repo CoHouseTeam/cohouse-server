@@ -5,7 +5,7 @@ import com.zero.cohousesever.notification.entity.DeviceToken;
 import com.zero.cohousesever.notification.push.adapter.FirebasePushSender;
 import com.zero.cohousesever.notification.push.port.PushCommand;
 import com.zero.cohousesever.notification.repository.DeviceTokenRepository;
-import com.zero.cohousesever.settlement.entity.SettlementParticipant;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementParticipant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;

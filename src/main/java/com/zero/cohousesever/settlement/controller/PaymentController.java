@@ -1,8 +1,8 @@
 package com.zero.cohousesever.settlement.controller;
 
 import com.zero.cohousesever.member.security.CustomUserDetails;
-import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
-import com.zero.cohousesever.settlement.dto.PaymentHistorySearchRequest;
+import com.zero.cohousesever.settlement.dto.payment.PaymentHistoryResponse;
+import com.zero.cohousesever.settlement.dto.payment.PaymentHistorySearchRequest;
 import com.zero.cohousesever.settlement.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

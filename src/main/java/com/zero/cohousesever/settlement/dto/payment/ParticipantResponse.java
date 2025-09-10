@@ -1,7 +1,7 @@
-package com.zero.cohousesever.settlement.dto;
+package com.zero.cohousesever.settlement.dto.payment;
 
-import com.zero.cohousesever.settlement.entity.PaymentStatus;
-import com.zero.cohousesever.settlement.entity.SettlementParticipant;
+import com.zero.cohousesever.settlement.entity.payment.PaymentStatus;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementParticipant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

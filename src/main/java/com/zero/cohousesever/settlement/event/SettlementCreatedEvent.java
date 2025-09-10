@@ -1,7 +1,7 @@
 package com.zero.cohousesever.settlement.event;
 
 
-import com.zero.cohousesever.settlement.entity.SettlementParticipant;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementParticipant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

@@ -4,8 +4,13 @@ import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
-import com.zero.cohousesever.settlement.dto.PaymentHistoryResponse;
-import com.zero.cohousesever.settlement.entity.*;
+import com.zero.cohousesever.settlement.dto.payment.PaymentHistoryResponse;
+import com.zero.cohousesever.settlement.entity.payment.PaymentHistory;
+import com.zero.cohousesever.settlement.entity.payment.PaymentStatus;
+import com.zero.cohousesever.settlement.entity.settlement.Settlement;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementHistory;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementParticipant;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementStatus;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
@@ -14,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
