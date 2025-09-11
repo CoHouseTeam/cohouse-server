@@ -4,6 +4,7 @@ import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.member.dto.auth.*;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.member.enums.MemberStatus;
 import com.zero.cohousesever.member.enums.TokenValidationStatus;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.member.security.CustomUserDetails;
@@ -51,6 +52,10 @@ public class AuthService {
     public JwtTokenResponseDto loginAuthenticate(LoginRequestDto requestDto) {
         Member member = memberRepository.findByEmail(requestDto.getEmail())
                 .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
+
+        if (MemberStatus.INACTIVE.equals(member.getStatus())) {
+            throw new CustomException(MEMBER_INACTIVE);
+        }
 
         if (!passwordEncoder.matches(requestDto.getPassword(), member.getPassword())) {
             throw new CustomException(PASSWORD_NOT_MATCH);
