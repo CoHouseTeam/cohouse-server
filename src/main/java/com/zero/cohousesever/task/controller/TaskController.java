@@ -101,7 +101,7 @@ public class TaskController {
     TaskTemplate t = taskTemplateService.getById(templateId); // 없으면 내부에서 예외
     taskAssignmentService.ensureLeader(user.getId(), t.getGroupId());
 
-    TaskTemplate updated = taskTemplateService.updateTemplate(templateId, request.getCategory());
+    TaskTemplate updated = taskTemplateService.updateTemplate(templateId, request);
     return ResponseEntity.ok(TaskTemplateResponse.from(updated));
   }
 
