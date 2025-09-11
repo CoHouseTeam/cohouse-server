@@ -11,11 +11,14 @@ import com.zero.cohousesever.settlement.entity.settlement.Settlement;
 import com.zero.cohousesever.settlement.entity.settlement.SettlementHistory;
 import com.zero.cohousesever.settlement.entity.settlement.SettlementParticipant;
 import com.zero.cohousesever.settlement.entity.settlement.SettlementStatus;
+import com.zero.cohousesever.settlement.event.PaymentCompletedEvent;
+import com.zero.cohousesever.settlement.event.PaymentFailedEvent;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,8 +35,10 @@ public class PaymentService {
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final SettlementParticipantRepository settlementParticipantRepository;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     /**
-     * 참여자가 송금 버튼을 눌러 송금 처리
+     * 참여자가 송금 버튼을 눌러 송금
      */
     public PaymentHistory processPayment(Long memberId, Long settlementId) {
         Member member = findMemberOrThrow(memberId);
@@ -66,7 +71,7 @@ public class PaymentService {
             if (paymentSuccess) {
                 sender.setStatus(PaymentStatus.PAID);
                 settlementParticipantRepository.save(sender);
-                // 모든 참여자 상태가 PAID인지 검사
+                // 모든 참여자 송금 상태가 PAID 인지 검사
                 boolean allPaid = settlement.getSettlementParticipants()
                         .stream()
                         .allMatch(p -> p.getStatus() == PaymentStatus.PAID);
@@ -83,15 +88,31 @@ public class PaymentService {
                 }
 
                 paymentHistory.setStatus(PaymentStatus.PAID);
+                paymentHistoryRepository.save(paymentHistory);
+
+                eventPublisher.publishEvent(new PaymentCompletedEvent(
+                        settlement.getId(),
+                        paymentHistory.getSender().getId()
+                ));
             } else {
                 paymentHistory.setStatus(PaymentStatus.FAILED);
+                paymentHistoryRepository.save(paymentHistory);
+
+                eventPublisher.publishEvent(new PaymentFailedEvent(
+                        settlement.getId(),
+                        paymentHistory.getSender().getId()
+                ));
             }
         } catch (Exception e) {
             paymentHistory.setStatus(PaymentStatus.FAILED);
+            paymentHistoryRepository.save(paymentHistory);
+
+            eventPublisher.publishEvent(new PaymentFailedEvent(
+                    settlement.getId(),
+                    paymentHistory.getSender().getId()
+            ));
             throw e;
         }
-
-        paymentHistoryRepository.save(paymentHistory);
 
         return paymentHistory;
     }

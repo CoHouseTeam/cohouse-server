@@ -24,6 +24,7 @@ import com.zero.cohousesever.settlement.entity.settlement.Settlement;
 import com.zero.cohousesever.settlement.entity.settlement.SettlementHistory;
 import com.zero.cohousesever.settlement.entity.settlement.SettlementParticipant;
 import com.zero.cohousesever.settlement.entity.settlement.SettlementStatus;
+import com.zero.cohousesever.settlement.event.SettlementCanceledEvent;
 import com.zero.cohousesever.settlement.event.SettlementCreatedEvent;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
@@ -61,7 +62,7 @@ public class SettlementService {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * 정산 등록
+     * 정산 생성
      */
     @Transactional
     public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request, MultipartFile file) throws IOException {
@@ -102,8 +103,8 @@ public class SettlementService {
 
         eventPublisher.publishEvent(new SettlementCreatedEvent(
                 savedSettlement.getId(),
-                group.getId(),
-                participants
+                savedSettlement.getGroup().getId(),
+                savedSettlement.getSettlementParticipants()
         ));
 
         return SettlementResponse.fromEntity(savedSettlement);
@@ -217,7 +218,7 @@ public class SettlementService {
     }
 
     /**
-     * 정산 취소 처리
+     * 정산 취소
      * - 정산 취소 시 송금을 한 정산 참여자만 환불 상태로 변경
      */
 //    @Transactional FIXME 트랜잭션 여부 다시 생각
@@ -263,6 +264,13 @@ public class SettlementService {
         settlement.setStatus(SettlementStatus.CANCELED);
         settlementRepository.save(settlement);
         settlementParticipantRepository.saveAll(settlement.getSettlementParticipants());
+
+
+        eventPublisher.publishEvent(new SettlementCanceledEvent(
+                settlement.getId(),
+                settlement.getGroup().getId(),
+                settlement.getSettlementParticipants()
+        ));
     }
 
     /**
