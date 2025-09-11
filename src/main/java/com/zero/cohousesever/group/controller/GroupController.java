@@ -2,7 +2,7 @@ package com.zero.cohousesever.group.controller;
 
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupJoinDto;
-import com.zero.cohousesever.group.dto.group.GroupNameDto;
+import com.zero.cohousesever.group.dto.group.GroupCreateDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
 import com.zero.cohousesever.group.dto.groupmember.IsLeaderDto;
@@ -34,7 +34,7 @@ public class GroupController {
     @PostMapping
     public ResponseEntity<GroupSummary> createGroup(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody GroupNameDto requestDto
+            @RequestBody GroupCreateDto requestDto
     ) {
         Long memberId = userDetails.getId();
 

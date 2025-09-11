@@ -5,7 +5,8 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class GroupNameDto {
+public class GroupCreateDto {
 
     private String groupName;
+    private String leaderNickname;
 }

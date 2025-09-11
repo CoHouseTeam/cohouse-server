@@ -3,7 +3,7 @@ package com.zero.cohousesever.group.service;
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupJoinDto;
-import com.zero.cohousesever.group.dto.group.GroupNameDto;
+import com.zero.cohousesever.group.dto.group.GroupCreateDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.IsLeaderDto;
 import com.zero.cohousesever.group.dto.groupmember.LeaderTransferRequestDto;
@@ -58,7 +58,7 @@ class GroupServiceTest {
     private Member testMember;
     private Group testGroup;
     private GroupMember testGroupMember;
-    private GroupNameDto groupNameDto;
+    private GroupCreateDto groupCreateDto;
 
     @BeforeEach
     void setUp() {
@@ -87,8 +87,9 @@ class GroupServiceTest {
                 .build();
         ReflectionTestUtils.setField(testGroupMember, "id", 1L);
 
-        groupNameDto = new GroupNameDto();
-        ReflectionTestUtils.setField(groupNameDto, "groupName", "테스트 그룹");
+        groupCreateDto = new GroupCreateDto();
+        ReflectionTestUtils.setField(groupCreateDto, "groupName", "테스트 그룹");
+        ReflectionTestUtils.setField(groupCreateDto, "leaderNickname", "리더 닉네임");
     }
 
     @Test
@@ -102,12 +103,13 @@ class GroupServiceTest {
         when(groupRepository.save(any(Group.class))).thenReturn(testGroup);
 
         // when
-        GroupSummary result = groupService.createGroup(memberId, groupNameDto);
+        GroupSummary result = groupService.createGroup(memberId, groupCreateDto);
 
         // then
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("테스트 그룹");
         assertThat(result.getStatus()).isEqualTo(GroupStatus.ACTIVE);
+        assertThat(result.getGroupMembers().size()).isEqualTo(1);
 
         verify(memberRepository).findById(memberId);
         verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
@@ -122,7 +124,7 @@ class GroupServiceTest {
         when(memberRepository.findById(memberId)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> groupService.createGroup(memberId, groupNameDto))
+        assertThatThrownBy(() -> groupService.createGroup(memberId, groupCreateDto))
                 .isInstanceOf(CustomException.class)
                 .hasMessage(MEMBER_NOT_FOUND.getMessage());
 
@@ -141,7 +143,7 @@ class GroupServiceTest {
                 .thenReturn(true);
 
         // when & then
-        assertThatThrownBy(() -> groupService.createGroup(memberId, groupNameDto))
+        assertThatThrownBy(() -> groupService.createGroup(memberId, groupCreateDto))
                 .isInstanceOf(CustomException.class)
                 .hasMessage(ALREADY_IN_GROUP.getMessage());
 
@@ -162,7 +164,7 @@ class GroupServiceTest {
         when(groupRepository.save(any(Group.class))).thenReturn(testGroup);
 
         // when
-        GroupSummary result = groupService.createGroup(memberId, groupNameDto);
+        GroupSummary result = groupService.createGroup(memberId, groupCreateDto);
 
         // then
         assertThat(result).isNotNull();
