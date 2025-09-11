@@ -49,6 +49,7 @@ public class TaskAssignmentScheduler {
     LocalDate weekTo = sunday.plusDays(6);
 
     List<TaskTemplate> templates = taskTemplateRepository.findAll().stream()
+        .filter(TaskTemplate::isActive)
         .filter(t -> repeatDayRepository.existsByTaskTemplate_Id(t.getId()))
         .toList();
 
