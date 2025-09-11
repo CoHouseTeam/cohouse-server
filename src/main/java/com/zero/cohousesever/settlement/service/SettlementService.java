@@ -247,6 +247,18 @@ public class SettlementService {
     }
 
     /**
+     * 나의 정산 간단 목록 조회
+     */
+    public List<SettlementSimpleResponse> getMySimpleSettlements(Long memberId) {
+        Member member = findMemberOrThrow(memberId);
+        List<Settlement> settlements = settlementRepository.findAllSimpleByParticipantMember(member);
+
+        return settlements.stream()
+                .map(SettlementSimpleResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 나의 정산 목록 조회
      */
     public Page<SettlementResponse> getMySettlements(Long memberId, Pageable pageable) {
