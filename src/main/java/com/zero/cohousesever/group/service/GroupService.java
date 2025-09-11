@@ -3,7 +3,7 @@ package com.zero.cohousesever.group.service;
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.group.dto.group.GroupInviteDto;
 import com.zero.cohousesever.group.dto.group.GroupJoinDto;
-import com.zero.cohousesever.group.dto.group.GroupNameDto;
+import com.zero.cohousesever.group.dto.group.GroupCreateDto;
 import com.zero.cohousesever.group.dto.group.GroupSummary;
 import com.zero.cohousesever.group.dto.groupmember.GroupMemberSummary;
 import com.zero.cohousesever.group.dto.groupmember.IsLeaderDto;
@@ -38,7 +38,7 @@ public class GroupService {
     private final InviteCodeService inviteCodeService;
 
     @Transactional
-    public GroupSummary createGroup(Long memberId, GroupNameDto groupNameDto) {
+    public GroupSummary createGroup(Long memberId, GroupCreateDto groupCreateDto) {
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
@@ -49,14 +49,14 @@ public class GroupService {
 
         GroupMember leader = GroupMember.builder()
                 .member(member)
-                .nickname(member.getName()) // 이름을 기본 닉네임으로 사용
+                .nickname(groupCreateDto.getLeaderNickname())
                 .isLeader(true)
                 .status(GroupMemberStatus.ACTIVE)
                 .joinedAt(LocalDateTime.now())
                 .build();
 
         Group group = Group.builder()
-                .name(groupNameDto.getGroupName())
+                .name(groupCreateDto.getGroupName())
                 .status(GroupStatus.ACTIVE)
                 .build();
 
