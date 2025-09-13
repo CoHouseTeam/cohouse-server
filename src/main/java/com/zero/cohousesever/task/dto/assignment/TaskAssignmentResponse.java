@@ -63,6 +63,7 @@ public class TaskAssignmentResponse {
   public static TaskAssignmentResponse fromHistory(TaskAssignmentHistory h) {
     return TaskAssignmentResponse.builder()
         .historyId(h.getId())
+        .assignmentId(h.getAssignmentId())
         .groupMemberId(h.getGroupMemberId())
         .date(h.getDate().toString())
         .status(h.getStatus())

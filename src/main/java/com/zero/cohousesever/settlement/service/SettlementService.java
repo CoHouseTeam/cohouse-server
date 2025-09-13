@@ -13,6 +13,7 @@ import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.ocr.TesseractOcrService;
+import com.zero.cohousesever.settlement.dto.SettlementSimpleResponse;
 import com.zero.cohousesever.settlement.dto.payment.ParticipantResponse;
 import com.zero.cohousesever.settlement.dto.settlement.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.settlement.OcrResult;
@@ -271,6 +272,18 @@ public class SettlementService {
                 settlement.getGroup().getId(),
                 settlement.getSettlementParticipants()
         ));
+    }
+
+    /**
+     * 나의 정산 간단 목록 조회
+     */
+    public List<SettlementSimpleResponse> getMySimpleSettlements(Long memberId) {
+        Member member = findMemberOrThrow(memberId);
+        List<Settlement> settlements = settlementRepository.findAllSimpleByParticipantMember(member);
+
+        return settlements.stream()
+                .map(SettlementSimpleResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**

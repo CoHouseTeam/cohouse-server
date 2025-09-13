@@ -5,8 +5,9 @@ import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.file.dto.FileUploadResponse;
 import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.member.security.CustomUserDetails;
-import com.zero.cohousesever.settlement.dto.settlement.CreateSettlementRequest;
+import com.zero.cohousesever.settlement.dto.SettlementSimpleResponse;
 import com.zero.cohousesever.settlement.dto.payment.ParticipantResponse;
+import com.zero.cohousesever.settlement.dto.settlement.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.settlement.SettlementHistoryResponse;
 import com.zero.cohousesever.settlement.dto.settlement.SettlementResponse;
 import com.zero.cohousesever.settlement.service.PaymentService;
@@ -55,6 +56,15 @@ public class SettlementController {
 
         settlementService.cancelSettlement(memberId, settlementId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 나의 간단 정산 목록 조회 - 메인페이지 전용
+     */
+    @GetMapping("/my/simple")
+    public ResponseEntity<List<SettlementSimpleResponse>> getMySimpleSettlements(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<SettlementSimpleResponse> settlements = settlementService.getMySimpleSettlements(userDetails.getId());
+        return ResponseEntity.ok(settlements);
     }
 
     /**
