@@ -1,7 +1,8 @@
-package com.zero.cohousesever.settlement.entity;
+package com.zero.cohousesever.settlement.entity.payment;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.member.entity.Member;
+import com.zero.cohousesever.settlement.entity.settlement.Settlement;
 import jakarta.persistence.*;
 import lombok.*;
 

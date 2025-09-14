@@ -1,7 +1,7 @@
 package com.zero.cohousesever.settlement.repository;
 
 import com.zero.cohousesever.member.entity.Member;
-import com.zero.cohousesever.settlement.entity.PaymentHistory;
+import com.zero.cohousesever.settlement.entity.payment.PaymentHistory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

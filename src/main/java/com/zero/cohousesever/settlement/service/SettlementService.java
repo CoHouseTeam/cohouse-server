@@ -13,14 +13,28 @@ import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.ocr.TesseractOcrService;
-import com.zero.cohousesever.settlement.dto.*;
-import com.zero.cohousesever.settlement.entity.*;
+import com.zero.cohousesever.settlement.dto.settlement.SettlementSimpleResponse;
+import com.zero.cohousesever.settlement.dto.payment.ParticipantResponse;
+import com.zero.cohousesever.settlement.dto.settlement.CreateSettlementRequest;
+import com.zero.cohousesever.settlement.dto.settlement.OcrResult;
+import com.zero.cohousesever.settlement.dto.settlement.SettlementHistoryResponse;
+import com.zero.cohousesever.settlement.dto.settlement.SettlementResponse;
+import com.zero.cohousesever.settlement.entity.payment.PaymentHistory;
+import com.zero.cohousesever.settlement.entity.payment.PaymentStatus;
+import com.zero.cohousesever.settlement.entity.settlement.Settlement;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementHistory;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementParticipant;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementStatus;
+import com.zero.cohousesever.settlement.event.SettlementCanceledEvent;
+import com.zero.cohousesever.settlement.event.SettlementCreatedEvent;
+import com.zero.cohousesever.settlement.event.SettlementRefundedEvent;
 import com.zero.cohousesever.settlement.repository.PaymentHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementHistoryRepository;
 import com.zero.cohousesever.settlement.repository.SettlementParticipantRepository;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,8 +61,10 @@ public class SettlementService {
     private final TesseractOcrService tesseractOcrService;
     private final S3Service s3Service;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     /**
-     * 정산 등록
+     * 정산 생성
      */
     @Transactional
     public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request, MultipartFile file) throws IOException {
@@ -86,6 +102,12 @@ public class SettlementService {
                 .changedAt(LocalDateTime.now())
                 .build();
         settlementHistoryRepository.save(history);
+
+        eventPublisher.publishEvent(new SettlementCreatedEvent(
+                savedSettlement.getId(),
+                savedSettlement.getGroup().getId(),
+                savedSettlement.getSettlementParticipants()
+        ));
 
         return SettlementResponse.fromEntity(savedSettlement);
     }
@@ -174,7 +196,7 @@ public class SettlementService {
 
         manualShares.put(payerId, payerShare);
 
-        settlement.setPlatformSupportAmount(0L); // 플랫폼 오차 지원금 없음
+        settlement.setPlatformSupportAmount(0L);
 
         List<SettlementParticipant> settlementParticipants = new ArrayList<>();
         for (Long memberId : participantIds) {
@@ -198,10 +220,9 @@ public class SettlementService {
     }
 
     /**
-     * 정산 취소 처리
-     * - 정산 취소 시 송금을 한 정산 참여자만 환불 상태로 변경
+     * 정산 취소
+     * - 정산 취소 시 송금을 한 정산 참여자만 환불
      */
-//    @Transactional FIXME 트랜잭션 여부 다시 생각
     public void cancelSettlement(Long memberId, Long settlementId) {
         findMemberOrThrow(memberId);
         Settlement settlement = findSettlementOrThrow(settlementId);
@@ -210,6 +231,9 @@ public class SettlementService {
             throw new CustomException(ErrorCode.SETTLEMENT_PERMISSION_DENIED);
         }
 
+        List<SettlementParticipant> refundedParticipants = new ArrayList<>();
+        List<SettlementParticipant> canceledParticipants = new ArrayList<>();
+
         // 정산 참여자 상태 변경 및 송금 히스토리 생성
         for (SettlementParticipant participant : settlement.getSettlementParticipants()) {
 
@@ -217,6 +241,8 @@ public class SettlementService {
 
             if (previousStatus == PaymentStatus.PAID) {
                 participant.setStatus(PaymentStatus.REFUNDED);
+                refundedParticipants.add(participant);
+
                 // 송금 히스토리 생성: 환불 기록 추가
                 PaymentHistory refundHistory = PaymentHistory.builder()
                         .sender(participant.getMember())
@@ -230,6 +256,7 @@ public class SettlementService {
 
             } else if (previousStatus == PaymentStatus.PENDING) {
                 participant.setStatus(PaymentStatus.CANCELED);
+                canceledParticipants.add(participant);
             }
         }
 
@@ -244,6 +271,11 @@ public class SettlementService {
         settlement.setStatus(SettlementStatus.CANCELED);
         settlementRepository.save(settlement);
         settlementParticipantRepository.saveAll(settlement.getSettlementParticipants());
+
+        // 정산 취소 상태 참여자에게 정산 취소 이벤트 발행
+        eventPublisher.publishEvent(new SettlementCanceledEvent(settlement.getId(), settlement.getGroup().getId(), canceledParticipants));
+        // 송금 완료 후 환불 상태로 변경된 참여자에게 환불 이벤트 발행
+        eventPublisher.publishEvent(new SettlementRefundedEvent(settlement.getId(), settlement.getGroup().getId(), refundedParticipants));
     }
 
     /**

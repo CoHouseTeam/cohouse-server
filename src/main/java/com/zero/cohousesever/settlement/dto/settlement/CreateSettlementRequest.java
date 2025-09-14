@@ -1,9 +1,8 @@
-package com.zero.cohousesever.settlement.dto;
+package com.zero.cohousesever.settlement.dto.settlement;
 
-import com.zero.cohousesever.settlement.entity.SettlementCategory;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementCategory;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;

@@ -1,8 +1,10 @@
 package com.zero.cohousesever.notification.repository;
 
+import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.notification.entity.DeviceToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,4 +21,10 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> 
 
     /** 토큰 문자열로 단건 조회(사용 흔적 갱신 등에 활용) */
     Optional<DeviceToken> findByToken(String token);
+
+    /** 멤버의 토큰 목록 조회 */
+    List<DeviceToken> findByMember_IdAndActiveTrue(Long memberId);
+
+    /** 여러 멤버 토큰 목록 조회 */
+    List<DeviceToken> findByMemberInAndActiveTrue(List<Member> members);
 }
