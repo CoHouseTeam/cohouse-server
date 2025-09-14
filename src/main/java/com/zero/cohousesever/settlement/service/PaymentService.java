@@ -92,6 +92,7 @@ public class PaymentService {
 
                 eventPublisher.publishEvent(new PaymentCompletedEvent(
                         settlement.getId(),
+                        settlement.getGroup().getId(),
                         paymentHistory.getSender().getId()
                 ));
             } else {
@@ -100,6 +101,7 @@ public class PaymentService {
 
                 eventPublisher.publishEvent(new PaymentFailedEvent(
                         settlement.getId(),
+                        settlement.getGroup().getId(),
                         paymentHistory.getSender().getId()
                 ));
             }
@@ -109,6 +111,7 @@ public class PaymentService {
 
             eventPublisher.publishEvent(new PaymentFailedEvent(
                     settlement.getId(),
+                    settlement.getGroup().getId(),
                     paymentHistory.getSender().getId()
             ));
             throw e;

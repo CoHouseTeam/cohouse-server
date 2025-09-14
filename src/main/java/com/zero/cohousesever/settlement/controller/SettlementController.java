@@ -5,7 +5,7 @@ import com.zero.cohousesever.common.exception.ErrorCode;
 import com.zero.cohousesever.file.dto.FileUploadResponse;
 import com.zero.cohousesever.file.service.S3Service;
 import com.zero.cohousesever.member.security.CustomUserDetails;
-import com.zero.cohousesever.settlement.dto.SettlementSimpleResponse;
+import com.zero.cohousesever.settlement.dto.settlement.SettlementSimpleResponse;
 import com.zero.cohousesever.settlement.dto.payment.ParticipantResponse;
 import com.zero.cohousesever.settlement.dto.settlement.CreateSettlementRequest;
 import com.zero.cohousesever.settlement.dto.settlement.SettlementHistoryResponse;

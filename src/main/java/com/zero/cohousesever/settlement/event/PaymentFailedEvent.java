@@ -7,5 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public class PaymentFailedEvent {
         private final Long settlementId;
+        private final Long groupId;
         private final Long senderId;
 }
