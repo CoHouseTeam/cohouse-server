@@ -23,6 +23,9 @@ public class NotificationSetting extends BaseEntity {
     private Member member;
 
     @Column(nullable = false)
+    private boolean isEnabled;
+
+    @Column(nullable = false)
     private boolean taskEnabled;
 
     @Column(nullable = false)
