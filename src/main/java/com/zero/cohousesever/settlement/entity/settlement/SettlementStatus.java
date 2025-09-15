@@ -1,4 +1,4 @@
-package com.zero.cohousesever.settlement.entity;
+package com.zero.cohousesever.settlement.entity.settlement;
 
 /**
  * 정산 상태

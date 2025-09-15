@@ -101,7 +101,7 @@ public class TaskController {
     TaskTemplate t = taskTemplateService.getById(templateId); // 없으면 내부에서 예외
     taskAssignmentService.ensureLeader(user.getId(), t.getGroupId());
 
-    TaskTemplate updated = taskTemplateService.updateTemplate(templateId, request.getCategory());
+    TaskTemplate updated = taskTemplateService.updateTemplate(templateId, request);
     return ResponseEntity.ok(TaskTemplateResponse.from(updated));
   }
 
@@ -183,7 +183,8 @@ public class TaskController {
       @RequestParam Long groupId,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-      @RequestParam(required = false) Long memberId
+      @RequestParam(required = false) Long memberId,
+      @RequestParam(required = false, defaultValue = "true") boolean todo
   ) {
     taskAssignmentService.ensureMember(user.getId(), groupId);
 
@@ -191,7 +192,7 @@ public class TaskController {
         !groupMemberRepository.existsByGroupIdAndMemberId(groupId, memberId)) {
       throw new CustomException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
     }
-    return ResponseEntity.ok(taskAssignmentService.getAssignments(groupId, from, to, memberId));
+    return ResponseEntity.ok(taskAssignmentService.getAssignments(groupId, from, to, memberId, todo));
   }
 
   // 생성

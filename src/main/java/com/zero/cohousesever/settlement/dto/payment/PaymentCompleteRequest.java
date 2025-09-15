@@ -1,4 +1,4 @@
-package com.zero.cohousesever.settlement.dto;
+package com.zero.cohousesever.settlement.dto.payment;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

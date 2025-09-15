@@ -8,13 +8,20 @@ import com.zero.cohousesever.task.entity.TaskTemplate;
 import com.zero.cohousesever.task.repository.RepeatDayRepository;
 import com.zero.cohousesever.task.repository.TaskAssignmentRepository;
 import com.zero.cohousesever.task.repository.TaskTemplateRepository;
-
-import java.time.*;
+import com.zero.cohousesever.task.service.TaskAssignmentHistoryService;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,23 +36,29 @@ public class TaskAssignmentScheduler {
   private final RepeatDayRepository repeatDayRepository;
   private final TaskAssignmentRepository taskAssignmentRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final TaskAssignmentHistoryService taskAssignmentHistoryService;
 
-  /** 매주 토요일 00:10에 Quartz/스케줄러에서 호출 (어노테이션은 Quartz 전환 시 제거됨) */
+  /**
+   * 매주 토요일 00:10에 Quartz/스케줄러에서 호출 (어노테이션은 Quartz 전환 시 제거됨)
+   */
   @Transactional
   public void generateNextWeek() {
     LocalDate nextWeekAnchor = LocalDate.now(KST).plusWeeks(1);
     LocalDate sunday = nextWeekAnchor.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
     LocalDate weekFrom = sunday;
-    LocalDate weekTo   = sunday.plusDays(6);
+    LocalDate weekTo = sunday.plusDays(6);
 
     List<TaskTemplate> templates = taskTemplateRepository.findAll().stream()
+        .filter(TaskTemplate::isActive)
         .filter(t -> repeatDayRepository.existsByTaskTemplate_Id(t.getId()))
         .toList();
 
     for (TaskTemplate t : templates) {
       List<Long> candidates = groupMemberRepository.findMemberIdsByGroupIdAndStatus(
           t.getGroupId(), GroupMemberStatus.ACTIVE);
-      if (candidates == null || candidates.isEmpty()) continue;
+      if (candidates == null || candidates.isEmpty()) {
+        continue;
+      }
 
       Long assignee = resolveAssigneeForWeek(t, weekFrom, weekTo, candidates);
 
@@ -57,43 +70,85 @@ public class TaskAssignmentScheduler {
       List<TaskAssignment> toSave = new ArrayList<>();
       for (RepeatDay rd : rds) {
         LocalDate d = sunday.plusDays(rd.getDayOfWeek().getValue() % 7);
-        if (existingDates.contains(d)) continue;
+        if (existingDates.contains(d)) {
+          continue;
+        }
         toSave.add(TaskAssignment.builder()
             .template(t).groupMemberId(assignee).date(d).build());
       }
-      if (!toSave.isEmpty()) taskAssignmentRepository.saveAll(toSave);
+      if (toSave.isEmpty()) {
+        continue;
+      }
+
+      try {
+        // 1) 저장
+        var saved = taskAssignmentRepository.saveAll(toSave);
+        // 2) 히스토리에 PENDING도 upsert
+        taskAssignmentHistoryService.recordCreatedAssignments(saved);
+
+      } catch (org.springframework.dao.DataIntegrityViolationException e) {
+        // 동시/중복 삽입: 최종 상태는 "이미 존재"일 수 있으므로 재조회로 보정
+        List<TaskAssignment> merged = new ArrayList<>();
+        for (RepeatDay rd : rds) {
+          LocalDate d = sunday.plusDays(rd.getDayOfWeek().getValue() % 7);
+          taskAssignmentRepository.findByTemplate_IdAndDate(t.getId(), d)
+              .ifPresent(merged::add);
+        }
+        if (!merged.isEmpty()) {
+          taskAssignmentHistoryService.recordCreatedAssignments(merged);
+        }
+      }
     }
   }
 
-  /** ★ 신규 멤버 1순위 + 주간부하 최소 */
-  private Long pickByPriority(Long groupId, LocalDate weekFrom, LocalDate weekTo, List<Long> candidates) {
+  /**
+   * ★ 신규 멤버 1순위 + 주간부하 최소
+   */
+  private Long pickByPriority(Long groupId, LocalDate weekFrom, LocalDate weekTo,
+      List<Long> candidates) {
     List<Long> tier1 = new ArrayList<>();
     List<Long> tier2 = new ArrayList<>();
     for (Long c : candidates) {
-      boolean hasAnyHistory = taskAssignmentRepository.existsByTemplate_GroupIdAndGroupMemberId(groupId, c);
-      if (!hasAnyHistory) tier1.add(c); else tier2.add(c);
+      boolean hasAnyHistory = taskAssignmentRepository.existsByTemplate_GroupIdAndGroupMemberId(
+          groupId, c);
+      if (!hasAnyHistory) {
+        tier1.add(c);
+      } else {
+        tier2.add(c);
+      }
     }
     List<Long> pool = !tier1.isEmpty() ? tier1 : tier2;
 
-    var weeklyAll = taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(groupId, weekFrom, weekTo);
+    var weeklyAll = taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(groupId, weekFrom,
+        weekTo);
     Map<Long, Set<Long>> memberToTemplate = new HashMap<>();
     for (TaskAssignment a : weeklyAll) {
       Long m = a.getGroupMemberId();
-      if (m == null) continue;
+      if (m == null) {
+        continue;
+      }
       memberToTemplate.computeIfAbsent(m, k -> new HashSet<>()).add(a.getTemplate().getId());
     }
     int best = Integer.MAX_VALUE;
     List<Long> tied = new ArrayList<>();
     for (Long c : pool) {
       int load = memberToTemplate.getOrDefault(c, Collections.emptySet()).size();
-      if (load < best) { best = load; tied.clear(); tied.add(c); }
-      else if (load == best) { tied.add(c); }
+      if (load < best) {
+        best = load;
+        tied.clear();
+        tied.add(c);
+      } else if (load == best) {
+        tied.add(c);
+      }
     }
     return tied.get(ThreadLocalRandom.current().nextInt(tied.size()));
   }
 
-  /** ★ 랜덤일 때/직전담당자 유지 실패 시 → pickByPriority 사용 */
-  private Long resolveAssigneeForWeek(TaskTemplate t, LocalDate weekFrom, LocalDate weekTo, List<Long> candidates) {
+  /**
+   * ★ 랜덤일 때/직전담당자 유지 실패 시 → pickByPriority 사용
+   */
+  private Long resolveAssigneeForWeek(TaskTemplate t, LocalDate weekFrom, LocalDate weekTo,
+      List<Long> candidates) {
     if (t.isRandomEnabled()) {
       return pickByPriority(t.getGroupId(), weekFrom, weekTo, candidates);
     }

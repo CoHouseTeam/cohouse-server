@@ -193,7 +193,7 @@ class TaskAssignmentServiceTest {
     when(repeatRepo.findTemplateIdsHavingRepeat(Set.of(10L, 20L)))
         .thenReturn(Set.of(10L)); // 10만 WEEKLY
 
-    List<TaskAssignmentResponse> out = service.getAssignments(1L, from, to, 1L);
+    List<TaskAssignmentResponse> out = service.getAssignments(1L, from, to, 1L, false);
 
     assertEquals(2, out.size());
     assertEquals(1L, out.get(0).getAssignmentId());

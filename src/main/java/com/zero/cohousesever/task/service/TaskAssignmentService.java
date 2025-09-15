@@ -228,10 +228,22 @@ public class TaskAssignmentService {
     if (toSave.isEmpty()) {
       return List.of();
     }
-    var saved = taskAssignmentRepository.saveAll(toSave);
-    return saved.stream()
-        .map(a -> TaskAssignmentResponse.from(a, "WEEKLY"))
-        .toList();
+    try {
+      var saved = taskAssignmentRepository.saveAll(toSave);
+      taskAssignmentHistoryService.recordCreatedAssignments(saved);
+      return saved.stream()
+          .map(a -> TaskAssignmentResponse.from(a, "WEEKLY"))
+          .toList();
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      // 이미 들어간 경우 재조회해서 정상 응답
+      List<TaskAssignmentResponse> merged = new ArrayList<>();
+      for (RepeatDay rd : days) {
+        LocalDate d = sunday.plusDays(rd.getDayOfWeek().getValue() % 7);
+        taskAssignmentRepository.findByTemplate_IdAndDate(template.getId(), d)
+            .ifPresent(a -> merged.add(TaskAssignmentResponse.from(a, "WEEKLY")));
+      }
+      return merged;
+    }
   }
 
   /**
@@ -363,51 +375,46 @@ public class TaskAssignmentService {
    * 할일 배정 목록 조회 (최소 단위: 주) - from/to 없으면 이번 주(일~토) - 한쪽만 주어지면 그 날짜의 주(일~토) - 둘 다 주어지면: from의 일요일 ~
    * to의 토요일 - memberId가 있으면 해당 멤버만, 없으면 전체
    */
-  public List<TaskAssignmentResponse> getAssignments(Long groupId, LocalDate from, LocalDate to,
-      Long memberId) {
-    if (groupId == null) {
-      throw new CustomException(ErrorCode.GROUP_ID_REQUIRED);
-    }
+  public List<TaskAssignmentResponse> getAssignments(
+      Long groupId, LocalDate from, LocalDate to, Long memberId, boolean todoView) {
+
+    if (groupId == null) throw new CustomException(ErrorCode.GROUP_ID_REQUIRED);
 
     LocalDate[] range = computeWeekRange(from, to);
     LocalDate start = range[0], end = range[1];
 
-    List<TaskAssignment> list = (memberId == null)
-        ? taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(groupId, start, end)
-        : taskAssignmentRepository.findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(groupId,
-            memberId, start, end);
+    List<TaskAssignment> list;
+    if (todoView) {
+      list = (memberId == null)
+          ? taskAssignmentRepository
+          .findByTemplate_GroupIdAndDateBetweenAndStatusNotAndTemplate_ActiveTrue(
+              groupId, start, end, AssignmentStatus.SKIPPED)
+          : taskAssignmentRepository
+              .findByTemplate_GroupIdAndGroupMemberIdAndDateBetweenAndStatusNotAndTemplate_ActiveTrue(
+                  groupId, memberId, start, end, AssignmentStatus.SKIPPED);
+    } else {
+      // 기존 조회(관리/일반 화면)
+      list = (memberId == null)
+          ? taskAssignmentRepository.findByTemplate_GroupIdAndDateBetween(groupId, start, end)
+          : taskAssignmentRepository.findByTemplate_GroupIdAndGroupMemberIdAndDateBetween(
+              groupId, memberId, start, end);
+    }
 
-    Set<Long> templateIds = list.stream().map(a -> a.getTemplate().getId()).collect(toSet());
+    // repeatType 계산은 그대로
+    Set<Long> templateIds = list.stream().map(a -> a.getTemplate().getId()).collect(java.util.stream.Collectors.toSet());
     Set<Long> weeklyTemplateIds = templateIds.isEmpty()
-        ? Collections.emptySet()
+        ? java.util.Collections.emptySet()
         : repeatDayRepository.findTemplateIdsHavingRepeat(templateIds);
 
     return list.stream()
         .sorted(Comparator
-            .comparing(
-                (TaskAssignment a) -> a.getDate().getDayOfWeek().getValue() % 7) // SUNDAY first
+            .comparing((TaskAssignment a) -> a.getDate().getDayOfWeek().getValue() % 7)
             .thenComparing(TaskAssignment::getDate)
             .thenComparing(TaskAssignment::getId))
-        .map(a -> {
-          String repeatType =
-              weeklyTemplateIds.contains(a.getTemplate().getId()) ? "WEEKLY" : "NONE";
-          return TaskAssignmentResponse.from(a, repeatType);
-        })
-        .collect(toList());
+        .map(a -> TaskAssignmentResponse.from(
+            a, weeklyTemplateIds.contains(a.getTemplate().getId()) ? "WEEKLY" : "NONE"))
+        .collect(java.util.stream.Collectors.toList());
   }
 
-  /** 오늘(로컬 KST 기준) 해당 멤버의 할일 목록 */
-  public List<TaskAssignment> getTodayAssignments(Long memberId) {
-    if (memberId == null) throw new CustomException(ErrorCode.INVALID_REQUEST);
-    return taskAssignmentRepository.findByGroupMemberIdAndDate(memberId, LocalDate.now(KST));
-  }
-
-  /** 오늘(로컬 KST 기준) 해당 멤버의 미완료 존재 여부 */
-  public boolean hasIncompleteToday(Long memberId) {
-    if (memberId == null) throw new CustomException(ErrorCode.INVALID_REQUEST);
-    return taskAssignmentRepository.existsByGroupMemberIdAndDateAndStatusNot(
-        memberId, LocalDate.now(KST), AssignmentStatus.COMPLETED
-    );
-  }
 
 }

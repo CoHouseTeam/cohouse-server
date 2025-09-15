@@ -46,4 +46,20 @@ public class TaskAssignmentHistoryService {
         .stream().map(TaskAssignmentResponse::fromHistory).toList();
   }
 
+  public void recordCreatedAssignments(List<TaskAssignment> assignments) {
+    for (TaskAssignment a : assignments) {
+      historyRepository.findByAssignmentIdAndDate(a.getId(), a.getDate())
+          .orElseGet(() -> {
+            TaskAssignmentHistory h = TaskAssignmentHistory.builder()
+                .assignmentId(a.getId())
+                .groupMemberId(a.getGroupMemberId())
+                .category(a.getTemplate().getCategory())
+                .status(a.getStatus()) // 보통 PENDING
+                .date(a.getDate())
+                .build();
+            return historyRepository.save(h);
+          });
+    }
+  }
+
 }

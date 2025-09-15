@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +20,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "task_assignment")
+@Table(
+    name = "task_assignment",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_task_template_date",
+        columnNames = {"template_id", "date"}
+    )
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -49,7 +56,9 @@ public class TaskAssignment extends BaseEntity {
 
   @PrePersist
   public void prePersist() {
-    if (this.status == null) this.status = AssignmentStatus.PENDING;
+    if (this.status == null) {
+      this.status = AssignmentStatus.PENDING;
+    }
   }
 
 }

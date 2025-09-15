@@ -13,8 +13,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, Long> {
 
-  List<TaskAssignment> findByTemplate_Id(Long templateId);
-
   // develop에서 온 메서드 (주간 중복 체크 등 기간 필터)
   List<TaskAssignment> findByTemplate_IdAndDateBetween(
       Long templateId, LocalDate start, LocalDate end);
@@ -28,7 +26,8 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
   boolean existsByTemplate_GroupIdAndGroupMemberId(Long groupId, Long groupMemberId);
 
   // 기준일 이전의 가장 최근 배정 1건 (담당 그대로 유지용)
-  TaskAssignment findTopByTemplate_IdAndDateLessThanOrderByDateDesc(Long templateId, LocalDate date);
+  TaskAssignment findTopByTemplate_IdAndDateLessThanOrderByDateDesc(Long templateId,
+      LocalDate date);
 
   // 담당자 변경 시 동시성 제어
   @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -41,7 +40,13 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignment, 
   List<TaskAssignment> findByTemplate_GroupIdAndGroupMemberIdAndDateBetweenAndStatusNot(
       Long groupId, Long groupMemberId, LocalDate start, LocalDate end, AssignmentStatus status);
 
-  List<TaskAssignment> findByGroupMemberIdAndDate(Long memberId, LocalDate date);
+  Optional<TaskAssignment> findByTemplate_IdAndDate(Long templateId, LocalDate date);
 
-  boolean existsByGroupMemberIdAndDateAndStatusNot(Long memberId, LocalDate date, AssignmentStatus status);
+  // "해야할일" 조회용: SKIPPED 제외 + 활성 템플릿만 (템플릿 삭제 후 재 배정시 오류)
+  List<TaskAssignment> findByTemplate_GroupIdAndDateBetweenAndStatusNotAndTemplate_ActiveTrue(
+      Long groupId, LocalDate start, LocalDate end, AssignmentStatus status
+  );
+
+  List<TaskAssignment> findByTemplate_GroupIdAndGroupMemberIdAndDateBetweenAndStatusNotAndTemplate_ActiveTrue(
+      Long groupId, Long groupMemberId, LocalDate start, LocalDate end, AssignmentStatus status);
 }

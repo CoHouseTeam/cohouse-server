@@ -12,6 +12,7 @@ import java.time.DayOfWeek;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 반복 요일 설정 관련 비즈니스 로직 처리
@@ -65,7 +66,7 @@ public class RepeatDayService {
   }
 
   /**
-   * 반복 요일 수정
+   * 반복 요일 수정 단일
    */
   public RepeatDayResponse updateRepeatDay(Long templateId, Long repeatDayId, RepeatDayRequest request) {
     TaskTemplate template = taskTemplateRepository.findById(templateId)
@@ -117,4 +118,46 @@ public class RepeatDayService {
     }
   }
 
+  // 일괄 수정
+  @Transactional
+  public void replaceRepeatDays(Long templateId, List<String> days) {
+    TaskTemplate template = taskTemplateRepository.findById(templateId)
+        .orElseThrow(() -> new CustomException(ErrorCode.TEMPLATE_NOT_FOUND));
+
+    // 1) 입력 파싱/검증
+    java.util.Set<java.time.DayOfWeek> target = new java.util.LinkedHashSet<>();
+    if (days != null) {
+      for (String raw : days) {
+        if (raw == null || raw.isBlank()) {
+          throw new CustomException(ErrorCode.INVALID_REQUEST);
+        }
+        try {
+          target.add(java.time.DayOfWeek.valueOf(raw.trim().toUpperCase()));
+        } catch (IllegalArgumentException e) {
+          throw new CustomException(ErrorCode.DATE_FORMAT_INVALID);
+        }
+      }
+    }
+
+    // 2) 현재 상태 조회
+    java.util.List<RepeatDay> current = repeatDayRepository.findByTaskTemplate_Id(templateId);
+    java.util.Map<java.time.DayOfWeek, RepeatDay> byDow = new java.util.HashMap<>();
+    for (RepeatDay rd : current) byDow.put(rd.getDayOfWeek(), rd);
+
+    // 3) 삭제: 현재에 있지만 target에 없는 요일 제거
+    for (RepeatDay rd : current) {
+      if (!target.contains(rd.getDayOfWeek())) {
+        repeatDayRepository.delete(rd);
+      }
+    }
+
+    // 4) 추가: target에 있지만 현재에 없는 요일 추가
+    for (java.time.DayOfWeek dow : target) {
+      if (!byDow.containsKey(dow)) {
+        repeatDayRepository.save(
+            RepeatDay.builder().taskTemplate(template).dayOfWeek(dow).build()
+        );
+      }
+    }
+  }
 }

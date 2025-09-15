@@ -1,6 +1,7 @@
 package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
+import com.zero.cohousesever.common.utils.RandomCodeGenerator;
 import com.zero.cohousesever.member.dto.auth.PasswordForgotRequestDto;
 import com.zero.cohousesever.member.dto.auth.PasswordResetRequestDto;
 import com.zero.cohousesever.member.entity.Member;
@@ -42,6 +43,9 @@ class PasswordResetServiceTest {
 
     @Mock
     private ValueOperations<String, String> valueOperations;
+
+    @Mock
+    private RandomCodeGenerator codeGenerator;
 
     @Mock
     private PasswordEncoder passwordEncoder;

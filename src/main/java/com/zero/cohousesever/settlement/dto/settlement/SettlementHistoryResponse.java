@@ -1,8 +1,8 @@
-package com.zero.cohousesever.settlement.dto;
+package com.zero.cohousesever.settlement.dto.settlement;
 
-import com.zero.cohousesever.settlement.entity.SettlementCategory;
-import com.zero.cohousesever.settlement.entity.SettlementHistory;
-import com.zero.cohousesever.settlement.entity.SettlementStatus;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementCategory;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementHistory;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

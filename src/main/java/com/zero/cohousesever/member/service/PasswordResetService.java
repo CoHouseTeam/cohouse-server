@@ -2,6 +2,7 @@ package com.zero.cohousesever.member.service;
 
 import com.zero.cohousesever.common.exception.CustomException;
 import com.zero.cohousesever.common.exception.ErrorCode;
+import com.zero.cohousesever.common.utils.RandomCodeGenerator;
 import com.zero.cohousesever.member.dto.auth.PasswordForgotRequestDto;
 import com.zero.cohousesever.member.dto.auth.PasswordResetRequestDto;
 import com.zero.cohousesever.member.entity.Member;
@@ -33,7 +34,7 @@ public class PasswordResetService {
     private final MailSender mailSender;
     private final StringRedisTemplate redisTemplate;
     private final PasswordEncoder passwordEncoder;
-    private final SecureRandom random = new SecureRandom();
+    private final RandomCodeGenerator codeGenerator;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -45,7 +46,7 @@ public class PasswordResetService {
                 // 멤버가 존재하는 경우 이메일 발송
                 // 멤버가 존재하지 않으면 메일 발송하지 않고 그대로 리턴
                 .ifPresent(member -> {
-                    String token = generateToken();
+                    String token = codeGenerator.generateCode(TOKEN_LENGTH);
                     String redisKey = PASSWORD_RESET_KEY_PREFIX + token;
                     redisTemplate.opsForValue().set(redisKey, member.getId().toString(), TOKEN_EXPIRY_MINUTES, TimeUnit.MINUTES);
 
@@ -70,12 +71,6 @@ public class PasswordResetService {
         redisTemplate.delete(redisKey);
 
         log.info("비밀번호 재설정 완료: {}", member.getEmail());
-    }
-
-    private String generateToken() {
-        byte[] bytes = new byte[TOKEN_LENGTH];
-        random.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private void sendEmail(String email, String name, String token) {

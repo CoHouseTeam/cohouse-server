@@ -1,7 +1,9 @@
 package com.zero.cohousesever.member.controller;
 
+import com.zero.cohousesever.member.dto.profile.AlertTimeUpdateDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileImageResponseDto;
 import com.zero.cohousesever.member.dto.profile.MemberProfileSummary;
+import com.zero.cohousesever.member.dto.profile.ProfileUpdateDto;
 import com.zero.cohousesever.member.security.CustomUserDetails;
 import com.zero.cohousesever.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +35,7 @@ public class ProfileController {
     @PutMapping("/profile")
     public ResponseEntity<MemberProfileSummary> updateProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody MemberProfileSummary requestDto
+            @RequestBody ProfileUpdateDto requestDto
     ) {
         Long memberId = userDetails.getId();
 
@@ -46,7 +48,7 @@ public class ProfileController {
     @PutMapping("/profile/alert-time")
     public ResponseEntity<MemberProfileSummary> updateAlertTime(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody MemberProfileSummary requestDto
+            @RequestBody AlertTimeUpdateDto requestDto
     ) {
         Long memberId = userDetails.getId();
 

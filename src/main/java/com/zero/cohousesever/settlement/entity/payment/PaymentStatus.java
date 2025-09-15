@@ -1,4 +1,4 @@
-package com.zero.cohousesever.settlement.entity;
+package com.zero.cohousesever.settlement.entity.payment;
 
 public enum PaymentStatus {
     PENDING,     // 송금 대기 중 (아직 송금 미완료)

@@ -1,4 +1,4 @@
-package com.zero.cohousesever.settlement.entity;
+package com.zero.cohousesever.settlement.entity.settlement;
 
 import com.zero.cohousesever.common.entity.BaseEntity;
 import com.zero.cohousesever.group.entity.Group;
