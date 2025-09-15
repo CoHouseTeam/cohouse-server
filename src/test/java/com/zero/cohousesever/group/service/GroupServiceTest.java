@@ -369,7 +369,7 @@ class GroupServiceTest {
 
         when(groupMemberRepository.findByMemberIdAndGroupId(memberId, groupId))
                 .thenReturn(Optional.of(testGroupMember));
-        when(inviteCodeService.generateInviteCode(groupId)).thenReturn("INVITE123");
+        when(inviteCodeService.getInviteCodeByGroupId(groupId)).thenReturn("INVITE123");
 
         // when
         GroupInviteDto result = groupService.groupInvite(memberId, groupId);
@@ -717,7 +717,7 @@ class GroupServiceTest {
         ReflectionTestUtils.setField(groupJoinDto, "inviteCode", inviteCode);
 
         when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)).thenReturn(false);
-        when(inviteCodeService.validateInviteCode(inviteCode)).thenReturn(1L);
+        when(inviteCodeService.getGroupIdByInviteCode(inviteCode)).thenReturn(1L);
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(newMember));
         when(groupRepository.findById(1L)).thenReturn(Optional.of(testGroup));
         when(groupRepository.save(any(Group.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -735,7 +735,7 @@ class GroupServiceTest {
         assertThat(result.getJoinedAt()).isNotNull();
 
         verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
-        verify(inviteCodeService).validateInviteCode(inviteCode);
+        verify(inviteCodeService).getGroupIdByInviteCode(inviteCode);
         verify(memberRepository).findById(memberId);
         verify(groupRepository).findById(1L);
         verify(groupRepository).save(any(Group.class));
@@ -758,7 +758,7 @@ class GroupServiceTest {
                 .hasMessageContaining(ALREADY_IN_GROUP.getMessage());
 
         verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
-        verify(inviteCodeService, never()).validateInviteCode(any());
+        verify(inviteCodeService, never()).getGroupIdByInviteCode(any());
         verify(memberRepository, never()).findById(any());
         verify(groupRepository, never()).findById(any());
         verify(groupRepository, never()).save(any(Group.class));
@@ -776,7 +776,7 @@ class GroupServiceTest {
         ReflectionTestUtils.setField(groupJoinDto, "inviteCode", invalidInviteCode);
 
         when(groupMemberRepository.existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE)).thenReturn(false);
-        when(inviteCodeService.validateInviteCode(invalidInviteCode))
+        when(inviteCodeService.getGroupIdByInviteCode(invalidInviteCode))
                 .thenThrow(new CustomException(INVITE_CODE_INVALID));
 
         // when & then
@@ -785,7 +785,7 @@ class GroupServiceTest {
                 .hasMessageContaining(INVITE_CODE_INVALID.getMessage());
 
         verify(groupMemberRepository).existsByMemberIdAndStatus(memberId, GroupMemberStatus.ACTIVE);
-        verify(inviteCodeService).validateInviteCode(invalidInviteCode);
+        verify(inviteCodeService).getGroupIdByInviteCode(invalidInviteCode);
         verify(memberRepository, never()).findById(any());
         verify(groupRepository, never()).findById(any());
         verify(groupRepository, never()).save(any(Group.class));

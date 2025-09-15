@@ -135,7 +135,7 @@ public class GroupService {
             throw new CustomException(NOT_GROUP_LEADER);
         }
 
-        String inviteCode = inviteCodeService.generateInviteCode(groupId);
+        String inviteCode = inviteCodeService.getInviteCodeByGroupId(groupId);
 
         return GroupInviteDto.builder()
                 .groupId(groupId)
@@ -189,7 +189,7 @@ public class GroupService {
 
         String code = requestDto.getInviteCode();
 
-        Long groupId = inviteCodeService.validateInviteCode(code);
+        Long groupId = inviteCodeService.getGroupIdByInviteCode(code);
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
