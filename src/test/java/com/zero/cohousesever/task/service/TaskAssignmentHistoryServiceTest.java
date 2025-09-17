@@ -4,13 +4,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.zero.cohousesever.task.entity.TaskAssignment;
-import com.zero.cohousesever.task.entity.TaskAssignmentHistory;
 import com.zero.cohousesever.task.entity.TaskTemplate;
 import com.zero.cohousesever.task.entity.enums.AssignmentStatus;
 import com.zero.cohousesever.task.repository.RepeatDayRepository;
 import com.zero.cohousesever.task.repository.TaskAssignmentHistoryRepository;
 import com.zero.cohousesever.task.repository.TaskAssignmentRepository;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,50 +60,46 @@ class TaskAssignmentServiceUpdateStatusTest {
     verify(historyServiceMock, times(1)).recordStatusChange(a);
   }
 
-  // 히스토리 upsert - 신규 생성
+  //업서트 경로 검증: recordStatusChange 가 upsertHistory 를 정확히 호출하는지
   @Test
-  void recordStatusChange_creates_whenNotExists() {
+  void recordStatusChange_callsUpsert_withCorrectParams() {
     LocalDate d = LocalDate.of(2025, 8, 29);
     TaskAssignment a = ta(1L, 10L, 1L, 111L, d);
     a.setStatus(AssignmentStatus.COMPLETED);
 
-    when(historyRepo.findByAssignmentIdAndDate(1L, d)).thenReturn(Optional.empty());
-
     historyReal.recordStatusChange(a);
 
-    verify(historyRepo).save(argThat(h ->
-        h.getId() == null
-            && h.getAssignmentId().equals(1L)
-            && h.getDate().equals(d)
-            && h.getGroupMemberId().equals(111L)
-            && "청소".equals(h.getCategory())
-            && h.getStatus() == AssignmentStatus.COMPLETED
-    ));
+    verify(historyRepo, times(1)).upsertHistory(
+        eq(1L),                 // assignmentId
+        eq(111L),               // groupMemberId
+        eq("청소"),             // category
+        eq("COMPLETED"),        // status name()
+        argThat(sqlDate -> sqlDate.toLocalDate().equals(d)) // date
+    );
+    verifyNoMoreInteractions(historyRepo);
   }
 
-  // 히스토리 upsert - 업데이트
+  // (선택) 여러 건 생성 시, 각 건마다 업서트 호출되는지 검증
   @Test
-  void recordStatusChange_updates_whenExists() {
-    LocalDate d = LocalDate.of(2025, 8, 29);
-    TaskAssignment a = ta(1L, 10L, 1L, 222L, d);
-    a.setStatus(AssignmentStatus.SKIPPED);
+  void recordCreatedAssignments_callsUpsert_forEachAssignment() {
+    LocalDate d1 = LocalDate.of(2025, 8, 30);
+    LocalDate d2 = LocalDate.of(2025, 8, 31);
 
-    TaskAssignmentHistory existing = new TaskAssignmentHistory();
-    ReflectionTestUtils.setField(existing, "id", 999L);
-    existing.setAssignmentId(1L);
-    existing.setDate(d);
+    TaskAssignment a1 = ta(1L, 10L, 1L, 111L, d1);
+    a1.setStatus(AssignmentStatus.PENDING);
+    TaskAssignment a2 = ta(2L, 10L, 1L, 222L, d2);
+    a2.setStatus(AssignmentStatus.PENDING);
 
-    when(historyRepo.findByAssignmentIdAndDate(1L, d)).thenReturn(Optional.of(existing));
+    historyReal.recordCreatedAssignments(List.of(a1, a2));
 
-    historyReal.recordStatusChange(a);
-
-    verify(historyRepo).save(argThat(h ->
-        h.getId().equals(999L) // 같은 row 업데이트
-            && h.getAssignmentId().equals(1L)
-            && h.getDate().equals(d)
-            && h.getGroupMemberId().equals(222L)
-            && "청소".equals(h.getCategory())
-            && h.getStatus() == AssignmentStatus.SKIPPED
-    ));
+    verify(historyRepo, times(1)).upsertHistory(
+        eq(1L), eq(111L), eq("청소"), eq("PENDING"),
+        argThat(sqlDate -> sqlDate.toLocalDate().equals(d1))
+    );
+    verify(historyRepo, times(1)).upsertHistory(
+        eq(2L), eq(222L), eq("청소"), eq("PENDING"),
+        argThat(sqlDate -> sqlDate.toLocalDate().equals(d2))
+    );
+    verifyNoMoreInteractions(historyRepo);
   }
 }
