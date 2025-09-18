@@ -16,6 +16,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -83,6 +84,7 @@ public class NotificationService {
     /**
      * 사용자 알림 전체 소프트 딜리트
      */
+    @Transactional
     public void softDeleteAll(Long memberId) {
         notificationRepository.softDeleteAllByMember(
                 memberId, NotificationStatus.DELETED, LocalDateTime.now()
@@ -92,6 +94,7 @@ public class NotificationService {
     /**
      * 보관기간이 지난 알림을 일괄 소프트 딜리트 (배치/스케줄러용)
      */
+    @Transactional
     public int softDeleteOutdated() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
         return notificationRepository.softDeleteOlderThan(
@@ -104,6 +107,7 @@ public class NotificationService {
      * - 미읽음이면 읽음 처리, 이미 읽음이어도 성공(멱등)
      * - 존재하지 않거나 권한이 없으면 예외 발생
      */
+    @Transactional
     public void markAsRead(Long memberId, Long notificationId) {
         int updated = notificationRepository.markRead(
                 notificationId, memberId, NotificationStatus.ACTIVE, LocalDateTime.now());
