@@ -59,6 +59,8 @@ public class SettlementService {
 
     private final ApplicationEventPublisher eventPublisher;
 
+    private static final Long NO_PLATFORM_SUPPORT = 0L;
+
     /**
      * 정산 생성
      */
@@ -214,7 +216,7 @@ public class SettlementService {
 
         manualShares.put(payerId, payerShare);
 
-        settlement.setPlatformSupportAmount(0L);
+        settlement.setPlatformSupportAmount(NO_PLATFORM_SUPPORT);
 
         List<SettlementParticipant> settlementParticipants = new ArrayList<>();
         for (Long memberId : participantIds) {
@@ -223,7 +225,7 @@ public class SettlementService {
             settlementParticipant.setMember(member);
             settlementParticipant.setSettlement(settlement);
             settlementParticipant.setStatus(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING);
-            settlementParticipant.setShareAmount(manualShares.getOrDefault(memberId, 0L));
+            settlementParticipant.setShareAmount(manualShares.getOrDefault(memberId, NO_PLATFORM_SUPPORT));
             settlementParticipants.add(settlementParticipant);
         }
         return settlementParticipants;
