@@ -12,8 +12,8 @@ import java.util.Optional;
 /**
  * 실제 구현: 알림 설정(NotificationSetting)에서 선호 시각을 조회
  * - 설정이 없으면 기획 기본값을 제공
- *   ANNOUNCEMENT: 22:00
- *   TASK        : 08:00
+ * ANNOUNCEMENT: 22:00
+ * TASK        : 08:00
  */
 @Component
 @RequiredArgsConstructor
