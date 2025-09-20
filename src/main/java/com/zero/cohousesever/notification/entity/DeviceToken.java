@@ -51,4 +51,14 @@ public class DeviceToken extends BaseEntity {
     public void deactivate() {
         this.active = false;
     }
+
+    /** 토큰 활성화 처리 */
+    public void activate() {
+        this.active = true;
+    }
+
+    /** 소유자 재지정(동일 토큰을 다른 계정이 사용하게 된 경우) */
+    public void reassignOwner(Member newOwner) {
+        this.member = newOwner;
+    }
 }
