@@ -26,7 +26,7 @@ public class FirebasePushSender implements PushSender {
                 throw new CustomException(ErrorCode.FCM_TOKEN_MISSING);
             }
 
-            Notification notif = Notification.builder()
+            Notification fcmNotification = Notification.builder()
                     .setTitle(cmd.getTitle())
                     .setBody(cmd.getBody())
                     .build();
@@ -43,7 +43,7 @@ public class FirebasePushSender implements PushSender {
 
             Message.Builder builder = Message.builder()
                     .setToken(cmd.getToken())
-                    .setNotification(notif)
+                    .setNotification(fcmNotification)
                     .setAndroidConfig(android)
                     .setApnsConfig(apns);
 

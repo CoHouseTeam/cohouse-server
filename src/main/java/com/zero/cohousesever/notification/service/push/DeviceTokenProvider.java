@@ -6,6 +6,7 @@ import com.zero.cohousesever.notification.entity.DeviceToken;
 import com.zero.cohousesever.notification.repository.DeviceTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -20,7 +21,9 @@ public class DeviceTokenProvider {
 
     private final DeviceTokenRepository deviceTokenRepository;
 
-    /** 멤버의 최신 활성 토큰 문자열(Optional) */
+    /**
+     * 멤버의 최신 활성 토큰 문자열(Optional)
+     */
     public Optional<String> findActiveTokenByMemberId(Long memberId) {
         // 1순위: lastUsedAt 기준 최신
         Optional<DeviceToken> v1 = deviceTokenRepository
@@ -33,13 +36,18 @@ public class DeviceTokenProvider {
                 .map(DeviceToken::getToken);
     }
 
-    /** 없으면 예외 */
+    /**
+     * 없으면 예외
+     */
     public String getActiveTokenOrThrow(Long memberId) {
         return findActiveTokenByMemberId(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FCM_TOKEN_MISSING));
     }
 
-    /** 발송 성공 등 사용 흔적 갱신 */
+    /**
+     * 발송 성공 등 사용 흔적 갱신
+     */
+    @Transactional
     public void touchTokenUse(String token) {
         // 토큰을 찾아 최근 사용 시각을 now로 갱신
         deviceTokenRepository.findByToken(token).ifPresent(DeviceToken::markUsedNow);

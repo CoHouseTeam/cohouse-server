@@ -1,5 +1,6 @@
 package com.zero.cohousesever.notification.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.zero.cohousesever.notification.entity.Notification;
 import com.zero.cohousesever.notification.type.NotificationType;
 import lombok.Builder;
@@ -21,7 +22,11 @@ public class NotificationResponse {
     private String content;
 
     private boolean read;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime readAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
     /**

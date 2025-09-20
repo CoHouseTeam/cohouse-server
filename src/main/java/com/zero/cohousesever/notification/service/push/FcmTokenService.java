@@ -41,12 +41,15 @@ public class FcmTokenService {
                     existing.markUsedNow();
                     return existing;
                 })
-                .orElseGet(() -> DeviceToken.builder()
-                        .member(em.getReference(Member.class, memberId))
-                        .token(token)
-                        .active(true)
-                        .build()
-                );
+                .orElseGet(() -> {
+                    DeviceToken t = DeviceToken.builder()
+                            .member(em.getReference(Member.class, memberId))
+                            .token(token)
+                            .active(true)
+                            .build();
+                    t.markUsedNow();
+                    return t;
+                });
 
         DeviceToken persisted = deviceTokenRepository.save(saved);
         return FcmTokenResponse.from(persisted);
