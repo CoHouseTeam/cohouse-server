@@ -27,4 +27,7 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> 
 
     /** 여러 멤버 토큰 목록 조회 */
     List<DeviceToken> findByMemberInAndActiveTrue(List<Member> members);
+
+    /** 토큰 PK와 소유자 회원ID 조회 */
+    Optional<DeviceToken> findByIdAndMember_Id(Long id, Long memberId);
 }
