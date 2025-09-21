@@ -4,6 +4,7 @@
 
 ## 🚀 프로젝트 소개
 CoHouse는 공동생활의 비효율과 갈등을 해결하는 통합 관리 플랫폼입니다. 집안일 분담, 생활비 정산, 그리고 소통 문제를 한 곳에서 관리하여 투명하고 효율적인 쉐어하우스 생활을 돕습니다.
+
 ## 👥 팀원 소개
 ### 프론트엔드 팀 (Frontend)
 | 이름           | 역할          | 담당 페이지 / 기능                                       |
@@ -20,30 +21,27 @@ CoHouse는 공동생활의 비효율과 갈등을 해결하는 통합 관리 플
 | 변상훈         | 팀원          | 인증/인가 시스템, 회원 및 프로필 관리, 그룹 시스템 |
 | 최홍목         | 팀원          | 게시판, 게시판 푸시 알림 시스템, 푸시 알림 시스템 구축 |
 
-## 프로젝트 소개
-CoHouse는 공동생활의 비효율과 갈등을 해결하는 통합 관리 플랫폼입니다. 집안일 분담, 생활비 정산, 그리고 소통 문제를 한 곳에서 관리하여 투명하고 효율적인 쉐어하우스 생활을 돕습니다.
-
 ## 프로젝트 기술 스택
-### **Backend**
+#### **Frontend**
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)
+
+#### **Backend**
 ![Java](https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=java&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
 ![JPA](https://img.shields.io/badge/JPA-59666C?style=for-the-badge&logo=spring&logoColor=white)
 ![Hibernate](https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
 
-### **Frontend**
-![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)
-
-### **Database**
+#### **Database**
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 
-### **Infrastructure & Deployment**
+#### **Infrastructure & Deployment**
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 
-### **Authentication & Others**
+#### **Authentication & Others**
 ![OAuth2](https://img.shields.io/badge/OAuth2-FB542B?style=for-the-badge&logo=oauth&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=json-web-tokens&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
@@ -53,7 +51,7 @@ CoHouse는 공동생활의 비효율과 갈등을 해결하는 통합 관리 플
 ## 🏗️ 아키텍처
 ![git architecture image-001](https://github.com/user-attachments/assets/15b9506b-1dd7-4dcf-9873-3d1288546bba)
 
-## ERD
+## 📊 ERD
 ![git architecture image-001](https://github.com/user-attachments/assets/adca13a8-3736-4d09-bbe5-825f2f35fc4e)
 - 회원 & 그룹
     - 회원과 그룹을 조인 테이블로 연결하여 다대다 관계의 유연성을 확보하고 한 회원이 여러 그룹에 속하는 기능으로 쉽게 확장할 수 있습니다.
@@ -117,7 +115,7 @@ CoHouse는 공동생활의 비효율과 갈등을 해결하는 통합 관리 플
     - 공지사항, 정산, 할일 등 다양한 푸시 알림을 발송합니다.
 ---
 
-## 역할 및 기여
+## 🛠️ 역할 및 기여
 박준엽
 - 백엔드 API 설계 및 개발 (Spring Boot, JPA)
 - 정산 생성 로직 비즈니스 분리 및 트랜잭션 최소화 리팩토링
@@ -125,7 +123,7 @@ CoHouse는 공동생활의 비효율과 갈등을 해결하는 통합 관리 플
 - Firebase Push 알림 연동 및 서비스워커 구현
 - OCR기능 도입을 위한 Tesseract 통합 및 Docker 이미지 빌드
 
-## 개선점 및 배운 점
+## 📈 배운 점
 - 트랜잭션 범위를 최소화하여 성능 향상 경험
 - 환경변수 기반 프로젝트 설정으로 보안 및 개발-운영 분리 구현
 - 클라우드 환경에서의 컨테이너 관리 및 CI/CD 자동화
