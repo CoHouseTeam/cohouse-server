@@ -60,6 +60,7 @@ public class SettlementService {
     private final ApplicationEventPublisher eventPublisher;
 
     private static final Long NO_PLATFORM_SUPPORT = 0L;
+    private static final Long DEFAULT_SHARE_AMOUNT = 0L;
 
     /**
      * 정산 생성
@@ -185,12 +186,7 @@ public class SettlementService {
         for (Long memberId : participantIds) {
             Member member = findMemberOrThrow(memberId);
 
-            SettlementParticipant settlementParticipant = SettlementParticipant.builder()
-                    .member(member)
-                    .settlement(settlement)
-                    .status(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING)
-                    .shareAmount(shareAmount)
-                    .build();
+            SettlementParticipant settlementParticipant = createSettlementParticipant(settlement, member, shareAmount);
             settlementParticipants.add(settlementParticipant);
         }
         return settlementParticipants;
@@ -214,6 +210,7 @@ public class SettlementService {
             throw new CustomException(ErrorCode.EXCEED_TOTAL_AMOUNT);
         }
 
+        // 참여자 명단에 결제자 정보 추가
         manualShares.put(payerId, payerShare);
 
         settlement.setPlatformSupportAmount(NO_PLATFORM_SUPPORT);
@@ -221,14 +218,22 @@ public class SettlementService {
         List<SettlementParticipant> settlementParticipants = new ArrayList<>();
         for (Long memberId : participantIds) {
             Member member = findMemberOrThrow(memberId);
-            SettlementParticipant settlementParticipant = new SettlementParticipant();
-            settlementParticipant.setMember(member);
-            settlementParticipant.setSettlement(settlement);
-            settlementParticipant.setStatus(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING);
-            settlementParticipant.setShareAmount(manualShares.getOrDefault(memberId, NO_PLATFORM_SUPPORT));
+
+            SettlementParticipant settlementParticipant = createSettlementParticipant(settlement, member, manualShares.getOrDefault(memberId, DEFAULT_SHARE_AMOUNT));
+
             settlementParticipants.add(settlementParticipant);
         }
         return settlementParticipants;
+    }
+
+    private SettlementParticipant createSettlementParticipant(Settlement settlement, Member member, Long shareAmount) {
+        return SettlementParticipant.builder()
+                .member(member)
+                .settlement(settlement)
+                .status(member.getId().equals(settlement.getPayer().getId()) ?
+                        PaymentStatus.PAID : PaymentStatus.PENDING)
+                .shareAmount(shareAmount)
+                .build();
     }
 
     // 배분 금액 계산
