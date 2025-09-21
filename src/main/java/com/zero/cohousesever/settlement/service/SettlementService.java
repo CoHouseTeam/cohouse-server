@@ -13,12 +13,8 @@ import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
 import com.zero.cohousesever.member.repository.MemberRepository;
 import com.zero.cohousesever.ocr.TesseractOcrService;
-import com.zero.cohousesever.settlement.dto.settlement.SettlementSimpleResponse;
 import com.zero.cohousesever.settlement.dto.payment.ParticipantResponse;
-import com.zero.cohousesever.settlement.dto.settlement.CreateSettlementRequest;
-import com.zero.cohousesever.settlement.dto.settlement.OcrResult;
-import com.zero.cohousesever.settlement.dto.settlement.SettlementHistoryResponse;
-import com.zero.cohousesever.settlement.dto.settlement.SettlementResponse;
+import com.zero.cohousesever.settlement.dto.settlement.*;
 import com.zero.cohousesever.settlement.entity.payment.PaymentHistory;
 import com.zero.cohousesever.settlement.entity.payment.PaymentStatus;
 import com.zero.cohousesever.settlement.entity.settlement.Settlement;
@@ -63,67 +59,27 @@ public class SettlementService {
 
     private final ApplicationEventPublisher eventPublisher;
 
+    private static final Long NO_PLATFORM_SUPPORT = 0L;
+    private static final Long DEFAULT_SHARE_AMOUNT = 0L;
+
     /**
      * 정산 생성
      */
-    @Transactional
     public SettlementResponse createSettlement(Long payerId, CreateSettlementRequest request, MultipartFile file) throws IOException {
         validateSettlementCreation(payerId, request);
 
         Member payer = findMemberOrThrow(payerId);
+
         Group group = groupMemberRepository
                 .findByMemberIdAndStatus(payerId, GroupMemberStatus.ACTIVE)
                 .map(GroupMember::getGroup)
                 .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
-        Settlement settlement = Settlement.builder()
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .category(request.getCategory())
-                .settlementAmount(request.getSettlementAmount())
-                .status(SettlementStatus.PENDING)
-                .payer(payer)
-                .group(group)
-                .isEqualDistribution(request.isEqualDistribution())
-                .build();
 
-        List<SettlementParticipant> participants = processSettlementParticipants(settlement, request, payerId);
-        settlement.setSettlementParticipants(participants);
-        Settlement savedSettlement = settlementRepository.save(settlement);
+        Settlement settlement = processSettlementCreation(payer, group, request, file);
 
-        if (file != null && !file.isEmpty()) {
-            updateReceiptImage(payerId, file, group.getId(), savedSettlement.getId());
-        }
+        publishSettlementCreatedEvent(settlement);
 
-        SettlementHistory history = SettlementHistory.builder()
-                .settlement(savedSettlement)
-                .payer(payer)
-                .title(savedSettlement.getTitle())
-                .status(savedSettlement.getStatus())
-                .changedAt(LocalDateTime.now())
-                .build();
-        settlementHistoryRepository.save(history);
-
-        eventPublisher.publishEvent(new SettlementCreatedEvent(
-                savedSettlement.getId(),
-                savedSettlement.getGroup().getId(),
-                savedSettlement.getSettlementParticipants()
-        ));
-
-        return SettlementResponse.fromEntity(savedSettlement);
-    }
-
-    private List<SettlementParticipant> processSettlementParticipants(Settlement settlement, CreateSettlementRequest request, Long payerId) {
-        Set<Long> allParticipantIds = new HashSet<>(request.getParticipantIds());
-        allParticipantIds.add(payerId); // 결제자 포함
-
-        // 참가자들이 모두 유효한 멤버인지 검증
-        validateParticipants(allParticipantIds);
-
-        if (request.isEqualDistribution()) {
-            return createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount());
-        } else {
-            return createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
-        }
+        return SettlementResponse.fromEntity(settlement);
     }
 
     // 정산 생성 검증
@@ -147,6 +103,59 @@ public class SettlementService {
         }
     }
 
+    // 정산 생성과 관련된 핵심 비즈니스 로직을 처리
+    @Transactional
+    protected Settlement processSettlementCreation(Member payer, Group group, CreateSettlementRequest request, MultipartFile file) throws IOException {
+        Settlement settlement = createSettlementEntity(payer, group, request);
+
+        if (file != null && !file.isEmpty()) {
+            updateReceiptImage(payer.getId(), file, group.getId(), settlement.getId());
+        }
+
+        processParticipantsAndSaveSettlement(settlement, request, payer.getId());
+
+        handleSettlementCreateHistory(payer, settlement);
+
+        return settlement;
+    }
+
+    // 정산 엔티티 생성
+    private Settlement createSettlementEntity(Member payer, Group group, CreateSettlementRequest request) {
+        return Settlement.builder()
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .category(request.getCategory())
+                .settlementAmount(request.getSettlementAmount())
+                .status(SettlementStatus.PENDING)
+                .payer(payer)
+                .group(group)
+                .isEqualDistribution(request.isEqualDistribution())
+                .build();
+    }
+
+    // 참여자 처리 및 정산 저장
+    private void processParticipantsAndSaveSettlement(Settlement settlement, CreateSettlementRequest request, Long payerId) {
+        List<SettlementParticipant> participants = createSettlementParticipants(settlement, request, payerId);
+        settlement.setSettlementParticipants(participants);
+        settlementRepository.save(settlement);
+    }
+
+    private List<SettlementParticipant> createSettlementParticipants(Settlement settlement, CreateSettlementRequest request, Long payerId) {
+        Set<Long> allParticipantIds = buildAllParticipantIds(request.getParticipantIds(), payerId);
+        validateParticipants(allParticipantIds);
+
+        return request.isEqualDistribution()
+                ? createEqualDistributionParticipants(settlement, allParticipantIds, request.getSettlementAmount())
+                : createManualDistributionParticipants(settlement, allParticipantIds, request.getManualShares(), request.getSettlementAmount());
+    }
+
+    // 전체 참여자 ID 구성
+    private Set<Long> buildAllParticipantIds(List<Long> participantIds, Long payerId) {
+        Set<Long> allParticipantIds = new HashSet<>(participantIds);
+        allParticipantIds.add(payerId); // 결제자 포함
+        return allParticipantIds;
+    }
+
     private void validateParticipants(Set<Long> participantIds) {
         for (Long participantId : participantIds) {
             if (!memberRepository.existsById(participantId)) {
@@ -155,7 +164,19 @@ public class SettlementService {
         }
     }
 
-    // 균등 분배 참여자 생성 메서드
+    // 정산 생성 히스토리 생성 및 저장
+    private void handleSettlementCreateHistory(Member payer, Settlement settlement) {
+        SettlementHistory history = SettlementHistory.builder()
+                .settlement(settlement)
+                .payer(payer)
+                .title(settlement.getTitle())
+                .status(settlement.getStatus())
+                .changedAt(LocalDateTime.now())
+                .build();
+        settlementHistoryRepository.save(history);
+    }
+
+    // 균등 분배 참여자 생성
     private List<SettlementParticipant> createEqualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Long totalAmount) {
         Long shareAmount = calculateShareAmount(totalAmount, participantIds.size());
         Long remainder = totalAmount % participantIds.size();
@@ -165,18 +186,13 @@ public class SettlementService {
         for (Long memberId : participantIds) {
             Member member = findMemberOrThrow(memberId);
 
-            SettlementParticipant settlementParticipant = SettlementParticipant.builder()
-                    .member(member)
-                    .settlement(settlement)
-                    .status(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING)
-                    .shareAmount(shareAmount)
-                    .build();
+            SettlementParticipant settlementParticipant = createSettlementParticipant(settlement, member, shareAmount);
             settlementParticipants.add(settlementParticipant);
         }
         return settlementParticipants;
     }
 
-    // 수동 분배 참여자 생성 메서드
+    // 수동 분배 참여자 생성
     private List<SettlementParticipant> createManualDistributionParticipants(Settlement settlement, Set<Long> participantIds, Map<Long, Long> manualShares, Long totalAmount) {
         if (manualShares == null || manualShares.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_MANUAL_DISTRIBUTION);
@@ -194,29 +210,47 @@ public class SettlementService {
             throw new CustomException(ErrorCode.EXCEED_TOTAL_AMOUNT);
         }
 
+        // 참여자 명단에 결제자 정보 추가
         manualShares.put(payerId, payerShare);
 
-        settlement.setPlatformSupportAmount(0L);
+        settlement.setPlatformSupportAmount(NO_PLATFORM_SUPPORT);
 
         List<SettlementParticipant> settlementParticipants = new ArrayList<>();
         for (Long memberId : participantIds) {
             Member member = findMemberOrThrow(memberId);
-            SettlementParticipant settlementParticipant = new SettlementParticipant();
-            settlementParticipant.setMember(member);
-            settlementParticipant.setSettlement(settlement);
-            settlementParticipant.setStatus(memberId.equals(settlement.getPayer().getId()) ? PaymentStatus.PAID : PaymentStatus.PENDING);
-            settlementParticipant.setShareAmount(manualShares.getOrDefault(memberId, 0L));
+
+            SettlementParticipant settlementParticipant = createSettlementParticipant(settlement, member, manualShares.getOrDefault(memberId, DEFAULT_SHARE_AMOUNT));
+
             settlementParticipants.add(settlementParticipant);
         }
         return settlementParticipants;
     }
 
-    // 배분 금액 계산 메서드
-    public Long calculateShareAmount(Long totalAmount, int participantCount) {
+    private SettlementParticipant createSettlementParticipant(Settlement settlement, Member member, Long shareAmount) {
+        return SettlementParticipant.builder()
+                .member(member)
+                .settlement(settlement)
+                .status(member.getId().equals(settlement.getPayer().getId()) ?
+                        PaymentStatus.PAID : PaymentStatus.PENDING)
+                .shareAmount(shareAmount)
+                .build();
+    }
+
+    // 배분 금액 계산
+    private Long calculateShareAmount(Long totalAmount, int participantCount) {
         if (participantCount <= 0) {
             throw new CustomException(ErrorCode.INVALID_PARTICIPANT_COUNT);
         }
         return totalAmount / participantCount;
+    }
+
+    // 알림을 위한 정산 생성 이벤트
+    private void publishSettlementCreatedEvent(Settlement settlement) {
+        eventPublisher.publishEvent(new SettlementCreatedEvent(
+                settlement.getId(),
+                settlement.getGroup().getId(),
+                settlement.getSettlementParticipants()
+        ));
     }
 
     /**
