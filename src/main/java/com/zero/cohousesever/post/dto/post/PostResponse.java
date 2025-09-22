@@ -33,6 +33,24 @@ public class PostResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private boolean isAuthor;
+
+    public static PostResponse from(Post post, boolean isAuthor) {
+        return PostResponse.builder()
+                .id(post.getId())
+                .groupId(post.getGroupId())
+                .memberId(post.getMemberId())
+                .type(post.getType())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .status(post.getStatus())
+                .color(post.getColor())
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .isAuthor(isAuthor)
+                .build();
+    }
+
     public static PostResponse from(Post post) {
         return PostResponse.builder()
                 .id(post.getId())

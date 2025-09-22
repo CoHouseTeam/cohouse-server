@@ -73,8 +73,12 @@ public class PostController {
      * - ACTIVE 상태만 조회
      */
     @GetMapping("/{postId}")
-    public ResponseEntity<PostResponse> getPostDetail(@PathVariable("postId") Long id) {
-        return ResponseEntity.ok(postService.getPostDetail(id));
+    public ResponseEntity<PostResponse> getPostDetail(
+            @PathVariable("postId") Long id,
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        Long currentMemberId = (principal != null) ? principal.getId() : null;
+        return ResponseEntity.ok(postService.getPostDetail(id, currentMemberId));
     }
 
     /**

@@ -130,10 +130,13 @@ public class PostService {
      * 게시글 상세 조회
      * - ACTIVE 상태만 조회
      */
-    public PostResponse getPostDetail(Long id) {
+    public PostResponse getPostDetail(Long id, Long currentMemberId) {
         Post post = postRepository.findByIdAndStatus(id, PostStatus.ACTIVE)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-        return PostResponse.from(post);
+
+        boolean isAuthor = (currentMemberId != null) && post.getMemberId().equals(currentMemberId);
+
+        return PostResponse.from(post, isAuthor);
     }
 
     /**
