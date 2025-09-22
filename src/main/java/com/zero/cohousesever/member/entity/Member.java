@@ -14,6 +14,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "members")
 public class Member extends BaseEntity {
 
     @Column(nullable = false)
