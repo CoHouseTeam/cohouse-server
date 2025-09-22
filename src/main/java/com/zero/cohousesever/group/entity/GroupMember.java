@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "group_members")
 public class GroupMember extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

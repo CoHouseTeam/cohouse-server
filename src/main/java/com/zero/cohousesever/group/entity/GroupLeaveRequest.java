@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "group_leave_requests")
 public class GroupLeaveRequest extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
