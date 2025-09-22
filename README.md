@@ -1,7 +1,8 @@
 # CoHouse: 쉐어하우스 통합 관리 플랫폼
+🏠 [CoHouse 앱 바로가기](https://cohouse-client.vercel.app/)
 
 🔗 [**프로젝트 기획 및 상세 설계 문서 (Notion)**](https://onyx-cloak-677.notion.site/CoHouse-2428e1f790e98080ab7cdfe10843bb78?source=copy_link)
-🏠 [CoHouse 앱 바로가기](https://cohouse-client.vercel.app/)
+
 
 ## 🚀 프로젝트 소개
 CoHouse는 공동생활의 비효율과 갈등을 해결하는 통합 관리 플랫폼입니다. 집안일 분담, 생활비 정산, 그리고 소통 문제를 한 곳에서 관리하여 투명하고 효율적인 쉐어하우스 생활을 돕습니다.
