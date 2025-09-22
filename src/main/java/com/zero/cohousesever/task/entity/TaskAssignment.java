@@ -21,7 +21,7 @@ import lombok.Setter;
 
 @Entity
 @Table(
-    name = "task_assignment",
+    name = "task_assignments",
     uniqueConstraints = @UniqueConstraint(
         name = "uk_task_template_date",
         columnNames = {"template_id", "date"}
