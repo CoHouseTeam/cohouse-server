@@ -1240,39 +1240,4 @@ com.zero.cohousesever.common.exception.CustomException: 유효하지 않은 액�
   Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
   Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
 
-[2025-09-21 12:03:34:4025][main] INFO  o.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-[2025-09-21 12:03:34:4025][main] INFO  o.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-[2025-09-21 12:03:34:4025][main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@4795def
-[2025-09-21 12:03:34:4368][main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-[2025-09-21 12:03:34:4501][main] INFO  o.s.s.w.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@6e0fe9cd, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6f45a719, org.springframework.security.web.context.SecurityContextHolderFilter@4b5c0183, org.springframework.security.web.header.HeaderWriterFilter@69597fb3, org.springframework.security.web.authentication.logout.LogoutFilter@7d8f7059, com.zero.cohousesever.member.security.JwtExceptionFilter@a49995f, com.zero.cohousesever.member.security.JwtAuthenticationFilter@3ca43e5d, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@1631da37, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@52972465, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@5aee12c7, org.springframework.security.web.session.SessionManagementFilter@60c952ea, org.springframework.security.web.access.ExceptionTranslationFilter@34eff199, org.springframework.security.web.access.intercept.AuthorizationFilter@7acf609d]
-[2025-09-21 12:03:34:4699][main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path ''
-[2025-09-21 12:03:34:4700][main] INFO  o.s.s.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-[2025-09-21 12:03:34:4700][main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-[2025-09-21 12:03:34:4705][main] INFO  c.z.c.CohouseSeverApplication - Started CohouseSeverApplication in 4.635 seconds (process running for 5.027)
-[2025-09-21 12:03:34:4717][main] INFO  c.z.c.c.c.c.DatabaseConnectionChecker - ✅ MySQL 연결 성공!
-[2025-09-21 12:03:35:4904][main] INFO  c.z.c.c.c.c.RedisConnectionChecker - ✅ Redis 연결 성공!
-[2025-09-21 12:03:38:8590][http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-[2025-09-21 12:03:38:8590][http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-[2025-09-21 12:03:38:8591][http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-[2025-09-21 12:03:39:9708][http-nio-8080-exec-1] INFO  c.z.c.n.p.a.FirebasePushSender - [FCM] sent: memberId=1, messageId=projects/cohouse-f81d0/messages/238d5551-3e35-4de6-abf9-bfdf4dd9437e
-[2025-09-21 12:03:39:9708][http-nio-8080-exec-1] INFO  c.z.c.s.e.SettlementEventListener - 정산 생성 알림 전송 완료 - settlementId: 23, groupId: 1, 전송 대상: 1명
-[2025-09-21 12:03:44:14546][SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-[2025-09-21 12:03:44:14565][SpringApplicationShutdownHook] INFO  o.s.s.quartz.SchedulerFactoryBean - Shutting down Quartz Scheduler
-[2025-09-21 12:03:44:14565][SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
-[2025-09-21 12:03:44:14565][SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
-[2025-09-21 12:03:44:14565][SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
-[2025-09-21 12:03:44:14687][SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
-[2025-09-21 12:03:44:14688][SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
-[2025-09-21 12:03:44:14692][SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
-=======
-[2025-09-20 23:29:15:5164][main] INFO  o.quartz.impl.StdSchedulerFactory - Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
-[2025-09-20 23:29:15:5164][main] INFO  o.quartz.impl.StdSchedulerFactory - Quartz scheduler version: 2.3.2
-[2025-09-20 23:29:15:5164][main] INFO  org.quartz.core.QuartzScheduler - JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@37d05d32
-[2025-09-20 23:29:15:5410][main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-[2025-09-20 23:29:15:5515][main] INFO  o.s.s.w.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1e79a4f7, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@38bfb17a, org.springframework.security.web.context.SecurityContextHolderFilter@733c01ab, org.springframework.security.web.header.HeaderWriterFilter@307cea0a, org.springframework.security.web.authentication.logout.LogoutFilter@3467986, com.zero.cohousesever.member.security.JwtExceptionFilter@2565b097, com.zero.cohousesever.member.security.JwtAuthenticationFilter@5b076d23, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@5b71f335, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@60eeefe, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@26e197cd, org.springframework.security.web.session.SessionManagementFilter@2ee98de, org.springframework.security.web.access.ExceptionTranslationFilter@1cbd4ced, org.springframework.security.web.access.intercept.AuthorizationFilter@28d1d634]
-[2025-09-20 23:29:15:5645][main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path ''
-[2025-09-20 23:29:15:5646][main] INFO  o.s.s.quartz.SchedulerFactoryBean - Starting Quartz Scheduler now
-[2025-09-20 23:29:15:5646][main] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED started.
-[2025-09-20 23:29:15:5650][main] INFO  c.z.c.CohouseSeverApplication - Started CohouseSeverApplication in 5.603 seconds (process running for 6.017)
-[2025-09-20 23:29:15:5792][main] INFO  c.z.c.c.c.c.RedisConnectionChecker - ✅ Redis 연결 성공!
-[2025-09-20 23:29:15:5797][main] INFO  c.z.c.c.c.c.DatabaseConnectionChecker - ✅ MySQL 연결 성공!
+
