@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(
-        name = "device_token",
+        name = "device_tokens",
         indexes = {
                 @Index(name = "idx_device_token_member_active", columnList = "member_id, active"),
                 @Index(name = "idx_device_token_token_unique", columnList = "token", unique = true)
