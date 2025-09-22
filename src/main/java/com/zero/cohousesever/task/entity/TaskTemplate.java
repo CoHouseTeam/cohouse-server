@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "task_template")
+@Table(name = "task_templates")
 @Getter
 @Setter
 @NoArgsConstructor

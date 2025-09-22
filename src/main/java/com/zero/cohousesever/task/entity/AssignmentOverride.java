@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "assignment_override_request")
+@Table(name = "assignment_override_requests")
 @Getter
 @Setter
 @NoArgsConstructor

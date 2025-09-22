@@ -24,7 +24,7 @@ import lombok.Setter;
  */
 
 @Entity
-@Table(name = "repeat_day")
+@Table(name = "repeat_days")
 @Getter
 @Setter
 @NoArgsConstructor

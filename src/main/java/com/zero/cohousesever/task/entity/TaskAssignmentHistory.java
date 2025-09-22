@@ -17,7 +17,7 @@ import lombok.Setter;
 
 @Entity
 @Table(
-    name = "tasks_assignment_histories",
+    name = "task_assignment_histories",
     uniqueConstraints = @UniqueConstraint(name="uk_assignment_date", columnNames = {"assignment_id","date"})
 )
 @Getter @Setter

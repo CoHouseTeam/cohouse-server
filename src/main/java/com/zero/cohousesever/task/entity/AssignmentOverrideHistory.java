@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tasks_override_request_histories")
+@Table(name = "task_override_request_histories")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class AssignmentOverrideHistory extends BaseEntity {
