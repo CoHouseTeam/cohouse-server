@@ -2,12 +2,12 @@ package com.zero.cohousesever.task.service;
 
 import com.zero.cohousesever.task.dto.assignment.TaskAssignmentResponse;
 import com.zero.cohousesever.task.entity.TaskAssignment;
-import com.zero.cohousesever.task.entity.TaskAssignmentHistory;
 import com.zero.cohousesever.task.repository.TaskAssignmentHistoryRepository;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,19 +16,16 @@ public class TaskAssignmentHistoryService {
   private final TaskAssignmentHistoryRepository historyRepository;
 
   // 상태변경 시 upsert 기록
+
+  @Transactional
   public void recordStatusChange(TaskAssignment a) {
-    TaskAssignmentHistory h = historyRepository
-        .findByAssignmentIdAndDate(a.getId(), a.getDate())
-        .orElseGet(() -> TaskAssignmentHistory.builder()
-            .assignmentId(a.getId())
-            .date(a.getDate())
-            .build());
-
-    h.setGroupMemberId(a.getGroupMemberId());
-    h.setCategory(a.getTemplate().getCategory());
-    h.setStatus(a.getStatus());
-
-    historyRepository.save(h);
+    historyRepository.upsertHistory(
+        a.getId(),
+        a.getGroupMemberId(),
+        a.getTemplate().getCategory(),
+        a.getStatus().name(),
+        java.sql.Date.valueOf(a.getDate())
+    );
   }
 
   // 조회
@@ -46,19 +43,16 @@ public class TaskAssignmentHistoryService {
         .stream().map(TaskAssignmentResponse::fromHistory).toList();
   }
 
+  @Transactional
   public void recordCreatedAssignments(List<TaskAssignment> assignments) {
     for (TaskAssignment a : assignments) {
-      historyRepository.findByAssignmentIdAndDate(a.getId(), a.getDate())
-          .orElseGet(() -> {
-            TaskAssignmentHistory h = TaskAssignmentHistory.builder()
-                .assignmentId(a.getId())
-                .groupMemberId(a.getGroupMemberId())
-                .category(a.getTemplate().getCategory())
-                .status(a.getStatus()) // 보통 PENDING
-                .date(a.getDate())
-                .build();
-            return historyRepository.save(h);
-          });
+      historyRepository.upsertHistory(
+          a.getId(),
+          a.getGroupMemberId(),
+          a.getTemplate().getCategory(),
+          a.getStatus().name(),
+          java.sql.Date.valueOf(a.getDate())
+      );
     }
   }
 

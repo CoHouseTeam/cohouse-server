@@ -37,15 +37,15 @@ public class FirebaseConfig {
             if (!FirebaseApp.getApps().isEmpty()) {
                 return; // 이미 초기화됨
             }
-//            InputStream credStream = resolveCredentialStream();
-//            GoogleCredentials creds = GoogleCredentials.fromStream(credStream);
-//
-//            FirebaseOptions options = FirebaseOptions.builder()
-//                    .setCredentials(creds)
-//                    .setProjectId(projectId)
-//                    .build();
+            InputStream credStream = resolveCredentialStream();
+            GoogleCredentials creds = GoogleCredentials.fromStream(credStream);
 
-//            FirebaseApp.initializeApp(options);
+            FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(creds)
+                    .setProjectId(projectId)
+                    .build();
+
+            FirebaseApp.initializeApp(options);
             log.info("[FCM] FirebaseApp initialized for projectId={}", projectId);
         } catch (Exception e) {
             log.error("[FCM] init fail: {}", e.getMessage(), e);
@@ -55,12 +55,10 @@ public class FirebaseConfig {
 
     private InputStream resolveCredentialStream() {
         String b64 = System.getenv("FIREBASE_CREDENTIALS_B64");
-        System.out.println(b64);
         if (b64 != null && !b64.isBlank()) {
             byte[] decoded = Base64.getDecoder().decode(b64);
             return new ByteArrayInputStream(decoded);
         }
-        // 자격증명이 전혀 없으면 공통 예외
         throw new CustomException(ErrorCode.FCM_INIT_FAIL);
     }
 }

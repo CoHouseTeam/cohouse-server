@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +34,23 @@ public interface TaskAssignmentHistoryRepository extends JpaRepository<TaskAssig
       @Param("to")   java.time.LocalDate to
   );
 
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = """
+    INSERT INTO tasks_assignment_histories
+      (assignment_id, group_member_id, category, status, date, created_at, updated_at)
+    VALUES
+      (:assignmentId, :groupMemberId, :category, :status, :date, NOW(), NOW())
+    ON DUPLICATE KEY UPDATE
+      group_member_id = VALUES(group_member_id),
+      category       = VALUES(category),
+      status         = VALUES(status),
+      updated_at     = NOW()
+  """, nativeQuery = true)
+  void upsertHistory(
+      @Param("assignmentId") Long assignmentId,
+      @Param("groupMemberId") Long groupMemberId,
+      @Param("category") String category,
+      @Param("status") String status,
+      @Param("date") java.sql.Date date
+  );
 }

@@ -12,12 +12,10 @@ public class DeviceTokenAdminService {
 
     private final DeviceTokenRepository repo;
 
-    /** 전송 성공 등 사용 흔적 갱신 */
-    public void touchUsed(String token) {
-        repo.findByToken(token).ifPresent(DeviceToken::markUsedNow);
-    }
-
-    /** 무효/만료 토큰 비활성화 */
+    /**
+     * 무효/만료 토큰 비활성화
+     */
+    @Transactional
     public void deactivate(String token) {
         repo.findByToken(token).ifPresent(DeviceToken::deactivate);
     }

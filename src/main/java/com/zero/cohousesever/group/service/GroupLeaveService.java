@@ -13,7 +13,7 @@ import com.zero.cohousesever.group.repository.GroupLeaveRequestRepository;
 import com.zero.cohousesever.group.repository.GroupMemberRepository;
 import com.zero.cohousesever.group.repository.GroupRepository;
 import com.zero.cohousesever.member.entity.Member;
-import com.zero.cohousesever.settlement.entity.SettlementStatus;
+import com.zero.cohousesever.settlement.entity.settlement.SettlementStatus;
 import com.zero.cohousesever.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

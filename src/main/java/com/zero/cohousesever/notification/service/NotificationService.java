@@ -16,9 +16,12 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -29,6 +32,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationSettingRepository notificationSettingRepository;
     private final NotificationPolicy notificationPolicy;
+    private final NotificationPushBridge pushBridge;
 
     @PersistenceContext
     private EntityManager em;
@@ -44,7 +48,7 @@ public class NotificationService {
         Notification entity = Notification.builder()
                 .member(em.getReference(Member.class, memberId))
                 .type(req.getType())
-                .title(req.getTitle())
+                .title(safeTitle(req))
                 .content(req.getContent())
                 .isRead(false)
                 .readAt(null)
@@ -59,14 +63,47 @@ public class NotificationService {
         // 정책 판단
         DeliveryDecision decision = notificationPolicy.decide(saved, setting, isAppActive);
 
-        // 이 단계에서는 "결정만" 수행합니다.
-        // - SEND_NOW  : 웹소켓 즉시 푸시로 보낼 파이프라인에 전달
-        // - SCHEDULED : 사용자 지정 시각에 맞춰 스케줄러 큐에 적재
-        // - SKIP      : 아무것도 안 함
-        //
-        // 실제 송신/스케줄링 연결은 후속 PR(#111 Scheduler)에서 붙입니다.
+        if (decision == DeliveryDecision.SEND_NOW) {
+            pushBridge.sendNow(
+                    memberId,
+                    saved.getTitle(),
+                    saved.getContent(),
+                    buildPushData(saved)
+            );
+        }
 
         return NotificationResponse.from(saved);
+    }
+
+    /**
+     * title이 비어있을 때 타입별 기본 제목 제공
+     */
+    private String safeTitle(NotificationCreateRequest req) {
+        String t = req.getTitle();
+        if (t != null && !t.isBlank()) return t;
+        switch (req.getType()) {
+            case TASK:          return "할일 알림";
+            case SETTLEMENT:    return "정산 알림";
+            case ANNOUNCEMENT:  return "공지 알림";
+            case DELETE_REQUEST:return "탈퇴 요청 알림";
+            default:            return "알림";
+        }
+    }
+
+    /**
+     * 푸시 데이터 빌드(FCM data payload)
+     */
+    private Map<String, String> buildPushData(Notification n) {
+        Map<String, String> data = new HashMap<>();
+        data.put("notificationId", String.valueOf(n.getId()));
+        data.put("type", n.getType().name());
+        if (n.getGroupId() != null)
+            data.put("groupId", String.valueOf(n.getGroupId()));
+        if (n.getTaskId() != null)
+            data.put("taskId", String.valueOf(n.getTaskId()));
+        if (n.getSettlementId() != null)
+            data.put("settlementId", String.valueOf(n.getSettlementId()));
+        return data;
     }
 
     /**
@@ -83,6 +120,7 @@ public class NotificationService {
     /**
      * 사용자 알림 전체 소프트 딜리트
      */
+    @Transactional
     public void softDeleteAll(Long memberId) {
         notificationRepository.softDeleteAllByMember(
                 memberId, NotificationStatus.DELETED, LocalDateTime.now()
@@ -92,6 +130,7 @@ public class NotificationService {
     /**
      * 보관기간이 지난 알림을 일괄 소프트 딜리트 (배치/스케줄러용)
      */
+    @Transactional
     public int softDeleteOutdated() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
         return notificationRepository.softDeleteOlderThan(
@@ -104,6 +143,7 @@ public class NotificationService {
      * - 미읽음이면 읽음 처리, 이미 읽음이어도 성공(멱등)
      * - 존재하지 않거나 권한이 없으면 예외 발생
      */
+    @Transactional
     public void markAsRead(Long memberId, Long notificationId) {
         int updated = notificationRepository.markRead(
                 notificationId, memberId, NotificationStatus.ACTIVE, LocalDateTime.now());

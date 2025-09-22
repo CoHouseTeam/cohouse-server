@@ -29,4 +29,8 @@ public class TaskTemplate extends BaseEntity {
   @Column(nullable = false)
   private boolean randomEnabled;
 
+  @Builder.Default
+  @Column(nullable = false)
+  private boolean active = true;
+
 }

@@ -1,8 +1,8 @@
-package com.zero.cohousesever.settlement.dto;
+package com.zero.cohousesever.settlement.dto.payment;
 
 
-import com.zero.cohousesever.settlement.entity.PaymentHistory;
-import com.zero.cohousesever.settlement.entity.PaymentStatus;
+import com.zero.cohousesever.settlement.entity.payment.PaymentHistory;
+import com.zero.cohousesever.settlement.entity.payment.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
